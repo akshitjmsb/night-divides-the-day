@@ -60,10 +60,12 @@ Vercel provides excellent hosting for React/TypeScript applications with automat
    vercel
    ```
 
-3. **Configure Environment Variables:**
+3. **Configure Environment Variables (IMPORTANT - Keep your API key secure):**
    - Go to your Vercel dashboard
-   - Navigate to your project settings
+   - Navigate to your project settings → Environment Variables
    - Add environment variable: `GEMINI_API_KEY` with your Google Gemini API key
+   - **NEVER commit your API key to the repository**
+   - **Use Vercel's secure environment variable system**
 
 4. **Automatic Deployments:**
    - Connect your GitHub repository to Vercel
