@@ -2,6 +2,8 @@
 
 This is a personal dashboard application designed to provide daily reflections, tasks, and learning modules. It's built with HTML, TailwindCSS (via CDN), TypeScript, and the Google Gemini API.
 
+*Last updated: Testing GitHub Actions*
+
 ## Project Structure
 
 The project is organized into a clean and maintainable structure.
