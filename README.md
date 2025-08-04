@@ -44,7 +44,32 @@ This will start a simple web server, usually at `http://localhost:3000`. You can
 
 *Note: The application expects the `API_KEY` environment variable to be available in its execution context.*
 
-## Deployment to Hostinger
+## Deployment Options
+
+### Option 1: Deploy to Vercel (Recommended)
+
+Vercel provides excellent hosting for React/TypeScript applications with automatic deployments.
+
+1. **Install Vercel CLI:**
+   ```bash
+   npm install -g vercel
+   ```
+
+2. **Deploy to Vercel:**
+   ```bash
+   vercel
+   ```
+
+3. **Configure Environment Variables:**
+   - Go to your Vercel dashboard
+   - Navigate to your project settings
+   - Add environment variable: `GEMINI_API_KEY` with your Google Gemini API key
+
+4. **Automatic Deployments:**
+   - Connect your GitHub repository to Vercel
+   - Every push to the main branch will trigger automatic deployment
+
+### Option 2: Deploy to Hostinger
 
 Hostinger provides static web hosting which is perfect for this project.
 
