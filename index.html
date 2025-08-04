@@ -132,10 +132,11 @@
                 <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
             </section>
             <section class="mt-6">
-                <div class="grid grid-cols-4 gap-2">
+                <div class="grid grid-cols-5 gap-2">
                     <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
                     <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
                     <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
+                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
                     <div id="history-clickable" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
                 </div>
             </section>
@@ -266,6 +267,19 @@
                     <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
                 </div>
                 <div id="coffee-content" class="overflow-y-auto">
+                    <!-- JS will populate this -->
+                </div>
+                 <div class="text-center mt-4 pt-2 border-t"><button class="chat-context-btn footer-btn">Chat about this</button></div>
+            </div>
+        </div>
+
+        <div id="guitar-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
+            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="text-lg font-bold">Guitar Tab & Lessons</h3>
+                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
+                </div>
+                <div id="guitar-content" class="overflow-y-auto">
                     <!-- JS will populate this -->
                 </div>
                  <div class="text-center mt-4 pt-2 border-t"><button class="chat-context-btn footer-btn">Chat about this</button></div>

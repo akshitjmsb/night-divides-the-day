@@ -841,6 +841,95 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    async function fetchAndShowGuitarTab() {
+        const modal = document.getElementById('guitar-modal');
+        const contentEl = document.getElementById('guitar-content');
+        if (!modal || !contentEl) return;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        contentEl.innerHTML = '<p>Loading today\'s guitar lesson...</p>';
+
+        let guitarData;
+        try {
+            // Use a unique prompt for each day to get a different lesson
+            const dayOfYear = getDayOfYear(activeContentDate);
+            const prompt = `For day ${dayOfYear} of the year, generate a unique, self-contained guitar lesson for someone learning to play guitar. Include:
+1. A song title and artist (choose a popular, beginner-friendly song)
+2. A simple guitar tab in ASCII format (use - for strings, numbers for frets, keep it simple)
+3. A brief lesson explaining the technique or chord progression
+4. A practice tip for beginners
+
+Format the response as JSON with these exact fields:
+{
+    "title": "Song Name - Artist",
+    "tab": "E|---0---0---0---0---\\nB|---1---1---1---1---\\nG|---0---0---0---0---\\nD|---2---2---2---2---\\nA|---3---3---3---3---\\nE|---x---x---x---x---",
+    "lesson": "This lesson focuses on basic strumming pattern...",
+    "tip": "Practice slowly and focus on clean chord transitions"
+}`;
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            title: { 
+                                type: Type.STRING, 
+                                description: 'The song title and artist.' 
+                            },
+                            tab: {
+                                type: Type.STRING,
+                                description: 'The guitar tab in ASCII format.'
+                            },
+                            lesson: {
+                                type: Type.STRING,
+                                description: 'A brief lesson explaining the technique.'
+                            },
+                            tip: {
+                                type: Type.STRING,
+                                description: 'A practice tip for beginners.'
+                            }
+                        },
+                        required: ["title", "tab", "lesson", "tip"]
+                    }
+                }
+            });
+
+            try {
+                guitarData = JSON.parse(response.text);
+            } catch (jsonError) {
+                 console.error("Failed to parse JSON from Gemini response for guitar lesson:", jsonError);
+                 contentEl.innerHTML = `<p>Could not parse the lesson. Please try again later.</p>`;
+                 return;
+            }
+
+        } catch (error) {
+            console.error("Error fetching Guitar Lesson:", error);
+            contentEl.innerHTML = '<p>Could not retrieve a guitar lesson at this time.</p>';
+            return;
+        }
+        
+        if (guitarData && guitarData.title && guitarData.tab && guitarData.lesson && guitarData.tip) {
+             contentEl.innerHTML = `
+                <div class="space-y-4">
+                    <h4 class="font-bold text-md mb-2">${guitarData.title.replace(/\*/g, '')}</h4>
+                    <div class="bg-gray-100 p-3 rounded font-mono text-sm overflow-x-auto">
+                        <pre>${guitarData.tab.replace(/\*/g, '')}</pre>
+                    </div>
+                    <p class="text-base mb-4">${guitarData.lesson.replace(/\*/g, '')}</p>
+                    <div class="bg-blue-50 p-3 rounded">
+                        <p class="text-sm italic">💡 ${guitarData.tip.replace(/\*/g, '')}</p>
+                    </div>
+                </div>
+            `;
+        } else {
+             contentEl.innerHTML = '<p>Could not retrieve a guitar lesson. The response was empty.</p>';
+        }
+    }
+
     async function fetchAndShowHistory() {
         const modal = document.getElementById('history-modal');
         const contentEl = document.getElementById('history-content');
@@ -1177,7 +1266,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  titleEl.textContent = `French: Error`;
                  tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">Could not load French lesson data.</td></tr>`;
             } else {
-                titleEl.textContent = `French: “${soundData.sound}”`;
+                titleEl.textContent = `French: " ${soundData.sound} "`;
                 tableBodyEl.innerHTML = soundData.words.map((item: any, index: number) => 
                     `<tr><td class="font-bold text-center">${index + 1}</td><td>${item.word}</td><td>${item.cue}</td><td>${item.meaning}</td><td class="text-center"><button class="play-btn" data-word="${item.word}">🔊</button></td></tr>`
                 ).join('');
@@ -1423,6 +1512,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.closest('#geopolitics-clickable')) return fetchAndShowWorldOrder();
             if (target.closest('#tennis-clickable')) return fetchAndShowTennisMatches();
             if (target.closest('#coffee-clickable')) return fetchAndShowCoffeeTip();
+            if (target.closest('#guitar-clickable')) return fetchAndShowGuitarTab();
             if (target.closest('#history-clickable')) return fetchAndShowHistory();
 
 
@@ -1569,6 +1659,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         case 'coffee-modal': {
                             const context = (modal.querySelector('#coffee-content') as HTMLElement)?.innerText || '';
                             systemInstruction = `The user is asking about this coffee shop lesson. Expand on it, explain the business reasoning, and how to implement it.\n\nContext:\n${context}`;
+                            break;
+                        }
+                        case 'guitar-modal': {
+                            const context = (modal.querySelector('#guitar-content') as HTMLElement)?.innerText || '';
+                            systemInstruction = `The user is asking about this guitar lesson. Provide more details about the technique, suggest practice exercises, or explain music theory concepts.\n\nContext:\n${context}`;
                             break;
                         }
                         case 'history-modal': {
