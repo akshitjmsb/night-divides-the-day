@@ -1164,6 +1164,7 @@ Format the response as JSON with these exact fields:
         `).join('');
     }
 
+    // Original module rendering functions (kept for compatibility)
     function renderDayModule() {
         const lifePointerEl = document.getElementById('life-pointer-display-day');
         if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
@@ -1225,15 +1226,15 @@ Format the response as JSON with these exact fields:
         if (hour >= 8 && hour < 17) {
             if(sunIcon) sunIcon.style.display = 'inline-block';
             if(dayModule) dayModule.classList.add('active');
-            renderDayModule();
+            await renderDayModule();
         } else if (hour >= 17 && hour < 18) {
             if (sunsetIcon) sunsetIcon.style.display = 'inline-block';
             if(crossoverModule) crossoverModule.classList.add('active');
-            renderCrossoverModule();
+            await renderCrossoverModule();
         } else {
             if (moonIcon) moonIcon.style.display = 'inline-block';
             if(nightModule) nightModule.classList.add('active');
-            renderNightModule();
+            await renderNightModule();
         }
     }
 
@@ -1450,11 +1451,31 @@ Format the response as JSON with these exact fields:
         if (!archiveList) return;
         const archiveModal = document.getElementById('archive-modal');
         
+        // Get archived content for the archive date
+        const archivedContent = getArchivedContent(archiveKey);
+        
+        if (!archivedContent) {
+            archiveList.innerHTML = '<p class="text-gray-500 p-4">No archived content available for this date.</p>';
+            return;
+        }
+        
         const archiveItems: { label: string, action: () => void }[] = [
-            { label: "Previous Day's French", action: () => showFrenchModal('archive') },
-            { label: "Previous Day's Food", action: () => showFoodModal('archive') },
-            { label: `Previous Day's Analytics`, action: () => showAnalyticsModal('archive') },
-            { label: `Previous Day's Hood`, action: () => showHoodModal('archive') }
+            { 
+                label: `Archived French (${archivedContent.date})`, 
+                action: () => showArchivedFrenchModal(archivedContent) 
+            },
+            { 
+                label: `Archived Food (${archivedContent.date})`, 
+                action: () => showArchivedFoodModal(archivedContent) 
+            },
+            { 
+                label: `Archived Analytics (${archivedContent.date})`, 
+                action: () => showArchivedAnalyticsModal(archivedContent) 
+            },
+            { 
+                label: `Archived Hood (${archivedContent.date})`, 
+                action: () => showArchivedHoodModal(archivedContent) 
+            }
         ];
         
         archiveList.innerHTML = '';
@@ -1786,13 +1807,11 @@ Format the response as JSON with these exact fields:
             
             await mainRender();
             setupEventListeners();
-            triggerAutoContentGeneration(); // Initial check on load
 
             setInterval(updateTime, 1000);
             setInterval(async () => {
                 try {
                     await mainRender();
-                    triggerAutoContentGeneration(); // Periodically check if we need to generate content
                 } catch (error) {
                     handleGlobalError(error as Error, 'periodic update');
                 }
@@ -1803,4 +1822,230 @@ Format the response as JSON with these exact fields:
     }
 
     initializeApp();
+
+    // --- ENHANCED CONTENT FLOW SYSTEM ---
+    
+    /**
+     * Enhanced content generation specifically for CrossOver Module (5 PM - 6 PM)
+     */
+    async function triggerCrossOverContentGeneration(): Promise<void> {
+        const { hour } = getCanonicalTime();
+        
+        // Only generate during CrossOver Module (5 PM - 6 PM)
+        if (hour < 17 || hour >= 18) {
+            return;
+        }
+        
+        const todayKey = new Date().toISOString().split('T')[0];
+        const generationKey = `cross-over-generation-${todayKey}`;
+        
+        // Check if we've already generated content for tomorrow today
+        if (localStorage.getItem(generationKey)) {
+            return;
+        }
+        
+        console.log('🔄 CrossOver Module: Starting content generation for tomorrow...');
+        showSyncStatus('🔄 Generating tomorrow\'s content...', false);
+        
+        try {
+            // Generate all content types for tomorrow
+            const promises = [
+                getOrGeneratePlanForDate(previewContentDate, tomorrowKey),
+                getOrGenerateDynamicContent('french-sound', previewContentDate),
+                getOrGenerateDynamicContent('analytics', previewContentDate),
+                getOrGenerateDynamicContent('transportation-physics', previewContentDate)
+            ];
+            
+            await Promise.all(promises);
+            
+            // Mark that we've generated content for tomorrow
+            localStorage.setItem(generationKey, new Date().toISOString());
+            console.log('✅ CrossOver Module: Content generation completed');
+            showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
+            
+        } catch (error) {
+            console.error('❌ CrossOver Module: Content generation failed', error);
+            showSyncStatus('⚠️ Content generation failed. Will retry.', true);
+        }
+    }
+    
+    /**
+     * Archives today's content during Night Module (6 PM - 8 AM)
+     */
+    async function archiveTodaysContent(): Promise<void> {
+        const { hour } = getCanonicalTime();
+        
+        // Only archive during Night Module (6 PM - 8 AM)
+        if (hour >= 8 && hour < 18) {
+            return;
+        }
+        
+        const todayKey = new Date().toISOString().split('T')[0];
+        const archiveKey = `archived-${todayKey}`;
+        
+        // Check if we've already archived today's content
+        if (localStorage.getItem(archiveKey)) {
+            return;
+        }
+        
+        console.log('📦 Night Module: Archiving today\'s content...');
+        
+        try {
+            // Collect all of today's content
+            const archiveData = {
+                date: todayKey,
+                archivedAt: new Date().toISOString(),
+                foodPlan: await getOrGeneratePlanForDate(activeContentDate, todayKey),
+                frenchContent: await getOrGenerateDynamicContent('french-sound', activeContentDate),
+                analyticsContent: await getOrGenerateDynamicContent('analytics', activeContentDate),
+                transportationContent: await getOrGenerateDynamicContent('transportation-physics', activeContentDate),
+                lifePointer: todaysLifePointer
+            };
+            
+            // Save to archive
+            localStorage.setItem(archiveKey, JSON.stringify(archiveData));
+            console.log('✅ Night Module: Content archived successfully');
+            
+        } catch (error) {
+            console.error('❌ Night Module: Content archiving failed', error);
+        }
+    }
+    
+    /**
+     * Loads archived content for display
+     */
+    function getArchivedContent(dateKey: string): any {
+        const archiveKey = `archived-${dateKey}`;
+        const archivedData = localStorage.getItem(archiveKey);
+        
+        if (archivedData) {
+            try {
+                return JSON.parse(archivedData);
+            } catch (error) {
+                console.error('Error parsing archived content:', error);
+                return null;
+            }
+        }
+        
+        return null;
+    }
+    
+    // --- ARCHIVED CONTENT MODAL FUNCTIONS ---
+    
+    function showArchivedFrenchModal(archivedContent: any) {
+        const modal = document.getElementById('frenchy-modal');
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        const titleEl = modal.querySelector('#modal-frenchy-title') as HTMLElement;
+        const tableBodyEl = modal.querySelector('#modal-frenchy-table-body') as HTMLElement;
+        
+        titleEl.textContent = `French (Archived - ${archivedContent.date})`;
+        
+        if (archivedContent.frenchContent && archivedContent.frenchContent.sound && archivedContent.frenchContent.words) {
+            const { sound, words } = archivedContent.frenchContent;
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td class="p-3 border-b">${escapeHtml(sound)}</td>
+                    <td class="p-3 border-b">${escapeHtml(words.join(', '))}</td>
+                    <td class="p-3 border-b">Archived</td>
+                </tr>
+            `;
+        } else {
+            tableBodyEl.innerHTML = `<tr><td colspan="3" class="text-center p-4">No archived French content available.</td></tr>`;
+        }
+    }
+    
+    function showArchivedFoodModal(archivedContent: any) {
+        const modal = document.getElementById('food-modal');
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        const titleEl = modal.querySelector('#modal-food-title') as HTMLElement;
+        const contentEl = modal.querySelector('#modal-food-content') as HTMLElement;
+        
+        titleEl.textContent = `Food Plan (Archived - ${archivedContent.date})`;
+        contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.foodPlan || 'No archived food plan available.')}</div>`;
+    }
+    
+    function showArchivedAnalyticsModal(archivedContent: any) {
+        const modal = document.getElementById('analytics-modal');
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        const titleEl = modal.querySelector('#modal-analytics-title') as HTMLElement;
+        const contentEl = modal.querySelector('#modal-analytics-content') as HTMLElement;
+        
+        titleEl.textContent = `Analytics (Archived - ${archivedContent.date})`;
+        
+        if (archivedContent.analyticsContent && archivedContent.analyticsContent.insights) {
+            contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.analyticsContent.insights)}</div>`;
+        } else {
+            contentEl.innerHTML = `<div class="p-4">No archived analytics content available.</div>`;
+        }
+    }
+    
+    function showArchivedHoodModal(archivedContent: any) {
+        const modal = document.getElementById('hood-modal');
+        if (!modal) return;
+        
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        
+        const titleEl = modal.querySelector('#modal-hood-title') as HTMLElement;
+        const contentEl = modal.querySelector('#modal-hood-content') as HTMLElement;
+        
+        titleEl.textContent = `Transportation Physics (Archived - ${archivedContent.date})`;
+        
+        if (archivedContent.transportationContent && archivedContent.transportationContent.physics) {
+            contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.transportationContent.physics)}</div>`;
+        } else {
+            contentEl.innerHTML = `<div class="p-4">No archived transportation physics content available.</div>`;
+        }
+    }
+
+    // --- ENHANCED MODULE RENDERING FUNCTIONS ---
+    
+    async function renderDayModule() {
+        const lifePointerEl = document.getElementById('life-pointer-display-day');
+        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
+        
+        const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
+        if (reflectionPromptEl) reflectionPromptEl.textContent = '';
+
+        renderTasks('tasks-list-day');
+        
+        // Day Module: Content from yesterday's Night Module preview is now active
+        console.log('☀️ Day Module: Using content that was previewed in Night Module');
+    }
+
+    async function renderCrossoverModule() {
+        const lifePointerEl = document.getElementById('life-pointer-display-crossover');
+        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
+
+        renderTasks('tasks-list-crossover');
+        
+        // CrossOver Module: Generate tomorrow's content
+        await triggerCrossOverContentGeneration();
+    }
+
+    async function renderNightModule() {
+        const dayOfYear = getDayOfYear(previewContentDate);
+        const tomorrowsLifePointer = lifePointers[(dayOfYear - 1) % lifePointers.length];
+        
+        const lifePointerEl = document.getElementById('life-pointer-display-night');
+        if (lifePointerEl) lifePointerEl.textContent = tomorrowsLifePointer;
+        
+        renderTasks('tasks-list-night');
+        
+        // Night Module: Archive today's content and show tomorrow's preview
+        await archiveTodaysContent();
+        console.log('🌙 Night Module: Today\'s content archived, tomorrow\'s content previewed');
+    }
 });
