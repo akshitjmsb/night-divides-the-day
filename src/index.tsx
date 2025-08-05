@@ -1601,6 +1601,13 @@ Format the response as JSON with these exact fields:
             if (target.closest('#guitar-clickable')) return fetchAndShowGuitarTab();
             if (target.closest('#history-clickable')) return fetchAndShowHistory();
 
+            // Crossover and Night module tab event listeners
+            if (target.closest('#geopolitics-clickable-crossover') || target.closest('#geopolitics-clickable-night')) return fetchAndShowWorldOrder();
+            if (target.closest('#tennis-clickable-crossover') || target.closest('#tennis-clickable-night')) return fetchAndShowTennisMatches();
+            if (target.closest('#coffee-clickable-crossover') || target.closest('#coffee-clickable-night')) return fetchAndShowCoffeeTip();
+            if (target.closest('#guitar-clickable-crossover') || target.closest('#guitar-clickable-night')) return fetchAndShowGuitarTab();
+            if (target.closest('#history-clickable-crossover') || target.closest('#history-clickable-night')) return fetchAndShowHistory();
+
 
             const archiveModal = document.getElementById('archive-modal');
             if (target.closest('#archive-open-btn') && archiveModal) {

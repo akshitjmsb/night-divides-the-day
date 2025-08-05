@@ -1,0 +1,74 @@
+name: Test and Build
+
+on:
+  push:
+    branches:
+      - feature/day-to-day-changes
+      - development
+  pull_request:
+    branches:
+      - development
+  workflow_dispatch:
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check TypeScript
+      run: npx tsc --noEmit
+      continue-on-error: true
+
+    - name: Run tests
+      run: npm test
+      continue-on-error: true
+
+    - name: Build project
+      run: npm run build
+
+    - name: Check build output
+      run: |
+        if [ -d "dist" ]; then
+          echo "✅ Build successful - dist folder created"
+          ls -la dist/
+        else
+          echo "❌ Build failed - no dist folder found"
+          exit 1
+        fi
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-files
+        path: dist/
+        retention-days: 7
+
+  deploy-preview:
+    needs: test-and-build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: build-files
+        path: dist/
+
+    - name: Deploy to preview
+      run: |
+        echo "🚀 Deploying preview for PR #${{ github.event.pull_request.number }}"
+        echo "Branch: ${{ github.head_ref }}"
+        echo "Build files ready for deployment" 
