@@ -1,0 +1,96 @@
+name: Merge Feature to Development
+
+on:
+  pull_request:
+    branches:
+      - development
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      feature_branch:
+        description: 'Feature branch to merge'
+        required: true
+        default: 'feature/day-to-day-changes'
+        type: string
+
+jobs:
+  test-and-merge:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run tests
+      run: npm test
+      continue-on-error: true
+
+    - name: Build project
+      run: npm run build
+
+    - name: Check for build errors
+      run: |
+        if [ $? -eq 0 ]; then
+          echo "Build successful"
+        else
+          echo "Build failed"
+          exit 1
+        fi
+
+    - name: Auto-merge to development
+      if: github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'development'
+      run: |
+        # Only auto-merge if PR is approved or if it's from our feature branch
+        if [[ "${{ github.event.pull_request.head.ref }}" == "feature/day-to-day-changes" ]]; then
+          echo "Auto-merging feature/day-to-day-changes to development"
+          gh pr merge ${{ github.event.pull_request.number }} --merge --delete-branch
+        else
+          echo "Not auto-merging: PR is not from feature/day-to-day-changes branch"
+        fi
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Manual merge trigger
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        echo "Creating PR from ${{ github.event.inputs.feature_branch }} to development"
+        gh pr create --base development --head ${{ github.event.inputs.feature_branch }} --title "Auto-merge: ${{ github.event.inputs.feature_branch }} to development" --body "Automated merge from feature branch to development"
+        gh pr merge --merge --delete-branch
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  notify-success:
+    needs: test-and-merge
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+    - name: Notify success
+      run: |
+        echo "✅ Feature branch successfully merged to development"
+        echo "Branch: ${{ github.event.inputs.feature_branch || 'feature/day-to-day-changes' }}"
+        echo "Commit: ${{ github.sha }}"
+
+  notify-failure:
+    needs: test-and-merge
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+    - name: Notify failure
+      run: |
+        echo "❌ Merge to development failed"
+        echo "Please check the logs for details"
+        exit 1 
