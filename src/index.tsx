@@ -28,6 +28,9 @@ document.addEventListener('DOMContentLoaded', () => {
              .replace(/'/g, "&#039;");
     }
 
+    // Global variable for testing time zones
+    let testTimeOverride: Date | null = null;
+
     /**
      * Gets the current date and hour based on a canonical timezone ('America/Los_Angeles')
      * to ensure the app's state is consistent for all users, regardless of their location.
@@ -35,6 +38,9 @@ document.addEventListener('DOMContentLoaded', () => {
      */
     function getCanonicalTime(): { now: Date, hour: number } {
         const canonicalTimeZone = 'America/Los_Angeles';
+        
+        // Use test override if set (for time zone testing)
+        const baseDate = testTimeOverride || new Date();
         
         const formatter = new Intl.DateTimeFormat('en-US', {
             year: 'numeric',
@@ -47,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             timeZone: canonicalTimeZone,
         });
         
-        const parts = formatter.formatToParts(new Date());
+        const parts = formatter.formatToParts(baseDate);
         const partMap: { [key: string]: string } = {};
         for (const part of parts) {
             if (part.type !== 'literal') {
@@ -67,8 +73,67 @@ document.addEventListener('DOMContentLoaded', () => {
         // subsequent date logic work consistently for every user.
         const canonicalNow = new Date(year, month - 1, day, hour, minute, second);
 
+        // Enhanced logging for time zone testing
+        if (testTimeOverride) {
+            console.log('🕐 TESTING MODE - Canonical Time:', {
+                original: testTimeOverride.toISOString(),
+                canonical: canonicalNow.toISOString(),
+                hour: hour,
+                module: hour >= 8 && hour < 17 ? 'DAY' : hour >= 17 && hour < 18 ? 'CROSSOVER' : 'NIGHT'
+            });
+        }
+
         return { now: canonicalNow, hour: hour };
     }
+
+    /**
+     * Time zone testing utilities (available in browser console)
+     */
+    (window as any).testTimeZone = {
+        // Test CrossOver Module (5 PM - 6 PM)
+        testCrossOver: () => {
+            testTimeOverride = new Date('2024-01-15T17:30:00.000-08:00');
+            console.log('🧪 Testing CrossOver Module (5:30 PM)');
+            location.reload();
+        },
+        
+        // Test Night Module (6 PM - 8 AM)
+        testNight: () => {
+            testTimeOverride = new Date('2024-01-15T19:00:00.000-08:00');
+            console.log('🧪 Testing Night Module (7:00 PM)');
+            location.reload();
+        },
+        
+        // Test Day Module (8 AM - 5 PM)
+        testDay: () => {
+            testTimeOverride = new Date('2024-01-15T10:00:00.000-08:00');
+            console.log('🧪 Testing Day Module (10:00 AM)');
+            location.reload();
+        },
+        
+        // Test specific time
+        testTime: (isoString: string) => {
+            testTimeOverride = new Date(isoString);
+            console.log('🧪 Testing Custom Time:', isoString);
+            location.reload();
+        },
+        
+        // Reset to real time
+        reset: () => {
+            testTimeOverride = null;
+            console.log('🔄 Reset to real time');
+            location.reload();
+        },
+        
+        // Show current test status
+        status: () => {
+            console.log('📊 Test Status:', {
+                testTimeOverride: testTimeOverride?.toISOString(),
+                canonicalTime: getCanonicalTime(),
+                isTesting: !!testTimeOverride
+            });
+        }
+    };
 
     // --- DATA ---
     const lifePointers = [
@@ -1829,10 +1894,11 @@ Format the response as JSON with these exact fields:
      * Enhanced content generation specifically for CrossOver Module (5 PM - 6 PM)
      */
     async function triggerCrossOverContentGeneration(): Promise<void> {
-        const { hour } = getCanonicalTime();
+        const { hour, now } = getCanonicalTime();
         
         // Only generate during CrossOver Module (5 PM - 6 PM)
         if (hour < 17 || hour >= 18) {
+            console.log(`⏰ CrossOver: Not in CrossOver time window (current hour: ${hour})`);
             return;
         }
         
@@ -1841,10 +1907,16 @@ Format the response as JSON with these exact fields:
         
         // Check if we've already generated content for tomorrow today
         if (localStorage.getItem(generationKey)) {
+            console.log('🔄 CrossOver: Content already generated for tomorrow');
             return;
         }
         
-        console.log('🔄 CrossOver Module: Starting content generation for tomorrow...');
+        console.log('🚀 CrossOver: Starting content generation for tomorrow...', {
+            currentTime: now.toISOString(),
+            todayKey: todayKey,
+            hour: hour,
+            previewContentDate: previewContentDate.toISOString()
+        });
         showSyncStatus('🔄 Generating tomorrow\'s content...', false);
         
         try {
@@ -1860,11 +1932,11 @@ Format the response as JSON with these exact fields:
             
             // Mark that we've generated content for tomorrow
             localStorage.setItem(generationKey, new Date().toISOString());
-            console.log('✅ CrossOver Module: Content generation completed');
+            console.log('✅ CrossOver: Content generation completed for tomorrow');
             showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
             
         } catch (error) {
-            console.error('❌ CrossOver Module: Content generation failed', error);
+            console.error('❌ CrossOver: Content generation failed', error);
             showSyncStatus('⚠️ Content generation failed. Will retry.', true);
         }
     }
@@ -1873,10 +1945,11 @@ Format the response as JSON with these exact fields:
      * Archives today's content during Night Module (6 PM - 8 AM)
      */
     async function archiveTodaysContent(): Promise<void> {
-        const { hour } = getCanonicalTime();
+        const { hour, now } = getCanonicalTime();
         
         // Only archive during Night Module (6 PM - 8 AM)
         if (hour >= 8 && hour < 18) {
+            console.log(`⏰ Night: Not in Night time window (current hour: ${hour})`);
             return;
         }
         
@@ -1885,10 +1958,16 @@ Format the response as JSON with these exact fields:
         
         // Check if we've already archived today's content
         if (localStorage.getItem(archiveKey)) {
+            console.log('🔄 Night: Content already archived for today');
             return;
         }
         
-        console.log('📦 Night Module: Archiving today\'s content...');
+        console.log('📦 Night: Archiving today\'s content...', {
+            currentTime: now.toISOString(),
+            todayKey: todayKey,
+            hour: hour,
+            activeContentDate: activeContentDate.toISOString()
+        });
         
         try {
             // Collect all of today's content
@@ -1904,10 +1983,10 @@ Format the response as JSON with these exact fields:
             
             // Save to archive
             localStorage.setItem(archiveKey, JSON.stringify(archiveData));
-            console.log('✅ Night Module: Content archived successfully');
+            console.log('✅ Night: Content archived successfully for today');
             
         } catch (error) {
-            console.error('❌ Night Module: Content archiving failed', error);
+            console.error('❌ Night: Content archiving failed', error);
         }
     }
     
