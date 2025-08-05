@@ -1229,33 +1229,7 @@ Format the response as JSON with these exact fields:
         `).join('');
     }
 
-    // Original module rendering functions (kept for compatibility)
-    function renderDayModule() {
-        const lifePointerEl = document.getElementById('life-pointer-display-day');
-        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
-        
-        const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
-        if (reflectionPromptEl) reflectionPromptEl.textContent = '';
 
-        renderTasks('tasks-list-day');
-    }
-
-    function renderCrossoverModule() {
-        const lifePointerEl = document.getElementById('life-pointer-display-crossover');
-        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
-
-        renderTasks('tasks-list-crossover');
-    }
-
-    function renderNightModule() {
-        const dayOfYear = getDayOfYear(previewContentDate);
-        const tomorrowsLifePointer = lifePointers[(dayOfYear - 1) % lifePointers.length];
-        
-        const lifePointerEl = document.getElementById('life-pointer-display-night');
-        if (lifePointerEl) lifePointerEl.textContent = tomorrowsLifePointer;
-        
-        renderTasks('tasks-list-night');
-    }
     
     function renderChatHistory() {
         const chatHistoryDisplay = document.getElementById('chat-history');
