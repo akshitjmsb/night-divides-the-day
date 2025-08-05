@@ -1062,6 +1062,90 @@ Format the response as JSON with these exact fields:
         }
     }
 
+    async function fetchAndShowPoetry() {
+        const modal = document.getElementById('poetry-modal');
+        const contentEl = document.getElementById('poetry-content');
+        if (!modal || !contentEl) return;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        contentEl.innerHTML = '<p>Generating beautiful poetry for you...</p>';
+
+        try {
+            const dayOfYear = getDayOfYear(activeContentDate);
+            const prompt = `For day ${dayOfYear} of the year, generate a beautiful 2-line poem in English, Hindi, Urdu, or Punjabi. The poem should be meaningful and inspiring. Also provide a simple explanation of what the poet is trying to convey in simple words. Format your response as:
+            
+Poem:
+[2 lines of poetry]
+
+Language: [English/Hindi/Urdu/Punjabi]
+
+Explanation:
+[Simple explanation of the poem's meaning and what the poet is trying to convey]`;
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            poem: { 
+                                type: Type.STRING, 
+                                description: 'The 2-line poem in the specified language.' 
+                            },
+                            language: {
+                                type: Type.STRING,
+                                description: 'The language of the poem (English, Hindi, Urdu, or Punjabi).'
+                            },
+                            explanation: {
+                                type: Type.STRING,
+                                description: 'A simple explanation of what the poet is trying to convey.'
+                            }
+                        },
+                        required: ["poem", "language", "explanation"]
+                    }
+                }
+            });
+
+            let html = '';
+
+            if (response.text) {
+                try {
+                    const data = JSON.parse(response.text);
+                    html += `<div class="mb-6">`;
+                    html += `<h4 class="text-lg font-bold mb-3 text-center">Daily Poetry</h4>`;
+                    html += `<div class="bg-gray-50 p-4 rounded-lg mb-4">`;
+                    html += `<p class="text-lg italic text-center leading-relaxed">${escapeHtml(data.poem)}</p>`;
+                    html += `<p class="text-sm text-gray-600 text-center mt-2">Language: ${escapeHtml(data.language)}</p>`;
+                    html += `</div>`;
+                    html += `<div class="bg-blue-50 p-4 rounded-lg">`;
+                    html += `<h5 class="font-bold mb-2">What the poet is saying:</h5>`;
+                    html += `<p class="text-sm leading-relaxed">${escapeHtml(data.explanation)}</p>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                } catch (parseError) {
+                    // Fallback if JSON parsing fails
+                    html += `<div class="mb-6">`;
+                    html += `<h4 class="text-lg font-bold mb-3 text-center">Daily Poetry</h4>`;
+                    html += `<div class="bg-gray-50 p-4 rounded-lg">`;
+                    html += `<p class="text-lg italic text-center leading-relaxed">${escapeHtml(response.text)}</p>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                }
+            } else {
+                html += `<p>Could not generate poetry at this time.</p>`;
+            }
+
+            contentEl.innerHTML = html;
+
+        } catch (error) {
+            console.error("Error fetching Poetry:", error);
+            contentEl.innerHTML = '<p>An API Error occurred. Could not generate poetry at this time.</p>';
+        }
+    }
+
     // --- GEMINI API LOGIC ---
     async function getReflectionPrompt(pointer: string) {
         const reflectionPromptDisplay = document.getElementById('reflection-prompt-display-day');
@@ -1569,18 +1653,20 @@ Format the response as JSON with these exact fields:
             if (target.closest('#analytics-preview-clickable-crossover') || target.closest('#analytics-preview-clickable-night')) return showAnalyticsModal('tomorrow');
             if (target.closest('#hood-preview-clickable-crossover') || target.closest('#hood-preview-clickable-night')) return showHoodModal('tomorrow');
 
-            if (target.closest('#geopolitics-clickable')) return fetchAndShowWorldOrder();
-            if (target.closest('#tennis-clickable')) return fetchAndShowTennisMatches();
-            if (target.closest('#coffee-clickable')) return fetchAndShowCoffeeTip();
-            if (target.closest('#guitar-clickable')) return fetchAndShowGuitarTab();
-            if (target.closest('#history-clickable')) return fetchAndShowHistory();
+                    if (target.closest('#geopolitics-clickable')) return fetchAndShowWorldOrder();
+        if (target.closest('#tennis-clickable')) return fetchAndShowTennisMatches();
+        if (target.closest('#coffee-clickable')) return fetchAndShowCoffeeTip();
+        if (target.closest('#guitar-clickable')) return fetchAndShowGuitarTab();
+        if (target.closest('#history-clickable')) return fetchAndShowHistory();
+        if (target.closest('#poetry-clickable')) return fetchAndShowPoetry();
 
             // Crossover and Night module tab event listeners
-            if (target.closest('#geopolitics-clickable-crossover') || target.closest('#geopolitics-clickable-night')) return fetchAndShowWorldOrder();
-            if (target.closest('#tennis-clickable-crossover') || target.closest('#tennis-clickable-night')) return fetchAndShowTennisMatches();
-            if (target.closest('#coffee-clickable-crossover') || target.closest('#coffee-clickable-night')) return fetchAndShowCoffeeTip();
-            if (target.closest('#guitar-clickable-crossover') || target.closest('#guitar-clickable-night')) return fetchAndShowGuitarTab();
-            if (target.closest('#history-clickable-crossover') || target.closest('#history-clickable-night')) return fetchAndShowHistory();
+                    if (target.closest('#geopolitics-clickable-crossover') || target.closest('#geopolitics-clickable-night')) return fetchAndShowWorldOrder();
+        if (target.closest('#tennis-clickable-crossover') || target.closest('#tennis-clickable-night')) return fetchAndShowTennisMatches();
+        if (target.closest('#coffee-clickable-crossover') || target.closest('#coffee-clickable-night')) return fetchAndShowCoffeeTip();
+        if (target.closest('#guitar-clickable-crossover') || target.closest('#guitar-clickable-night')) return fetchAndShowGuitarTab();
+        if (target.closest('#history-clickable-crossover') || target.closest('#history-clickable-night')) return fetchAndShowHistory();
+        if (target.closest('#poetry-clickable-crossover') || target.closest('#poetry-clickable-night')) return fetchAndShowPoetry();
 
 
             const archiveModal = document.getElementById('archive-modal');
