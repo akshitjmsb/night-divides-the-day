@@ -92,12 +92,6 @@
 <body>
 
     <div id="app-container" class="app-container">
-        <!-- Quantum Timer UI -->
-        <div class="absolute top-4 right-6 flex items-center space-x-3 z-10">
-            <span id="quantum-timer-display" class="font-mono text-lg font-bold text-gray-700">30:00</span>
-            <button id="quantum-timer-btn" class="gemini-btn text-xs py-1 px-3">Start Quantum</button>
-        </div>
-
         <!-- Main App Header -->
         <header class="text-center mb-6">
             <div class="logo-container flex justify-center">
@@ -118,6 +112,12 @@
             <p id="current-datetime" class="text-xs mt-2"></p>
         </header>
 
+        <!-- Quantum Timer UI - Top Right Corner -->
+        <div class="quantum-timer-container absolute top-4 right-4 flex items-center space-x-2">
+            <span id="quantum-timer-display" class="font-mono text-sm font-bold text-gray-700">30:00</span>
+            <button id="quantum-timer-btn" class="gemini-btn text-xs py-1 px-2">Quantum</button>
+        </div>
+
         <!-- Sync Status -->
         <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>
 
@@ -131,8 +131,8 @@
                 </div>
                 <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
             </section>
-            <section class="mt-6">
-                <div class="grid grid-cols-6 gap-2">
+            <section class="mobile-section">
+                <div class="category-grid grid grid-cols-6 gap-2">
                     <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
                     <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
                     <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
@@ -141,15 +141,15 @@
                     <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
                 </div>
             </section>
-            <section class="mt-6">
+            <section class="mobile-section">
                 <h2>Focus</h2>
                 <div id="tasks-list-day" class="mt-2 text-base"></div>
-                <form id="add-task-form-day" class="flex mt-3">
+                <form id="add-task-form-day" class="add-task-form flex mt-3">
                     <input type="text" placeholder="Add a new focus..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
                     <button type="submit" class="bg-gray-700 text-white px-3 rounded-r-md hover:bg-black text-sm">Add</button>
                 </form>
             </section>
-            <section class="mt-6">
+            <section class="mobile-section">
                 <h2>Learn</h2>
                 <div id="frenchy-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
                 <div id="food-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
@@ -165,8 +165,8 @@
                 <div id="life-pointer-display-crossover" class="life-pointer mt-3"></div>
                 <div id="tasks-list-crossover" class="mt-4"></div>
             </section>
-            <section class="mt-6">
-                <div class="grid grid-cols-6 gap-2">
+            <section class="mobile-section">
+                <div class="category-grid grid grid-cols-6 gap-2">
                     <div id="geopolitics-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
                     <div id="tennis-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
                     <div id="coffee-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
@@ -175,7 +175,7 @@
                     <div id="poetry-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
                 </div>
             </section>
-            <section class="mt-6">
+            <section class="mobile-section">
                 <h2>Tomorrow's Preview</h2>
                 <div id="frenchy-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">French</h3></div>
                 <div id="food-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Food</h3></div>
@@ -194,8 +194,8 @@
                 <div id="analytics-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Analytics</h3></div>
                 <div id="hood-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Under the Hood</h3></div>
             </section>
-            <section class="mt-6">
-                <div class="grid grid-cols-6 gap-2">
+            <section class="mobile-section">
+                <div class="category-grid grid grid-cols-6 gap-2">
                     <div id="geopolitics-clickable-night" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
                     <div id="tennis-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
                     <div id="coffee-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
