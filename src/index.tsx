@@ -3,8 +3,14 @@ import { GoogleGenAI, Chat, GenerateContentResponse, Type } from "@google/genai"
 // Debug API key
 console.log('API Key available:', !!process.env.API_KEY);
 console.log('API Key length:', process.env.API_KEY ? process.env.API_KEY.length : 0);
+console.log('GEMINI_API_KEY available:', !!process.env.GEMINI_API_KEY);
+console.log('GEMINI_API_KEY length:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0);
 
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+// Use GEMINI_API_KEY if available, otherwise fall back to API_KEY
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+console.log('Using API key:', apiKey ? 'Available' : 'Missing');
+
+const ai = new GoogleGenAI({apiKey: apiKey});
 
 // A placeholder for a simple, anonymous key-value store service URL.
 // This allows data to be shared across devices, fulfilling the user's request
@@ -32,12 +38,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let testTimeOverride: Date | null = null;
 
     /**
-     * Gets the current date and hour based on a canonical timezone ('America/Los_Angeles')
+     * Gets the current date and hour based on a canonical timezone ('America/New_York')
      * to ensure the app's state is consistent for all users, regardless of their location.
      * @returns An object with the canonical Date object and the hour (0-23).
      */
     function getCanonicalTime(): { now: Date, hour: number } {
-        const canonicalTimeZone = 'America/Los_Angeles';
+        const canonicalTimeZone = 'America/New_York';
         
         // Use test override if set (for time zone testing)
         const baseDate = testTimeOverride || new Date();
@@ -92,22 +98,22 @@ document.addEventListener('DOMContentLoaded', () => {
     (window as any).testTimeZone = {
         // Test CrossOver Module (5 PM - 6 PM)
         testCrossOver: () => {
-            testTimeOverride = new Date('2024-01-15T17:30:00.000-08:00');
-            console.log('🧪 Testing CrossOver Module (5:30 PM)');
+            testTimeOverride = new Date('2024-01-15T17:30:00.000-05:00'); // EST
+            console.log('🧪 Testing CrossOver Module (5:30 PM Eastern Time)');
             location.reload();
         },
         
         // Test Night Module (6 PM - 8 AM)
         testNight: () => {
-            testTimeOverride = new Date('2024-01-15T19:00:00.000-08:00');
-            console.log('🧪 Testing Night Module (7:00 PM)');
+            testTimeOverride = new Date('2024-01-15T19:00:00.000-05:00'); // EST
+            console.log('🧪 Testing Night Module (7:00 PM Eastern Time)');
             location.reload();
         },
         
         // Test Day Module (8 AM - 5 PM)
         testDay: () => {
-            testTimeOverride = new Date('2024-01-15T10:00:00.000-08:00');
-            console.log('🧪 Testing Day Module (10:00 AM)');
+            testTimeOverride = new Date('2024-01-15T10:00:00.000-05:00'); // EST
+            console.log('🧪 Testing Day Module (10:00 AM Eastern Time)');
             location.reload();
         },
         
@@ -1062,6 +1068,121 @@ Format the response as JSON with these exact fields:
         }
     }
 
+    async function fetchAndShowPoetry() {
+        const modal = document.getElementById('poetry-modal');
+        const contentEl = document.getElementById('poetry-content');
+        if (!modal || !contentEl) return;
+
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        contentEl.innerHTML = '<p>Generating beautiful poetry for you...</p>';
+
+        // Debug: Check if AI is properly initialized
+        console.log('AI object:', ai);
+        console.log('AI models available:', ai.models);
+
+        try {
+            const dayOfYear = getDayOfYear(activeContentDate);
+            console.log('Day of year:', dayOfYear);
+            
+            const prompt = `Generate a random famous couplet from any language: Urdu, Hindi, Punjabi, English, or Persian. 
+
+Choose any famous poet randomly from any of these language traditions. Do not limit yourself to specific names - select from the vast universe of poets in these languages.
+
+Today is day ${dayOfYear} of the year. Use this number to randomly select a different poet and couplet each time.
+
+Write a unique scene in the present tense, as if it is unfolding right now—no instructions, just cinematic, sensory storytelling.
+Become the poet in their unique place and era. Describe the setting deeply: sights, sounds, smells, touch, and emotion. Show the poet's body language, thoughts, and actions as they write, read, and feel the couplet.
+Include the actual couplet (in original script and transliteration), plus a simple translation right after the poet speaks it.
+Let the inner meaning and longing be felt in the poet's thoughts and in what is sensed around them—make the reader live the poem's birth as if it is happening now.
+End with a short "About the Writer," describing the poet's real-life history and spirit.
+
+IMPORTANT: Make sure this is completely different from any previous responses. Use the day number to ensure variety.`;
+            
+            console.log('About to call AI with prompt:', prompt.substring(0, 100) + '...');
+            
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+                config: {
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            scene: { 
+                                type: Type.STRING, 
+                                description: 'The cinematic scene describing the poet and their environment in present tense.' 
+                            },
+                            couplet: {
+                                type: Type.STRING,
+                                description: 'The actual couplet in original script.'
+                            },
+                            transliteration: {
+                                type: Type.STRING,
+                                description: 'The transliteration of the couplet.'
+                            },
+                            translation: {
+                                type: Type.STRING,
+                                description: 'The simple translation of the couplet.'
+                            },
+                            aboutWriter: {
+                                type: Type.STRING,
+                                description: 'A short description of the poet\'s real-life history and spirit.'
+                            }
+                        },
+                        required: ["scene", "couplet", "transliteration", "translation", "aboutWriter"]
+                    }
+                }
+            });
+
+            console.log('AI Response received:', response);
+            console.log('Response text:', response.text);
+
+            let html = '';
+
+            if (response.text) {
+                try {
+                    const data = JSON.parse(response.text);
+                    html += `<div class="mb-6">`;
+                    html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
+                    html += `<div class="bg-gray-50 p-4 rounded-lg mb-4">`;
+                    html += `<div class="text-sm leading-relaxed mb-4">${escapeHtml(data.scene)}</div>`;
+                    html += `<div class="border-l-4 border-blue-500 pl-4 my-4">`;
+                    html += `<p class="text-lg font-semibold mb-2">${escapeHtml(data.couplet)}</p>`;
+                    html += `<p class="text-sm text-gray-600 mb-2">${escapeHtml(data.transliteration)}</p>`;
+                    html += `<p class="text-sm italic">"${escapeHtml(data.translation)}"</p>`;
+                    html += `</div>`;
+                    html += `<div class="bg-blue-50 p-3 rounded-lg mt-4">`;
+                    html += `<h5 class="font-bold mb-2 text-sm">About the Writer:</h5>`;
+                    html += `<p class="text-sm leading-relaxed">${escapeHtml(data.aboutWriter)}</p>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                } catch (parseError) {
+                    // Fallback if JSON parsing fails
+                    html += `<div class="mb-6">`;
+                    html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
+                    html += `<div class="bg-gray-50 p-4 rounded-lg">`;
+                    html += `<p class="text-sm leading-relaxed">${escapeHtml(response.text)}</p>`;
+                    html += `</div>`;
+                    html += `</div>`;
+                }
+            } else {
+                html += `<p>Could not generate poetry at this time.</p>`;
+            }
+
+            contentEl.innerHTML = html;
+
+        } catch (error) {
+            console.error("Error fetching Poetry:", error);
+            console.error("Error details:", {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
+            contentEl.innerHTML = '<p>An API Error occurred. Could not generate poetry at this time.</p>';
+        }
+    }
+
     // --- GEMINI API LOGIC ---
     async function getReflectionPrompt(pointer: string) {
         const reflectionPromptDisplay = document.getElementById('reflection-prompt-display-day');
@@ -1229,33 +1350,7 @@ Format the response as JSON with these exact fields:
         `).join('');
     }
 
-    // Original module rendering functions (kept for compatibility)
-    function renderDayModule() {
-        const lifePointerEl = document.getElementById('life-pointer-display-day');
-        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
-        
-        const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
-        if (reflectionPromptEl) reflectionPromptEl.textContent = '';
 
-        renderTasks('tasks-list-day');
-    }
-
-    function renderCrossoverModule() {
-        const lifePointerEl = document.getElementById('life-pointer-display-crossover');
-        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
-
-        renderTasks('tasks-list-crossover');
-    }
-
-    function renderNightModule() {
-        const dayOfYear = getDayOfYear(previewContentDate);
-        const tomorrowsLifePointer = lifePointers[(dayOfYear - 1) % lifePointers.length];
-        
-        const lifePointerEl = document.getElementById('life-pointer-display-night');
-        if (lifePointerEl) lifePointerEl.textContent = tomorrowsLifePointer;
-        
-        renderTasks('tasks-list-night');
-    }
     
     function renderChatHistory() {
         const chatHistoryDisplay = document.getElementById('chat-history');
@@ -1595,11 +1690,20 @@ Format the response as JSON with these exact fields:
             if (target.closest('#analytics-preview-clickable-crossover') || target.closest('#analytics-preview-clickable-night')) return showAnalyticsModal('tomorrow');
             if (target.closest('#hood-preview-clickable-crossover') || target.closest('#hood-preview-clickable-night')) return showHoodModal('tomorrow');
 
-            if (target.closest('#geopolitics-clickable')) return fetchAndShowWorldOrder();
-            if (target.closest('#tennis-clickable')) return fetchAndShowTennisMatches();
-            if (target.closest('#coffee-clickable')) return fetchAndShowCoffeeTip();
-            if (target.closest('#guitar-clickable')) return fetchAndShowGuitarTab();
-            if (target.closest('#history-clickable')) return fetchAndShowHistory();
+                    if (target.closest('#geopolitics-clickable')) return fetchAndShowWorldOrder();
+        if (target.closest('#tennis-clickable')) return fetchAndShowTennisMatches();
+        if (target.closest('#coffee-clickable')) return fetchAndShowCoffeeTip();
+        if (target.closest('#guitar-clickable')) return fetchAndShowGuitarTab();
+        if (target.closest('#history-clickable')) return fetchAndShowHistory();
+        if (target.closest('#poetry-clickable')) return fetchAndShowPoetry();
+
+            // Crossover and Night module tab event listeners
+                    if (target.closest('#geopolitics-clickable-crossover') || target.closest('#geopolitics-clickable-night')) return fetchAndShowWorldOrder();
+        if (target.closest('#tennis-clickable-crossover') || target.closest('#tennis-clickable-night')) return fetchAndShowTennisMatches();
+        if (target.closest('#coffee-clickable-crossover') || target.closest('#coffee-clickable-night')) return fetchAndShowCoffeeTip();
+        if (target.closest('#guitar-clickable-crossover') || target.closest('#guitar-clickable-night')) return fetchAndShowGuitarTab();
+        if (target.closest('#history-clickable-crossover') || target.closest('#history-clickable-night')) return fetchAndShowHistory();
+        if (target.closest('#poetry-clickable-crossover') || target.closest('#poetry-clickable-night')) return fetchAndShowPoetry();
 
 
             const archiveModal = document.getElementById('archive-modal');
