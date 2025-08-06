@@ -36,24 +36,24 @@
 
 /* Timer mobile positioning */
 @media (max-width: 768px) {
-    /* Change from absolute to relative positioning */
+    /* Keep absolute positioning but adjust for mobile */
     .quantum-timer-container {
-        position: relative !important;
-        top: auto !important;
-        right: auto !important;
-        justify-content: center !important;
-        margin-bottom: 1rem !important;
-        padding: 0.5rem;
+        position: absolute !important;
+        top: 0.5rem !important;
+        right: 0.5rem !important;
+        justify-content: flex-end !important;
+        margin-bottom: 0 !important;
+        padding: 0.25rem;
     }
     
     #quantum-timer-display {
-        font-size: 1.5rem !important;
+        font-size: 0.875rem !important;
     }
     
     #quantum-timer-btn {
-        font-size: 0.875rem !important;
-        padding: 0.5rem 1rem !important;
-        min-height: 44px;
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+        min-height: 32px;
     }
 }
 

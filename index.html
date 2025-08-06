@@ -92,12 +92,6 @@
 <body>
 
     <div id="app-container" class="app-container">
-        <!-- Quantum Timer UI - Mobile Responsive -->
-        <div class="quantum-timer-container flex items-center justify-center space-x-3 mb-4">
-            <span id="quantum-timer-display" class="font-mono text-xl font-bold text-gray-700">30:00</span>
-            <button id="quantum-timer-btn" class="gemini-btn text-sm py-2 px-4">Start Quantum</button>
-        </div>
-
         <!-- Main App Header -->
         <header class="text-center mb-6">
             <div class="logo-container flex justify-center">
@@ -117,6 +111,12 @@
             </div>
             <p id="current-datetime" class="text-xs mt-2"></p>
         </header>
+
+        <!-- Quantum Timer UI - Top Right Corner -->
+        <div class="quantum-timer-container absolute top-4 right-4 flex items-center space-x-2">
+            <span id="quantum-timer-display" class="font-mono text-sm font-bold text-gray-700">30:00</span>
+            <button id="quantum-timer-btn" class="gemini-btn text-xs py-1 px-2">Quantum</button>
+        </div>
 
         <!-- Sync Status -->
         <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>
