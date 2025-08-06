@@ -1087,12 +1087,7 @@ Format the response as JSON with these exact fields:
             
             const prompt = `Generate a random famous couplet from any language: Urdu, Hindi, Punjabi, English, or Persian. 
 
-Choose any poet randomly from these traditions:
-- Urdu: Mirza Ghalib, Faiz Ahmed Faiz, Allama Iqbal, Mir Taqi Mir, Bahadur Shah Zafar, Parveen Shakir, Ahmad Faraz, and others
-- Hindi: Kabir Das, Tulsidas, Surdas, Meera Bai, Ramdhari Singh Dinkar, Harivansh Rai Bachchan, Maithili Sharan Gupt, and others  
-- Punjabi: Bulleh Shah, Waris Shah, Baba Farid, Amrita Pritam, Shiv Kumar Batalvi, Puran Singh, and others
-- English: William Shakespeare, John Keats, William Wordsworth, Emily Dickinson, Robert Frost, Lord Byron, and others
-- Persian: Hafez, Rumi, Omar Khayyam, Saadi, Ferdowsi, and others
+Choose any famous poet randomly from any of these language traditions. Do not limit yourself to specific names - select from the vast universe of poets in these languages.
 
 Today is day ${dayOfYear} of the year. Use this number to randomly select a different poet and couplet each time.
 
