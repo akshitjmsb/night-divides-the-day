@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- UTILITY FUNCTIONS ---
     function getCanonicalTime() {
-        const canonicalTimeZone = 'America/Los_Angeles';
+        const canonicalTimeZone = 'America/New_York';
         
         const formatter = new Intl.DateTimeFormat('en-US', {
             year: 'numeric',

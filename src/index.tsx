@@ -32,12 +32,12 @@ document.addEventListener('DOMContentLoaded', () => {
     let testTimeOverride: Date | null = null;
 
     /**
-     * Gets the current date and hour based on a canonical timezone ('America/Los_Angeles')
+     * Gets the current date and hour based on a canonical timezone ('America/New_York')
      * to ensure the app's state is consistent for all users, regardless of their location.
      * @returns An object with the canonical Date object and the hour (0-23).
      */
     function getCanonicalTime(): { now: Date, hour: number } {
-        const canonicalTimeZone = 'America/Los_Angeles';
+        const canonicalTimeZone = 'America/New_York';
         
         // Use test override if set (for time zone testing)
         const baseDate = testTimeOverride || new Date();
@@ -92,22 +92,22 @@ document.addEventListener('DOMContentLoaded', () => {
     (window as any).testTimeZone = {
         // Test CrossOver Module (5 PM - 6 PM)
         testCrossOver: () => {
-            testTimeOverride = new Date('2024-01-15T17:30:00.000-08:00');
-            console.log('🧪 Testing CrossOver Module (5:30 PM)');
+            testTimeOverride = new Date('2024-01-15T17:30:00.000-05:00'); // EST
+            console.log('🧪 Testing CrossOver Module (5:30 PM Eastern Time)');
             location.reload();
         },
         
         // Test Night Module (6 PM - 8 AM)
         testNight: () => {
-            testTimeOverride = new Date('2024-01-15T19:00:00.000-08:00');
-            console.log('🧪 Testing Night Module (7:00 PM)');
+            testTimeOverride = new Date('2024-01-15T19:00:00.000-05:00'); // EST
+            console.log('🧪 Testing Night Module (7:00 PM Eastern Time)');
             location.reload();
         },
         
         // Test Day Module (8 AM - 5 PM)
         testDay: () => {
-            testTimeOverride = new Date('2024-01-15T10:00:00.000-08:00');
-            console.log('🧪 Testing Day Module (10:00 AM)');
+            testTimeOverride = new Date('2024-01-15T10:00:00.000-05:00'); // EST
+            console.log('🧪 Testing Day Module (10:00 AM Eastern Time)');
             location.reload();
         },
         
