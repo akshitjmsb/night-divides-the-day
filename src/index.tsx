@@ -3,8 +3,14 @@ import { GoogleGenAI, Chat, GenerateContentResponse, Type } from "@google/genai"
 // Debug API key
 console.log('API Key available:', !!process.env.API_KEY);
 console.log('API Key length:', process.env.API_KEY ? process.env.API_KEY.length : 0);
+console.log('GEMINI_API_KEY available:', !!process.env.GEMINI_API_KEY);
+console.log('GEMINI_API_KEY length:', process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0);
 
-const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+// Use GEMINI_API_KEY if available, otherwise fall back to API_KEY
+const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+console.log('Using API key:', apiKey ? 'Available' : 'Missing');
+
+const ai = new GoogleGenAI({apiKey: apiKey});
 
 // A placeholder for a simple, anonymous key-value store service URL.
 // This allows data to be shared across devices, fulfilling the user's request
@@ -1071,17 +1077,34 @@ Format the response as JSON with these exact fields:
         modal.classList.add('flex');
         contentEl.innerHTML = '<p>Generating beautiful poetry for you...</p>';
 
+        // Debug: Check if AI is properly initialized
+        console.log('AI object:', ai);
+        console.log('AI models available:', ai.models);
+
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
-            const prompt = `For day ${dayOfYear} of the year, generate a beautiful 2-line poem in English, Hindi, Urdu, or Punjabi. The poem should be meaningful and inspiring. Also provide a simple explanation of what the poet is trying to convey in simple words. Format your response as:
+            console.log('Day of year:', dayOfYear);
             
-Poem:
-[2 lines of poetry]
+            const prompt = `Generate a random famous couplet from any language: Urdu, Hindi, Punjabi, English, or Persian. 
 
-Language: [English/Hindi/Urdu/Punjabi]
+Choose any poet randomly from these traditions:
+- Urdu: Mirza Ghalib, Faiz Ahmed Faiz, Allama Iqbal, Mir Taqi Mir, Bahadur Shah Zafar, Parveen Shakir, Ahmad Faraz, and others
+- Hindi: Kabir Das, Tulsidas, Surdas, Meera Bai, Ramdhari Singh Dinkar, Harivansh Rai Bachchan, Maithili Sharan Gupt, and others  
+- Punjabi: Bulleh Shah, Waris Shah, Baba Farid, Amrita Pritam, Shiv Kumar Batalvi, Puran Singh, and others
+- English: William Shakespeare, John Keats, William Wordsworth, Emily Dickinson, Robert Frost, Lord Byron, and others
+- Persian: Hafez, Rumi, Omar Khayyam, Saadi, Ferdowsi, and others
 
-Explanation:
-[Simple explanation of the poem's meaning and what the poet is trying to convey]`;
+Today is day ${dayOfYear} of the year. Use this number to randomly select a different poet and couplet each time.
+
+Write a unique scene in the present tense, as if it is unfolding right now—no instructions, just cinematic, sensory storytelling.
+Become the poet in their unique place and era. Describe the setting deeply: sights, sounds, smells, touch, and emotion. Show the poet's body language, thoughts, and actions as they write, read, and feel the couplet.
+Include the actual couplet (in original script and transliteration), plus a simple translation right after the poet speaks it.
+Let the inner meaning and longing be felt in the poet's thoughts and in what is sensed around them—make the reader live the poem's birth as if it is happening now.
+End with a short "About the Writer," describing the poet's real-life history and spirit.
+
+IMPORTANT: Make sure this is completely different from any previous responses. Use the day number to ensure variety.`;
+            
+            console.log('About to call AI with prompt:', prompt.substring(0, 100) + '...');
             
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
@@ -1091,23 +1114,34 @@ Explanation:
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            poem: { 
+                            scene: { 
                                 type: Type.STRING, 
-                                description: 'The 2-line poem in the specified language.' 
+                                description: 'The cinematic scene describing the poet and their environment in present tense.' 
                             },
-                            language: {
+                            couplet: {
                                 type: Type.STRING,
-                                description: 'The language of the poem (English, Hindi, Urdu, or Punjabi).'
+                                description: 'The actual couplet in original script.'
                             },
-                            explanation: {
+                            transliteration: {
                                 type: Type.STRING,
-                                description: 'A simple explanation of what the poet is trying to convey.'
+                                description: 'The transliteration of the couplet.'
+                            },
+                            translation: {
+                                type: Type.STRING,
+                                description: 'The simple translation of the couplet.'
+                            },
+                            aboutWriter: {
+                                type: Type.STRING,
+                                description: 'A short description of the poet\'s real-life history and spirit.'
                             }
                         },
-                        required: ["poem", "language", "explanation"]
+                        required: ["scene", "couplet", "transliteration", "translation", "aboutWriter"]
                     }
                 }
             });
+
+            console.log('AI Response received:', response);
+            console.log('Response text:', response.text);
 
             let html = '';
 
@@ -1115,22 +1149,25 @@ Explanation:
                 try {
                     const data = JSON.parse(response.text);
                     html += `<div class="mb-6">`;
-                    html += `<h4 class="text-lg font-bold mb-3 text-center">Daily Poetry</h4>`;
+                    html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
                     html += `<div class="bg-gray-50 p-4 rounded-lg mb-4">`;
-                    html += `<p class="text-lg italic text-center leading-relaxed">${escapeHtml(data.poem)}</p>`;
-                    html += `<p class="text-sm text-gray-600 text-center mt-2">Language: ${escapeHtml(data.language)}</p>`;
+                    html += `<div class="text-sm leading-relaxed mb-4">${escapeHtml(data.scene)}</div>`;
+                    html += `<div class="border-l-4 border-blue-500 pl-4 my-4">`;
+                    html += `<p class="text-lg font-semibold mb-2">${escapeHtml(data.couplet)}</p>`;
+                    html += `<p class="text-sm text-gray-600 mb-2">${escapeHtml(data.transliteration)}</p>`;
+                    html += `<p class="text-sm italic">"${escapeHtml(data.translation)}"</p>`;
                     html += `</div>`;
-                    html += `<div class="bg-blue-50 p-4 rounded-lg">`;
-                    html += `<h5 class="font-bold mb-2">What the poet is saying:</h5>`;
-                    html += `<p class="text-sm leading-relaxed">${escapeHtml(data.explanation)}</p>`;
+                    html += `<div class="bg-blue-50 p-3 rounded-lg mt-4">`;
+                    html += `<h5 class="font-bold mb-2 text-sm">About the Writer:</h5>`;
+                    html += `<p class="text-sm leading-relaxed">${escapeHtml(data.aboutWriter)}</p>`;
                     html += `</div>`;
                     html += `</div>`;
                 } catch (parseError) {
                     // Fallback if JSON parsing fails
                     html += `<div class="mb-6">`;
-                    html += `<h4 class="text-lg font-bold mb-3 text-center">Daily Poetry</h4>`;
+                    html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
                     html += `<div class="bg-gray-50 p-4 rounded-lg">`;
-                    html += `<p class="text-lg italic text-center leading-relaxed">${escapeHtml(response.text)}</p>`;
+                    html += `<p class="text-sm leading-relaxed">${escapeHtml(response.text)}</p>`;
                     html += `</div>`;
                     html += `</div>`;
                 }
@@ -1142,6 +1179,11 @@ Explanation:
 
         } catch (error) {
             console.error("Error fetching Poetry:", error);
+            console.error("Error details:", {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
             contentEl.innerHTML = '<p>An API Error occurred. Could not generate poetry at this time.</p>';
         }
     }
