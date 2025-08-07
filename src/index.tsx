@@ -1417,32 +1417,30 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         await loadCoreData();
         await loadTasks(); // Load the latest tasks from storage to sync on each 5min interval.
 
-        const sunIcon = document.getElementById('sun-icon') as HTMLElement;
-        const sunsetIcon = document.getElementById('sunset-icon') as HTMLElement;
-        const moonIcon = document.getElementById('moon-icon') as HTMLElement;
+        // Always show day module (now our single dynamic module)
         const dayModule = document.getElementById('day-module') as HTMLElement;
-        const crossoverModule = document.getElementById('crossover-module') as HTMLElement;
-        const nightModule = document.getElementById('night-module') as HTMLElement;
+        if (dayModule) dayModule.classList.add('active');
         
-        [sunIcon, sunsetIcon, moonIcon].forEach(icon => {
-            if (icon) icon.style.display = 'none'
-        });
-        [dayModule, crossoverModule, nightModule].forEach(m => {
-            if(m) m.classList.remove('active');
-        });
+        // Update dynamic icon based on time
+        updateDynamicIcon(hour);
+        
+        // Always render day content for now
+        await renderDayModule();
+    }
 
+    function updateDynamicIcon(hour: number) {
+        const iconEl = document.getElementById('dynamic-time-icon') as HTMLElement;
+        if (!iconEl) return;
+        
         if (hour >= 8 && hour < 17) {
-            if(sunIcon) sunIcon.style.display = 'inline-block';
-            if(dayModule) dayModule.classList.add('active');
-            await renderDayModule();
+            iconEl.textContent = '☀️';
+            iconEl.className = 'theme-icon day-mode';
         } else if (hour >= 17 && hour < 18) {
-            if (sunsetIcon) sunsetIcon.style.display = 'inline-block';
-            if(crossoverModule) crossoverModule.classList.add('active');
-            await renderCrossoverModule();
+            iconEl.textContent = '🌇';
+            iconEl.className = 'theme-icon crossover-mode';
         } else {
-            if (moonIcon) moonIcon.style.display = 'inline-block';
-            if(nightModule) nightModule.classList.add('active');
-            await renderNightModule();
+            iconEl.textContent = '🌙';
+            iconEl.className = 'theme-icon night-mode';
         }
     }
 
