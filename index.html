@@ -21,7 +21,7 @@
     <style>
         body { font-family: 'Special Elite', monospace; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 0.5rem; }
         .app-container { position: relative; background-color: #ffffff; padding: 1.5rem; max-width: 800px; width: 100%; border-radius: 8px; }
-        .module { display: none; }
+        .module { display: block; }
         .module.active { display: block; }
         h1, h2, h3 { font-family: 'Special Elite', monospace; }
         h1 { font-size: 1.75rem; }
@@ -81,7 +81,14 @@
             white-space: pre-wrap;
             word-wrap: break-word;
         }
-        .theme-icon { font-size: 1.5rem; margin-left: 0.5rem; display: none; }
+        .theme-icon { 
+            font-size: 1.5rem; 
+            margin-left: 0.5rem; 
+            transition: all 0.3s ease;
+        }
+        .theme-icon.day-mode { color: #f59e0b; }
+        .theme-icon.crossover-mode { color: #f97316; }
+        .theme-icon.night-mode { color: #6366f1; }
 
         /* --- MODAL STYLES --- */
         .modal-content-panel { background-color: #ffffff; color: #111111; }
@@ -104,9 +111,7 @@
             </div>
             <div class="flex justify-center items-center">
                 <h1>Night Divides the Day</h1>
-                <span id="sun-icon" class="theme-icon">☀️</span>
-                <span id="sunset-icon" class="theme-icon">🌇</span>
-                <span id="moon-icon" class="theme-icon">🌙</span>
+                <span id="dynamic-time-icon" class="theme-icon">☀️</span>
             </div>
             <p id="current-datetime" class="text-xs mt-2"></p>
         </header>
@@ -120,8 +125,8 @@
         <!-- Sync Status -->
         <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>
 
-        <!-- DAY MODULE (8am - 5pm) -->
-        <div id="day-module" class="module">
+        <!-- DYNAMIC MODULE (Always visible, content adapts based on time) -->
+        <div id="day-module" class="module active">
             <section>
                 <h2>Reflect</h2>
                 <div id="life-pointer-display-day" class="life-pointer mt-3"></div>
@@ -154,62 +159,6 @@
                 <div id="food-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
                 <div id="analytics-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
                 <div id="hood-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
-            </section>
-        </div>
-
-        <!-- CROSSOVER MODULE (5pm - 6pm) -->
-        <div id="crossover-module" class="module">
-             <section>
-                <h2>Today's State</h2>
-                <div id="life-pointer-display-crossover" class="life-pointer mt-3"></div>
-                <div id="tasks-list-crossover" class="mt-4"></div>
-            </section>
-            <section class="mobile-section">
-                <div class="category-grid grid grid-cols-6 gap-2">
-                    <div id="geopolitics-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
-                    <div id="tennis-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
-                    <div id="history-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
-                    <div id="poetry-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
-                </div>
-            </section>
-            <section class="mobile-section">
-                <h2>Tomorrow's Preview</h2>
-                <div id="frenchy-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">French</h3></div>
-                <div id="food-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Food</h3></div>
-                <div id="analytics-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Analytics</h3></div>
-                <div id="hood-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Under the Hood</h3></div>
-            </section>
-        </div>
-
-        <!-- NIGHT MODULE (6pm - 8am) -->
-        <div id="night-module" class="module">
-            <section>
-                <h2>Tomorrow's Preview</h2>
-                <div id="life-pointer-display-night" class="life-pointer mt-3"></div>
-                <div id="frenchy-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">French</h3></div>
-                <div id="food-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Food</h3></div>
-                <div id="analytics-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Analytics</h3></div>
-                <div id="hood-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Under the Hood</h3></div>
-            </section>
-            <section class="mobile-section">
-                <div class="category-grid grid grid-cols-6 gap-2">
-                    <div id="geopolitics-clickable-night" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
-                    <div id="tennis-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
-                    <div id="history-clickable-night" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
-                    <div id="poetry-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
-                </div>
-            </section>
-             <section class="mt-6">
-                <h2>Focus (Today)</h2>
-                <div id="tasks-list-night" class="mt-2 text-base"></div>
-                <form id="add-task-form-night" class="flex mt-3">
-                    <input type="text" placeholder="Add a new focus..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
-                    <button type="submit" class="bg-gray-700 text-white px-3 rounded-r-md hover:bg-black text-sm">Add</button>
-                </form>
             </section>
         </div>
         
