@@ -975,43 +975,16 @@ Use actual current tournament data and highlight Canadian players with <strong> 
             key: string;
             tuning: string;
             lyricsWithChords: string;
-            lyricsPlain: string;
             chordChanges: string;
             inspiration: string;
             youtubeLessonTitle: string;
             youtubeLessonUrl: string;
             spotifyUrl: string;
-            wordChordMap: Array<{ wordIndex: number; word: string; chord: string }>;
         } | null = null;
 
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
-            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:
-
-{
-  "title": "Song title only",
-  "artist": "Artist name",
-  "key": "Musical key (e.g., A minor, E major)",
-  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard, DADGAD)",
-  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",
-  "lyricsPlain": "Same excerpt as above but with just the lyrics words separated by spaces; no chords, no tabs, no punctuation-heavy markup.",
-  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",
-  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",
-  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",
-  "youtubeLessonUrl": "Direct YouTube URL starting with https://",
-  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/",
-  "wordChordMap": [
-    { "wordIndex": 1, "word": "When", "chord": "G" },
-    { "wordIndex": 3, "word": "the", "chord": "D" }
-  ]
-}
-
-Rules:
-- Keep lyrics snippet short and fair-use; do not include full lyrics.
-- Use a well-known Classic Rock song with beginner-friendly parts.
-- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.
-- wordChordMap should include ONLY the words at which a new chord STARTS. Index is 1-based on lyricsPlain tokenization by spaces.`;
-
+            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Use a well-known Classic Rock song with beginner-friendly parts.\n- YouTube lesson MUST clearly be a guitar lesson: the title must include the word 'guitar' AND either 'lesson' or 'tutorial'. Provide a full watch URL (https://www.youtube.com/watch?v=...) or youtu.be short link. Do NOT return Shorts, Live, or playlist links.\n- Spotify must be a direct track URL in the form https://open.spotify.com/track/<22-char base62 id>.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
@@ -1025,24 +998,11 @@ Rules:
                             key: { type: Type.STRING },
                             tuning: { type: Type.STRING },
                             lyricsWithChords: { type: Type.STRING },
-                            lyricsPlain: { type: Type.STRING },
                             chordChanges: { type: Type.STRING },
                             inspiration: { type: Type.STRING },
                             youtubeLessonTitle: { type: Type.STRING },
                             youtubeLessonUrl: { type: Type.STRING },
                             spotifyUrl: { type: Type.STRING },
-                            wordChordMap: {
-                                type: Type.ARRAY,
-                                items: {
-                                    type: Type.OBJECT,
-                                    properties: {
-                                        wordIndex: { type: Type.NUMBER },
-                                        word: { type: Type.STRING },
-                                        chord: { type: Type.STRING },
-                                    },
-                                    required: ['wordIndex', 'word', 'chord'],
-                                },
-                            },
                         },
                         required: [
                             'title',
@@ -1050,13 +1010,11 @@ Rules:
                             'key',
                             'tuning',
                             'lyricsWithChords',
-                            'lyricsPlain',
                             'chordChanges',
                             'inspiration',
                             'youtubeLessonTitle',
                             'youtubeLessonUrl',
                             'spotifyUrl',
-                            'wordChordMap',
                         ],
                     },
                 },
@@ -1081,47 +1039,64 @@ Rules:
         }
 
         const safe = (s: string) => escapeHtml((s || '').replace(/\*/g, ''));
+        const isValidYouTubeUrl = (url: string) => {
+            if (!url) return false;
+            const badPatterns = /\/shorts\//i;
+            const validPatterns = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i;
+            return validPatterns.test(url) && !badPatterns.test(url);
+        };
+        const isLikelyGuitarLesson = (title: string, url: string) => {
+            const t = (title || '').toLowerCase();
+            const hasKeywords = t.includes('guitar') && (t.includes('lesson') || t.includes('tutorial') || t.includes('how to') || t.includes('tabs'));
+            const notLiveOrShorts = !/\blive\b/i.test(t) && !/\/shorts\//i.test(url || '');
+            return hasKeywords && notLiveOrShorts;
+        };
+        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\/[A-Za-z0-9]{22}(\?.*)?$/i.test(url || '');
+
+        const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist} guitar lesson`)}`;
+        const spSearchUrl = `https://open.spotify.com/search/${encodeURIComponent(`${data.title} ${data.artist}`)}`;
+
+        const ytIsUsable = isValidYouTubeUrl(data.youtubeLessonUrl) && isLikelyGuitarLesson(data.youtubeLessonTitle, data.youtubeLessonUrl);
+        const chosenYouTubeUrl = ytIsUsable ? data.youtubeLessonUrl : ytSearchUrl;
+        const chosenYouTubeTitle = ytIsUsable
+            ? data.youtubeLessonTitle
+            : `Search YouTube for ${data.title} ${data.artist} guitar lesson`;
+        const chosenSpotifyUrl = isValidSpotifyTrackUrl(data.spotifyUrl) ? data.spotifyUrl : spSearchUrl;
 
         contentEl.innerHTML = `
-        <div class="space-y-4">
-            <h4 class="font-bold text-md">${safe(data.title)} — ${safe(data.artist)}</h4>
+            <div class="space-y-4">
+                <h4 class="font-bold text-md">${safe(data.title)} — ${safe(data.artist)}</h4>
 
-            <div class="text-sm">
-                <p><span class="font-semibold">Key:</span> ${safe(data.key)}</p>
-                <p><span class="font-semibold">Tuning:</span> ${safe(data.tuning)}</p>
+                <div class="text-sm">
+                    <p><span class="font-semibold">Key:</span> ${safe(data.key)}</p>
+                    <p><span class="font-semibold">Tuning:</span> ${safe(data.tuning)}</p>
+                </div>
+
+                <div class="bg-gray-100 p-3 rounded font-mono text-sm overflow-x-auto">
+                    <p class="font-semibold mb-1">Lyrics & Chords (excerpt)</p>
+                    <pre>${safe(data.lyricsWithChords)}</pre>
+                </div>
+
+                <div class="bg-blue-50 p-3 rounded text-sm">
+                    <p class="font-semibold mb-1">Chord Changes</p>
+                    <p>${safe(data.chordChanges)}</p>
+                </div>
+
+                <div class="text-sm">
+                    <p class="font-semibold mb-1">Why this song rocks</p>
+                    <p>${safe(data.inspiration)}</p>
+                </div>
+
+                <div class="text-sm">
+                    <p class="font-semibold mb-1">Best YouTube Lesson</p>
+                    <a href="${safe(ytSearchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">Search on YouTube</a>
+                </div>
+
+                <div class="text-sm">
+                    <p class="font-semibold mb-1">Listen on Spotify</p>
+                    <a href="${safe(spSearchUrl)}" target="_blank" rel="noopener noreferrer" class="text-green-700 underline">Search on Spotify</a>
+                </div>
             </div>
-
-            <div class="bg-gray-100 p-3 rounded font-mono text-sm overflow-x-auto">
-                <p class="font-semibold mb-1">Lyrics & Chords (excerpt)</p>
-                <pre>${safe(data.lyricsWithChords)}</pre>
-            </div>
-
-            
-
-            <div class="bg-blue-50 p-3 rounded text-sm">
-                <p class="font-semibold mb-1">Chord Changes</p>
-                <p>${safe(data.chordChanges)}</p>
-            </div>
-
-            <div class="text-sm">
-                <p class="font-semibold mb-1">Why this song rocks</p>
-                <p>${safe(data.inspiration)}</p>
-            </div>
-
-            <div class="text-sm">
-                <p class="font-semibold mb-1">Best YouTube Lesson</p>
-                <a href="${safe(data.youtubeLessonUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
-                    ${safe(data.youtubeLessonTitle)}
-                </a>
-            </div>
-
-            <div class="text-sm">
-                <p class="font-semibold mb-1">Listen on Spotify</p>
-                <a href="${safe(data.spotifyUrl)}" target="_blank" rel="noopener noreferrer" class="text-green-700 underline">
-                    ${safe(data.spotifyUrl)}
-                </a>
-            </div>
-        </div>
         `;
     }
 
