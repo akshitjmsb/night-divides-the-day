@@ -1094,6 +1094,9 @@ Use actual current tournament data and highlight Canadian players with <strong> 
                     <a href="${safe(chosenYouTubeUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
                         ${safe(chosenYouTubeTitle)}
                     </a>
+                    <div class="text-xs text-gray-600 mt-1">
+                        <a href="${safe(ytSearchUrl)}" target="_blank" rel="noopener noreferrer" class="underline">Search on YouTube (fallback)</a>
+                    </div>
                 </div>
 
                 <div class="text-sm">
@@ -1101,6 +1104,9 @@ Use actual current tournament data and highlight Canadian players with <strong> 
                     <a href="${safe(chosenSpotifyUrl)}" target="_blank" rel="noopener noreferrer" class="text-green-700 underline">
                         ${safe(chosenSpotifyUrl)}
                     </a>
+                    <div class="text-xs text-gray-600 mt-1">
+                        <a href="${safe(spSearchUrl)}" target="_blank" rel="noopener noreferrer" class="underline">Search on Spotify (fallback)</a>
+                    </div>
                 </div>
             </div>
         `;
