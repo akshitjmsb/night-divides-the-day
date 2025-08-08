@@ -984,7 +984,8 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
-            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https://",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Use a well-known Classic Rock song with beginner-friendly parts.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
+            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",
+  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Use a well-known Classic Rock song with beginner-friendly parts.\n- YouTube lesson MUST clearly be a guitar lesson: the title must include the word 'guitar' AND either 'lesson' or 'tutorial'. Provide a full watch URL (https://www.youtube.com/watch?v=...) or youtu.be short link. Do NOT return Shorts, Live, or playlist links.\n- Spotify must be a direct track URL in the form https://open.spotify.com/track/<22-char base62 id>.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
 
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
@@ -1040,14 +1041,26 @@ Use actual current tournament data and highlight Canadian players with <strong> 
         }
 
         const safe = (s: string) => escapeHtml((s || '').replace(/\*/g, ''));
-        const isValidYouTubeUrl = (url: string) => /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url || '');
-        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\//i.test(url || '');
+        const isValidYouTubeUrl = (url: string) => {
+            if (!url) return false;
+            const badPatterns = /\/shorts\//i;
+            const validPatterns = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i;
+            return validPatterns.test(url) && !badPatterns.test(url);
+        };
+        const isLikelyGuitarLesson = (title: string, url: string) => {
+            const t = (title || '').toLowerCase();
+            const hasKeywords = t.includes('guitar') && (t.includes('lesson') || t.includes('tutorial') || t.includes('how to') || t.includes('tabs'));
+            const notLiveOrShorts = !/\blive\b/i.test(t) && !/\/shorts\//i.test(url || '');
+            return hasKeywords && notLiveOrShorts;
+        };
+        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\/[A-Za-z0-9]{22}(\?.*)?$/i.test(url || '');
 
         const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist} guitar lesson`)}`;
         const spSearchUrl = `https://open.spotify.com/search/${encodeURIComponent(`${data.title} ${data.artist}`)}`;
 
-        const chosenYouTubeUrl = isValidYouTubeUrl(data.youtubeLessonUrl) ? data.youtubeLessonUrl : ytSearchUrl;
-        const chosenYouTubeTitle = isValidYouTubeUrl(data.youtubeLessonUrl)
+        const ytIsUsable = isValidYouTubeUrl(data.youtubeLessonUrl) && isLikelyGuitarLesson(data.youtubeLessonTitle, data.youtubeLessonUrl);
+        const chosenYouTubeUrl = ytIsUsable ? data.youtubeLessonUrl : ytSearchUrl;
+        const chosenYouTubeTitle = ytIsUsable
             ? data.youtubeLessonTitle
             : `Search YouTube for ${data.title} ${data.artist} guitar lesson`;
         const chosenSpotifyUrl = isValidSpotifyTrackUrl(data.spotifyUrl) ? data.spotifyUrl : spSearchUrl;
