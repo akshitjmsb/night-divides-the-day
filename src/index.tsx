@@ -967,26 +967,25 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        contentEl.innerHTML = '<p>Loading today\'s guitar lesson...</p>';
+        contentEl.innerHTML = `<p>Loading today&apos;s guitar pick...</p>`;
 
-        let guitarData;
+        let data: {
+            title: string;
+            artist: string;
+            key: string;
+            tuning: string;
+            lyricsWithChords: string;
+            chordChanges: string;
+            inspiration: string;
+            youtubeLessonTitle: string;
+            youtubeLessonUrl: string;
+            spotifyUrl: string;
+        } | null = null;
+
         try {
-            // Use a unique prompt for each day to get a different lesson
             const dayOfYear = getDayOfYear(activeContentDate);
-            const prompt = `For day ${dayOfYear} of the year, generate a unique, self-contained guitar lesson for someone learning to play guitar. Include:
-1. A song title and artist (choose a popular, beginner-friendly song)
-2. A simple guitar tab in ASCII format (use - for strings, numbers for frets, keep it simple)
-3. A brief lesson explaining the technique or chord progression
-4. A practice tip for beginners
+            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https://",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Use a well-known Classic Rock song with beginner-friendly parts.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
 
-Format the response as JSON with these exact fields:
-{
-    "title": "Song Name - Artist",
-    "tab": "E|---0---0---0---0---\\nB|---1---1---1---1---\\nG|---0---0---0---0---\\nD|---2---2---2---2---\\nA|---3---3---3---3---\\nE|---x---x---x---x---",
-    "lesson": "This lesson focuses on basic strumming pattern...",
-    "tip": "Practice slowly and focus on clean chord transitions"
-}`;
-            
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
@@ -995,58 +994,103 @@ Format the response as JSON with these exact fields:
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            title: { 
-                                type: Type.STRING, 
-                                description: 'The song title and artist.' 
-                            },
-                            tab: {
-                                type: Type.STRING,
-                                description: 'The guitar tab in ASCII format.'
-                            },
-                            lesson: {
-                                type: Type.STRING,
-                                description: 'A brief lesson explaining the technique.'
-                            },
-                            tip: {
-                                type: Type.STRING,
-                                description: 'A practice tip for beginners.'
-                            }
+                            title: { type: Type.STRING },
+                            artist: { type: Type.STRING },
+                            key: { type: Type.STRING },
+                            tuning: { type: Type.STRING },
+                            lyricsWithChords: { type: Type.STRING },
+                            chordChanges: { type: Type.STRING },
+                            inspiration: { type: Type.STRING },
+                            youtubeLessonTitle: { type: Type.STRING },
+                            youtubeLessonUrl: { type: Type.STRING },
+                            spotifyUrl: { type: Type.STRING },
                         },
-                        required: ["title", "tab", "lesson", "tip"]
-                    }
-                }
+                        required: [
+                            'title',
+                            'artist',
+                            'key',
+                            'tuning',
+                            'lyricsWithChords',
+                            'chordChanges',
+                            'inspiration',
+                            'youtubeLessonTitle',
+                            'youtubeLessonUrl',
+                            'spotifyUrl',
+                        ],
+                    },
+                },
             });
 
             try {
-                guitarData = JSON.parse(response.text);
+                data = JSON.parse(response.text);
             } catch (jsonError) {
-                 console.error("Failed to parse JSON from Gemini response for guitar lesson:", jsonError);
-                 contentEl.innerHTML = `<p>Could not parse the lesson. Please try again later.</p>`;
-                 return;
+                console.error('Failed to parse JSON for guitar feature:', jsonError);
+                contentEl.innerHTML = `<p>Could not parse the guitar pick. Please try again later.</p>`;
+                return;
             }
-
         } catch (error) {
-            console.error("Error fetching Guitar Lesson:", error);
-            contentEl.innerHTML = '<p>Could not retrieve a guitar lesson at this time.</p>';
+            console.error('Error fetching Guitar feature:', error);
+            contentEl.innerHTML = `<p>Could not retrieve a guitar pick at this time.</p>`;
             return;
         }
-        
-        if (guitarData && guitarData.title && guitarData.tab && guitarData.lesson && guitarData.tip) {
-             contentEl.innerHTML = `
-                <div class="space-y-4">
-                    <h4 class="font-bold text-md mb-2">${guitarData.title.replace(/\*/g, '')}</h4>
-                    <div class="bg-gray-100 p-3 rounded font-mono text-sm overflow-x-auto">
-                        <pre>${guitarData.tab.replace(/\*/g, '')}</pre>
-                    </div>
-                    <p class="text-base mb-4">${guitarData.lesson.replace(/\*/g, '')}</p>
-                    <div class="bg-blue-50 p-3 rounded">
-                        <p class="text-sm italic">💡 ${guitarData.tip.replace(/\*/g, '')}</p>
-                    </div>
-                </div>
-            `;
-        } else {
-             contentEl.innerHTML = '<p>Could not retrieve a guitar lesson. The response was empty.</p>';
+
+        if (!data) {
+            contentEl.innerHTML = `<p>No data returned for this guitar pick.</p>`;
+            return;
         }
+
+        const safe = (s: string) => escapeHtml((s || '').replace(/\*/g, ''));
+        const isValidYouTubeUrl = (url: string) => /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url || '');
+        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\//i.test(url || '');
+
+        const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist} guitar lesson`)}`;
+        const spSearchUrl = `https://open.spotify.com/search/${encodeURIComponent(`${data.title} ${data.artist}`)}`;
+
+        const chosenYouTubeUrl = isValidYouTubeUrl(data.youtubeLessonUrl) ? data.youtubeLessonUrl : ytSearchUrl;
+        const chosenYouTubeTitle = isValidYouTubeUrl(data.youtubeLessonUrl)
+            ? data.youtubeLessonTitle
+            : `Search YouTube for ${data.title} ${data.artist} guitar lesson`;
+        const chosenSpotifyUrl = isValidSpotifyTrackUrl(data.spotifyUrl) ? data.spotifyUrl : spSearchUrl;
+
+        contentEl.innerHTML = `
+            <div class="space-y-4">
+                <h4 class="font-bold text-md">${safe(data.title)} — ${safe(data.artist)}</h4>
+
+                <div class="text-sm">
+                    <p><span class="font-semibold">Key:</span> ${safe(data.key)}</p>
+                    <p><span class="font-semibold">Tuning:</span> ${safe(data.tuning)}</p>
+                </div>
+
+                <div class="bg-gray-100 p-3 rounded font-mono text-sm overflow-x-auto">
+                    <p class="font-semibold mb-1">Lyrics & Chords (excerpt)</p>
+                    <pre>${safe(data.lyricsWithChords)}</pre>
+                </div>
+
+                <div class="bg-blue-50 p-3 rounded text-sm">
+                    <p class="font-semibold mb-1">Chord Changes</p>
+                    <p>${safe(data.chordChanges)}</p>
+                </div>
+
+                <div class="text-sm">
+                    <p class="font-semibold mb-1">Why this song rocks</p>
+                    <p>${safe(data.inspiration)}</p>
+                </div>
+
+                <div class="text-sm">
+                    <p class="font-semibold mb-1">Best YouTube Lesson</p>
+                    <a href="${safe(chosenYouTubeUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
+                        ${safe(chosenYouTubeTitle)}
+                    </a>
+                </div>
+
+                <div class="text-sm">
+                    <p class="font-semibold mb-1">Listen on Spotify</p>
+                    <a href="${safe(chosenSpotifyUrl)}" target="_blank" rel="noopener noreferrer" class="text-green-700 underline">
+                        ${safe(chosenSpotifyUrl)}
+                    </a>
+                </div>
+            </div>
+        `;
     }
 
     async function fetchAndShowHistory() {
