@@ -2066,11 +2066,16 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
             
             await mainRender();
             setupEventListeners();
+            // Run 5 PM cycle on startup if within window, and warm caches
+            await runFivePmCycleOnce();
+            await triggerAutoContentGeneration();
 
             setInterval(updateTime, 1000);
             setInterval(async () => {
                 try {
                     await mainRender();
+                    await runFivePmCycleOnce();
+                    await triggerAutoContentGeneration();
                 } catch (error) {
                     handleGlobalError(error as Error, 'periodic update');
                 }
@@ -2182,6 +2187,69 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         } catch (error) {
             console.error('❌ Night: Content archiving failed', error);
         }
+    }
+
+    /**
+     * Archives the previous cycle's content exactly once between 5 PM and 6 PM.
+     * This runs at the cycle boundary so the just-finished cycle is preserved.
+     */
+    async function archivePreviousCycleAtFive(): Promise<void> {
+        const { hour } = getCanonicalTime();
+        if (hour < 17 || hour >= 18) {
+            return; // Only archive in the 5 PM window
+        }
+
+        // Ensure date keys are up to date relative to the 5 PM boundary
+        updateDateDerivedData();
+
+        // We want to archive the cycle that just ended, which corresponds to archiveDate/archiveKey
+        const previousCycleDateKey = archiveKey; // e.g., 2025-08-07
+        const previousCycleStorageKey = `archived-${previousCycleDateKey}`;
+
+        if (localStorage.getItem(previousCycleStorageKey)) {
+            // Already archived
+            return;
+        }
+
+        try {
+            const data = {
+                date: previousCycleDateKey,
+                archivedAt: new Date().toISOString(),
+                foodPlan: await getOrGeneratePlanForDate(archiveDate, previousCycleDateKey),
+                frenchContent: await getOrGenerateDynamicContent('french-sound', archiveDate),
+                analyticsContent: await getOrGenerateDynamicContent('analytics', archiveDate),
+                transportationContent: await getOrGenerateDynamicContent('transportation-physics', archiveDate),
+                lifePointer: lifePointers[(getDayOfYear(archiveDate) - 1) % lifePointers.length]
+            };
+
+            localStorage.setItem(previousCycleStorageKey, JSON.stringify(data));
+            console.log('✅ 5 PM: Archived previous cycle content for', previousCycleDateKey);
+        } catch (error) {
+            console.error('❌ 5 PM: Failed to archive previous cycle', error);
+        }
+    }
+
+    /**
+     * Runs the 5 PM daily cycle exactly once: archive the previous cycle and generate the next one.
+     */
+    async function runFivePmCycleOnce(): Promise<void> {
+        const { hour } = getCanonicalTime();
+        if (hour < 17 || hour >= 18) {
+            return; // Only act in the 5 PM window
+        }
+
+        const todayKey = new Date().toISOString().split('T')[0];
+        const cycleKey = `five-pm-cycle-${todayKey}`;
+        if (localStorage.getItem(cycleKey)) {
+            return; // Already executed for this day
+        }
+
+        // First archive the previous cycle, then generate the next cycle
+        await archivePreviousCycleAtFive();
+        await triggerCrossOverContentGeneration();
+
+        localStorage.setItem(cycleKey, new Date().toISOString());
+        console.log('🔁 5 PM: Daily cycle completed');
     }
     
     /**
