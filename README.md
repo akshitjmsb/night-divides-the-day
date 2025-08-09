@@ -42,7 +42,7 @@ npm start
 
 This will start a simple web server, usually at `http://localhost:3000`. You can open this URL in your browser to see the application.
 
-*Note: The application expects the `API_KEY` environment variable to be available in its execution context.*
+*Note: The application expects the `GEMINI_API_KEY` environment variable to be available in its execution context.*
 
 ## Deployment Options
 
@@ -64,6 +64,7 @@ Vercel provides excellent hosting for React/TypeScript applications with automat
    - Go to your Vercel dashboard
    - Navigate to your project settings → Environment Variables
    - Add environment variable: `GEMINI_API_KEY` with your Google Gemini API key
+   - Add Vercel KV variables: `KV_REST_API_URL`, `KV_REST_API_TOKEN` (and optional `KV_REST_API_READ_ONLY_TOKEN`)
    - **NEVER commit your API key to the repository**
    - **Use Vercel's secure environment variable system**
 

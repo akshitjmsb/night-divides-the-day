@@ -603,6 +603,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
+     * Attempts to read server-generated content for a given date (ET) from `/api/content`.
+     * This is read-only and will not generate or mutate any state on the server.
+     */
+    async function fetchServerContent(dateKey: string): Promise<any | null> {
+        try {
+            const res = await fetch(`/api/content?date=${encodeURIComponent(dateKey)}`);
+            if (!res.ok) return null;
+            const json = await res.json();
+            return json?.data ?? null;
+        } catch (e) {
+            console.warn('Server content fetch failed', e);
+            return null;
+        }
+    }
+
+    /**
      * Proactively generates the next day's content after 5 PM.
      * This function is triggered on app load and periodically to "warm the cache",
      * creating the experience of an autonomous sync process for the user.
@@ -675,25 +691,18 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.removeItem(localKey);
         }
     
-        // 2. Check cloud cache
+        // 2. Check server KV via API
         try {
-            const response = await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`);
-            if (response.ok) {
-                const responseText = await response.text();
-                if (responseText) {
-                    try {
-                        const cloudData = JSON.parse(responseText);
-                        if (cloudData && cloudData.plan) {
-                            localStorage.setItem(localKey, cloudData.plan);
-                            return cloudData.plan;
-                        }
-                    } catch (jsonError) {
-                         console.warn('Failed to parse food plan from cloud.', jsonError);
-                    }
+            const server = await fetchServerContent(dateKey);
+            if (server && typeof server === 'object' && 'summary' in server) {
+                const summary = (server as any).summary as string;
+                if (summary && typeof summary === 'string') {
+                    localStorage.setItem(localKey, summary);
+                    return summary;
                 }
             }
         } catch (e) {
-            console.warn("Could not fetch food plan from cloud cache. Will generate.", e);
+            console.warn('Could not fetch from server content API.', e);
         }
         
         // 3. Generate new plan

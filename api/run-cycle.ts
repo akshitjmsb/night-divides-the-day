@@ -1,121 +1,149 @@
 import { kv } from '@vercel/kv';
-
-function getEasternNow(): { now: Date; ymd: string; hour: number } {
-  const formatter = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
-  });
-  const parts = Object.fromEntries(formatter.formatToParts(new Date()).map(p => [p.type, p.value]));
-  const now = new Date(`${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}-05:00`);
-  const ymd = `${parts.year}-${parts.month}-${parts.day}`;
-  return { now, ymd, hour: parseInt(parts.hour, 10) };
-}
-
-function ymdFromDate(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const da = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${da}`;
-}
-
-async function callGemini(prompt: string, opts?: { jsonSchema?: any; googleSearch?: boolean; asText?: boolean }): Promise<any> {
-  const apiKey = (process.env as any).GEMINI_API_KEY as string;
-  if (!apiKey) throw new Error('GEMINI_API_KEY not set');
-  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(apiKey);
-  const body: any = {
-    contents: [{ role: 'user', parts: [{ text: prompt }] }]
-  };
-  if (opts?.jsonSchema) {
-    body.generationConfig = { response_mime_type: 'application/json' };
-  }
-  if (opts?.googleSearch) {
-    body.tools = [{ googleSearch: {} }];
-  }
-  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  if (opts?.jsonSchema && text) {
-    try { return JSON.parse(text); } catch { return null; }
-  }
-  return opts?.asText ? (text || '') : text;
-}
-
-async function generateForDate(dateKey: string): Promise<{ food: string; french: any; analytics: any; transport: any }> {
-  // Food (text)
-  const foodPrompt = `Create a full-day meal plan using only whole, minimally processed foods that naturally support libido for ${dateKey}. Format: simple list with headings (Breakfast, Lunch, Dinner, Snack). Be concise. Avoid markdown.`;
-  const food = await callGemini(foodPrompt, { asText: true });
-
-  // French (json)
-  const frenchPrompt = `Act as a French phonetics teacher planning a long-term course. For the date ${dateKey}, create a self-contained lesson for a single, unique French phoneme. Provide { "sound": "...", "words": [{"word":"...","cue":"...","meaning":"..."}] } with exactly 10 words. No markdown.`;
-  const french = await callGemini(frenchPrompt, { jsonSchema: {} });
-
-  // Analytics (json)
-  const analyticsPrompt = `Generate a unique, new set of daily technical topics for an analytics engineer for ${dateKey}. Provide JSON with keys sql{title,prompt,solution}, dax{title,prompt,solution}, snowflake{title,prompt,solution}, dbt{title,prompt,solution}, dataManagement{title,explanation}, dataQuality{title,explanation}.`;
-  const analytics = await callGemini(analyticsPrompt, { jsonSchema: {} });
-
-  // Transportation Physics (json)
-  const transportPrompt = `For the date ${dateKey}, explain a single, fundamental physics principle behind a common mode of transportation. Provide JSON: { "title": "...", "explanation": "..." } using simple language.`;
-  const transport = await callGemini(transportPrompt, { jsonSchema: {} });
-
-  return { food, french, analytics, transport };
-}
-
-export default async function handler(req: Request): Promise<Response> {
-  try {
-    const { hour, now } = getEasternNow();
-
-    // Only act during the 5 PM hour (idempotent; also allow cron every hour)
-    if (hour !== 17) {
-      return new Response(JSON.stringify({ ok: true, skipped: true, reason: 'outside-5pm-hour' }), { status: 200 });
-    }
-
-    // Determine cycle dates
-    const activeDate = new Date(now); // At 5 PM we are switching to this date as the new cycle
-    const previousCycleDate = new Date(now);
-    previousCycleDate.setDate(previousCycleDate.getDate() - 1);
-
-    const activeKey = ymdFromDate(activeDate);
-    const prevKey = ymdFromDate(previousCycleDate);
-
-    const cycleFlagKey = `cycle:executed:${activeKey}`;
-    const already = await kv.get<string>(cycleFlagKey);
-    if (already) {
-      return new Response(JSON.stringify({ ok: true, skipped: true, reason: 'already-executed' }), { status: 200 });
-    }
-
-    // Archive previous cycle
-    const foodPrev = await kv.get<string>(`content:food:${prevKey}`);
-    const frPrev = await kv.get(`content:french:${prevKey}`);
-    const anPrev = await kv.get(`content:analytics:${prevKey}`);
-    const tpPrev = await kv.get(`content:transport:${prevKey}`);
-
-    const archiveBlob = {
-      date: prevKey,
-      archivedAt: new Date().toISOString(),
-      foodPlan: foodPrev || null,
-      frenchContent: frPrev || null,
-      analyticsContent: anPrev || null,
-      transportationContent: tpPrev || null
-    };
-    await kv.set(`archive:${prevKey}`, archiveBlob);
-
-    // Generate fresh content for the active cycle date and store in KV
-    const gen = await generateForDate(activeKey);
-    await kv.set(`content:food:${activeKey}`, gen.food || foodPrev || '');
-    await kv.set(`content:french:${activeKey}`, gen.french || frPrev || {});
-    await kv.set(`content:analytics:${activeKey}`, gen.analytics || anPrev || {});
-    await kv.set(`content:transport:${activeKey}`, gen.transport || tpPrev || {});
-
-    await kv.set(cycleFlagKey, new Date().toISOString());
-
-    return new Response(JSON.stringify({ ok: true, executed: true, date: activeKey }), { status: 200 });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ ok: false, error: err?.message || 'unknown' }), { status: 500 });
-  }
-}
+import { GoogleGenerativeAI } from '@google/genai';
 
 export const config = { runtime: 'edge' };
+
+type GeneratedContent = {
+  date: string;
+  generatedAt: string;
+  summary: string;
+  poem: string;
+  couplet: string;
+  scene: string;
+  source: 'server';
+};
+
+function getNowInET(): Date {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  })
+    .formatToParts(now)
+    .reduce<Record<string, string>>((acc, p) => {
+      if (p.type !== 'literal') acc[p.type] = p.value;
+      return acc;
+    }, {});
+
+  const dateString = `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}:${parts.second}.000-05:00`;
+  // Create a Date from ET components; the offset (-05:00) may differ in DST, but we only need hour/day.
+  return new Date(dateString);
+}
+
+function etDateString(d: Date): string {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  })
+    .formatToParts(d)
+    .reduce<Record<string, string>>((acc, p) => {
+      if (p.type !== 'literal') acc[p.type] = p.value;
+      return acc;
+    }, {});
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function addDaysET(base: Date, deltaDays: number): Date {
+  const tmp = new Date(base.getTime());
+  tmp.setUTCDate(tmp.getUTCDate() + deltaDays);
+  return tmp;
+}
+
+async function generateContentForDate(targetDate: string): Promise<GeneratedContent> {
+  const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
+  const nowIso = new Date().toISOString();
+
+  if (!apiKey) {
+    // Fallback content when API key is missing
+    return {
+      date: targetDate,
+      generatedAt: nowIso,
+      summary: 'Daily reflections placeholder. Configure GEMINI_API_KEY to enable server-side generation.',
+      poem: 'A quiet day awaits,\nWhere focus meets gentle light;\nWe move with steady pace.',
+      couplet: 'Work with care; rest with grace.\nTwilight teaches us our pace.',
+      scene: 'An empty desk at dusk, a notebook open to the next page.',
+      source: 'server',
+    };
+  }
+
+  const ai = new GoogleGenerativeAI({ apiKey });
+  const model = ai.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+  const [summary, poem, couplet, scene] = await Promise.all([
+    model.generateContent(`Give a motivating 2-3 sentence plan/summary for the day ${targetDate}. Keep it actionable, calm, and positive.`)
+      .then(r => r.response.text())
+      .catch(() => 'A calm, actionable day plan.'),
+    model.generateContent(`Compose a short free-verse poem for ${targetDate}, 3-5 lines, reflective but upbeat.`)
+      .then(r => r.response.text())
+      .catch(() => 'A brief poem of focus and light.'),
+    model.generateContent(`Write a two-line rhymed couplet for ${targetDate} about balance of work and rest.`)
+      .then(r => r.response.text())
+      .catch(() => 'Balance guides our way;\nWe work, then rest, each day.'),
+    model.generateContent(`Describe a single evocative scene for a dashboard header for ${targetDate}, one concise sentence.`)
+      .then(r => r.response.text())
+      .catch(() => 'A desk bathed in warm afternoon light.'),
+  ]);
+
+  return {
+    date: targetDate,
+    generatedAt: nowIso,
+    summary: summary.trim(),
+    poem: poem.trim(),
+    couplet: couplet.trim(),
+    scene: scene.trim(),
+    source: 'server',
+  };
+}
+
+export default async function handler(_req: Request): Promise<Response> {
+  try {
+    const nowEt = getNowInET();
+    const hourEt = Number(
+      new Intl.DateTimeFormat('en-CA', { timeZone: 'America/New_York', hour: '2-digit', hour12: false })
+        .formatToParts(nowEt)
+        .find(p => p.type === 'hour')?.value || '00'
+    );
+
+    const todayEtStr = etDateString(nowEt);
+    const tomorrowEtStr = etDateString(addDaysET(nowEt, 1));
+
+    // Idempotency key per day
+    const idKey = `run-cycle:executed:${todayEtStr}`;
+    const alreadyRan = await kv.get<boolean>(idKey);
+
+    let ran = false;
+    let targetDate = tomorrowEtStr;
+    let content: GeneratedContent | null = null;
+
+    if (hourEt === 17 && !alreadyRan) {
+      content = await generateContentForDate(tomorrowEtStr);
+      await kv.set(`content:${tomorrowEtStr}`, content);
+      await kv.set(idKey, true, { ex: 60 * 60 * 24 });
+      ran = true;
+    }
+
+    // Heartbeat
+    await kv.set('cron:lastRun', new Date().toISOString());
+
+    return new Response(
+      JSON.stringify({ ok: true, ran, hourEt, todayEtStr, targetDate, contentStored: Boolean(content) }),
+      { status: 200, headers: { 'content-type': 'application/json' } }
+    );
+  } catch (error: unknown) {
+    const message = (error as Error)?.message || 'Unknown error';
+    return new Response(JSON.stringify({ ok: false, error: message }), {
+      status: 500,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+}
 
 
