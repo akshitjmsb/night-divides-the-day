@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const { now, hour } = getCanonicalTime();
 
         // Determine the active content date based on the time.
-        // From midnight to 4:59 PM, the active content is the previous calendar day (5 PM boundary).
-        if (hour < 17) {
+        // From midnight to 7:59 AM, the "active day" is still considered the previous calendar day.
+        if (hour < 8) {
             activeContentDate = new Date(now);
             activeContentDate.setDate(now.getDate() - 1);
         } else {
@@ -353,8 +353,80 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- POETRY RECENTS PERSISTENCE ---
+    type PoetrySelection = { poet: string; language: string; timestamp: number };
+    const POETRY_RECENTS_LOCAL_KEY = 'poetryRecents';
+    const POETRY_RECENTS_CLOUD_KEY = 'poetry-recent-selections';
+    const MAX_POETRY_RECENTS = 6;
+
+    async function loadPoetryRecents(): Promise<PoetrySelection[]> {
+        // 1) Try cloud first to sync across devices
+        try {
+            const res = await fetch(`${CLOUD_CACHE_BASE_URL}/${POETRY_RECENTS_CLOUD_KEY}`);
+            if (res.ok) {
+                const text = await res.text();
+                if (text) {
+                    const parsed = JSON.parse(text);
+                    if (Array.isArray(parsed)) {
+                        localStorage.setItem(POETRY_RECENTS_LOCAL_KEY, JSON.stringify(parsed));
+                        return parsed as PoetrySelection[];
+                    }
+                    if (parsed && Array.isArray(parsed.recents)) {
+                        localStorage.setItem(POETRY_RECENTS_LOCAL_KEY, JSON.stringify(parsed.recents));
+                        return parsed.recents as PoetrySelection[];
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load poetry recents from cloud, falling back to local.', e);
+        }
+
+        // 2) Local fallback
+        try {
+            const local = localStorage.getItem(POETRY_RECENTS_LOCAL_KEY);
+            if (local) {
+                const parsed = JSON.parse(local);
+                if (Array.isArray(parsed)) return parsed as PoetrySelection[];
+            }
+        } catch (e) {
+            console.warn('Could not parse local poetry recents.', e);
+        }
+        return [];
+    }
+
+    async function savePoetryRecents(recents: PoetrySelection[]): Promise<void> {
+        try {
+            localStorage.setItem(POETRY_RECENTS_LOCAL_KEY, JSON.stringify(recents));
+        } catch (e) {
+            console.warn('Failed saving poetry recents to local storage.', e);
+        }
+        try {
+            await fetch(`${CLOUD_CACHE_BASE_URL}/${POETRY_RECENTS_CLOUD_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recents })
+            });
+        } catch (e) {
+            console.warn('Failed saving poetry recents to cloud cache.', e);
+        }
+    }
+
+    function recordPoetrySelection(recents: PoetrySelection[], poet: string, language: string): PoetrySelection[] {
+        const next: PoetrySelection[] = [{ poet, language, timestamp: Date.now() }, ...recents];
+        // Deduplicate consecutive duplicates and cap size
+        const unique: PoetrySelection[] = [];
+        for (const item of next) {
+            const last = unique[unique.length - 1];
+            if (!last || last.poet !== item.poet || last.language !== item.language) {
+                unique.push(item);
+            }
+            if (unique.length >= MAX_POETRY_RECENTS) break;
+        }
+        return unique;
+    }
+
     // --- DYNAMIC CONTENT GENERATION & CACHING ---
-    async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound', date: Date): Promise<any> {
+    async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', date: Date): Promise<any> {
         const dateKey = date.toISOString().split('T')[0];
         const localKey = `dynamic-content-${contentType}-${dateKey}`;
         const cloudKey = `${contentType}-${dateKey}`;
@@ -411,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return generatedContent;
     }
     
-    async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound', dateKey: string): Promise<any> {
+    async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', dateKey: string): Promise<any> {
         let prompt = '';
         let responseSchema: any = {};
 
@@ -478,6 +550,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 required: ["sound", "words"]
             };
+        } else if (contentType === 'classic-rock-500') {
+            // Request a 500 entry pool of classic rock songs
+            prompt = `Generate a JSON array of exactly 500 items. Each item must have two string fields: title and artist. The list should be classic rock (and closely related rock) songs that are well-known/popular for guitar learners. Keep it diverse across decades and artists; avoid duplicates. Return JSON only.`;
+            responseSchema = {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        artist: { type: Type.STRING }
+                    },
+                    required: ['title', 'artist']
+                }
+            };
         } else {
             return null;
         }
@@ -517,7 +603,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Proactively generates the next cycle's content after 5 PM.
+     * Proactively generates the next day's content after 5 PM.
      * This function is triggered on app load and periodically to "warm the cache",
      * creating the experience of an autonomous sync process for the user.
      */
@@ -531,7 +617,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateForGeneration = previewContentDate;
         const dateKeyForGeneration = dateForGeneration.toISOString().split('T')[0];
 
-        // Check if we are in the window to generate the next cycle (i.e., after 5 PM boundary).
+        // Check if we are in the window to generate tomorrow's content (i.e., it's after 5 PM today).
         if (!isContentReadyForPreview(dateForGeneration)) {
             return; // Not time to generate yet.
         }
@@ -543,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         isAutoGenerating = true;
-        showSyncStatus('⚙️ Synchronizing next cycle\'s content...');
+        showSyncStatus('⚙️ Synchronizing next day\'s content...');
         console.log(`It's after 5 PM. Triggering background content generation for ${dateKeyForGeneration}...`);
         
         try {
@@ -984,8 +1070,42 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
-            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https://",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Use a well-known Classic Rock song with beginner-friendly parts.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
 
+            // Load a 500-song classic rock pool from cache (local/cloud) and pick one at random
+            let songPool: Array<{ title: string; artist: string }> = [];
+            try {
+                const pool = await getOrGenerateDynamicContent('classic-rock-500', activeContentDate);
+                if (Array.isArray(pool) && pool.length > 0) {
+                    songPool = pool
+                        .filter(item => item && typeof item.title === 'string' && typeof item.artist === 'string')
+                        .map(item => ({ title: item.title, artist: item.artist }));
+                }
+            } catch (e) {
+                console.warn('Could not load classic-rock-500 pool. Falling back to AI-random.', e);
+            }
+
+            // Recent history to avoid repeats
+            const RECENT_KEY = 'guitarRecentPicks';
+            const loadRecent = (): string[] => {
+                try { const raw = localStorage.getItem(RECENT_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
+            };
+            const saveRecent = (arr: string[]) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(0, 30))); } catch {} };
+            const recent = loadRecent();
+
+            let pickedTitle = '';
+            let pickedArtist = '';
+            if (songPool.length > 0) {
+                const pool = songPool.filter(s => !recent.includes(`${s.title} — ${s.artist}`));
+                const selectionPool = pool.length > 0 ? pool : songPool;
+                const idx = Math.floor(Math.random() * selectionPool.length);
+                const picked = selectionPool[idx];
+                pickedTitle = picked.title; pickedArtist = picked.artist;
+                saveRecent([`${picked.title} — ${picked.artist}`, ...recent.filter(x => x !== `${picked.title} — ${picked.artist}`)]);
+            }
+
+            const prompt = pickedTitle && pickedArtist
+                ? `Create a concise guitar lesson for the specific classic rock song below. Return JSON ONLY with these exact fields. Do not add extra text.\n\nSong: "${pickedTitle}" by "${pickedArtist}"\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`
+                : `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
@@ -1040,14 +1160,26 @@ Use actual current tournament data and highlight Canadian players with <strong> 
         }
 
         const safe = (s: string) => escapeHtml((s || '').replace(/\*/g, ''));
-        const isValidYouTubeUrl = (url: string) => /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url || '');
-        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\//i.test(url || '');
+        const isValidYouTubeUrl = (url: string) => {
+            if (!url) return false;
+            const badPatterns = /\/shorts\//i;
+            const validPatterns = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i;
+            return validPatterns.test(url) && !badPatterns.test(url);
+        };
+        const isLikelyGuitarLesson = (title: string, url: string) => {
+            const t = (title || '').toLowerCase();
+            const hasKeywords = t.includes('guitar') && (t.includes('lesson') || t.includes('tutorial') || t.includes('how to') || t.includes('tabs'));
+            const notLiveOrShorts = !/\blive\b/i.test(t) && !/\/shorts\//i.test(url || '');
+            return hasKeywords && notLiveOrShorts;
+        };
+        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\/[A-Za-z0-9]{22}(\?.*)?$/i.test(url || '');
 
         const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist} guitar lesson`)}`;
         const spSearchUrl = `https://open.spotify.com/search/${encodeURIComponent(`${data.title} ${data.artist}`)}`;
 
-        const chosenYouTubeUrl = isValidYouTubeUrl(data.youtubeLessonUrl) ? data.youtubeLessonUrl : ytSearchUrl;
-        const chosenYouTubeTitle = isValidYouTubeUrl(data.youtubeLessonUrl)
+        const ytIsUsable = isValidYouTubeUrl(data.youtubeLessonUrl) && isLikelyGuitarLesson(data.youtubeLessonTitle, data.youtubeLessonUrl);
+        const chosenYouTubeUrl = ytIsUsable ? data.youtubeLessonUrl : ytSearchUrl;
+        const chosenYouTubeTitle = ytIsUsable
             ? data.youtubeLessonTitle
             : `Search YouTube for ${data.title} ${data.artist} guitar lesson`;
         const chosenSpotifyUrl = isValidSpotifyTrackUrl(data.spotifyUrl) ? data.spotifyUrl : spSearchUrl;
@@ -1175,21 +1307,32 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
+            const poetryRecents = await loadPoetryRecents();
+            const recentPoets = poetryRecents.map(r => r.poet).filter(Boolean);
+            const recentLanguages = poetryRecents.map(r => r.language).filter(Boolean);
             console.log('Day of year:', dayOfYear);
             
-            const prompt = `Generate a random famous couplet from any language: Urdu, Hindi, Punjabi, English, or Persian. 
+            const prompt = `Task: Create a mini poetry moment with simple words.
 
-Choose any famous poet randomly from any of these language traditions. Do not limit yourself to specific names - select from the vast universe of poets in these languages.
+Constraints:
+- Pick a famous couplet from one poet in one language chosen from: Urdu, Hindi, Punjabi, English, Persian.
+- Avoid using any poet in this do-not-repeat list: ${JSON.stringify(recentPoets)}
+- Avoid using any language in this do-not-repeat list: ${JSON.stringify(recentLanguages)}
+- Use day number ${dayOfYear} to help pick variety.
 
-Today is day ${dayOfYear} of the year. Use this number to randomly select a different poet and couplet each time.
+Write:
+1) scene: 6–10 short sentences, present tense, simple everyday words. Place the poet clearly in their real historical era and place. Show what is happening around them that might inspire the couplet. Focus on clear, concrete details (what they see, hear, touch). End the scene right before the couplet is spoken, so the couplet feels like a natural result of the moment.
+2) couplet: the exact couplet in the original script.
+3) transliteration: simple romanized version.
+4) translation: one or two short, plain sentences.
+5) aboutWriter: 2–3 short lines about the poet.
+6) poet: the poet's name.
+7) language: the language of the couplet.
 
-Write a unique scene in the present tense, as if it is unfolding right now—no instructions, just cinematic, sensory storytelling.
-Become the poet in their unique place and era. Describe the setting deeply: sights, sounds, smells, touch, and emotion. Show the poet's body language, thoughts, and actions as they write, read, and feel the couplet.
-Include the actual couplet (in original script and transliteration), plus a simple translation right after the poet speaks it.
-Let the inner meaning and longing be felt in the poet's thoughts and in what is sensed around them—make the reader live the poem's birth as if it is happening now.
-End with a short "About the Writer," describing the poet's real-life history and spirit.
-
-IMPORTANT: Make sure this is completely different from any previous responses. Use the day number to ensure variety.`;
+Rules:
+- Keep language plain and readable.
+- Respect the do-not-repeat lists for poet and language.
+- Respond ONLY as strict JSON matching the provided schema.`;
             
             console.log('About to call AI with prompt:', prompt.substring(0, 100) + '...');
             
@@ -1220,9 +1363,17 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
                             aboutWriter: {
                                 type: Type.STRING,
                                 description: 'A short description of the poet\'s real-life history and spirit.'
+                            },
+                            poet: {
+                                type: Type.STRING,
+                                description: 'Poet\'s name.'
+                            },
+                            language: {
+                                type: Type.STRING,
+                                description: 'Language of the couplet.'
                             }
                         },
-                        required: ["scene", "couplet", "transliteration", "translation", "aboutWriter"]
+                        required: ["scene", "couplet", "transliteration", "translation", "aboutWriter", "poet", "language"]
                     }
                 }
             });
@@ -1236,7 +1387,11 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
                 try {
                     const data = JSON.parse(response.text);
                     html += `<div class="mb-6">`;
-                    html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
+                    html += `<h4 class="text-lg font-bold mb-1 text-center">Poetry in Motion</h4>`;
+                    if (data.poet || data.language) {
+                        const byline = [data.poet, data.language].filter(Boolean).join(' · ');
+                        if (byline) html += `<p class="text-center text-xs text-gray-600 mb-2">${escapeHtml(byline)}</p>`;
+                    }
                     html += `<div class="bg-gray-50 p-4 rounded-lg mb-4">`;
                     html += `<div class="text-sm leading-relaxed mb-4">${escapeHtml(data.scene)}</div>`;
                     html += `<div class="border-l-4 border-blue-500 pl-4 my-4">`;
@@ -1249,6 +1404,12 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
                     html += `<p class="text-sm leading-relaxed">${escapeHtml(data.aboutWriter)}</p>`;
                     html += `</div>`;
                     html += `</div>`;
+
+                    // Record and persist selection to avoid repeats next time
+                    const poetName = typeof data.poet === 'string' ? data.poet : '';
+                    const langName = typeof data.language === 'string' ? data.language : '';
+                    const updatedRecents = recordPoetrySelection(poetryRecents, poetName, langName);
+                    await savePoetryRecents(updatedRecents);
                 } catch (parseError) {
                     // Fallback if JSON parsing fails
                     html += `<div class="mb-6">`;
@@ -2066,16 +2227,11 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
             
             await mainRender();
             setupEventListeners();
-            // Run 5 PM cycle on startup if within window, and warm caches
-            await runFivePmCycleOnce();
-            await triggerAutoContentGeneration();
 
             setInterval(updateTime, 1000);
             setInterval(async () => {
                 try {
                     await mainRender();
-                    await runFivePmCycleOnce();
-                    await triggerAutoContentGeneration();
                 } catch (error) {
                     handleGlobalError(error as Error, 'periodic update');
                 }
@@ -2104,19 +2260,19 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         const todayKey = new Date().toISOString().split('T')[0];
         const generationKey = `cross-over-generation-${todayKey}`;
         
-        // Check if we've already generated content for the next cycle today
+        // Check if we've already generated content for tomorrow today
         if (localStorage.getItem(generationKey)) {
-            console.log('🔄 CrossOver: Content already generated for next cycle');
+            console.log('🔄 CrossOver: Content already generated for tomorrow');
             return;
         }
         
-        console.log('🚀 CrossOver: Starting content generation for next cycle...', {
+        console.log('🚀 CrossOver: Starting content generation for tomorrow...', {
             currentTime: now.toISOString(),
             todayKey: todayKey,
             hour: hour,
             previewContentDate: previewContentDate.toISOString()
         });
-        showSyncStatus('🔄 Generating next cycle\'s content...', false);
+        showSyncStatus('🔄 Generating tomorrow\'s content...', false);
         
         try {
             // Generate all content types for tomorrow
@@ -2129,10 +2285,10 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
             
             await Promise.all(promises);
             
-            // Mark that we've generated content for the next cycle
+            // Mark that we've generated content for tomorrow
             localStorage.setItem(generationKey, new Date().toISOString());
-            console.log('✅ CrossOver: Content generation completed for next cycle');
-            showSyncStatus('✅ Next cycle\'s content generated successfully!', true);
+            console.log('✅ CrossOver: Content generation completed for tomorrow');
+            showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
             
         } catch (error) {
             console.error('❌ CrossOver: Content generation failed', error);
@@ -2187,69 +2343,6 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         } catch (error) {
             console.error('❌ Night: Content archiving failed', error);
         }
-    }
-
-    /**
-     * Archives the previous cycle's content exactly once between 5 PM and 6 PM.
-     * This runs at the cycle boundary so the just-finished cycle is preserved.
-     */
-    async function archivePreviousCycleAtFive(): Promise<void> {
-        const { hour } = getCanonicalTime();
-        if (hour < 17 || hour >= 18) {
-            return; // Only archive in the 5 PM window
-        }
-
-        // Ensure date keys are up to date relative to the 5 PM boundary
-        updateDateDerivedData();
-
-        // We want to archive the cycle that just ended, which corresponds to archiveDate/archiveKey
-        const previousCycleDateKey = archiveKey; // e.g., 2025-08-07
-        const previousCycleStorageKey = `archived-${previousCycleDateKey}`;
-
-        if (localStorage.getItem(previousCycleStorageKey)) {
-            // Already archived
-            return;
-        }
-
-        try {
-            const data = {
-                date: previousCycleDateKey,
-                archivedAt: new Date().toISOString(),
-                foodPlan: await getOrGeneratePlanForDate(archiveDate, previousCycleDateKey),
-                frenchContent: await getOrGenerateDynamicContent('french-sound', archiveDate),
-                analyticsContent: await getOrGenerateDynamicContent('analytics', archiveDate),
-                transportationContent: await getOrGenerateDynamicContent('transportation-physics', archiveDate),
-                lifePointer: lifePointers[(getDayOfYear(archiveDate) - 1) % lifePointers.length]
-            };
-
-            localStorage.setItem(previousCycleStorageKey, JSON.stringify(data));
-            console.log('✅ 5 PM: Archived previous cycle content for', previousCycleDateKey);
-        } catch (error) {
-            console.error('❌ 5 PM: Failed to archive previous cycle', error);
-        }
-    }
-
-    /**
-     * Runs the 5 PM daily cycle exactly once: archive the previous cycle and generate the next one.
-     */
-    async function runFivePmCycleOnce(): Promise<void> {
-        const { hour } = getCanonicalTime();
-        if (hour < 17 || hour >= 18) {
-            return; // Only act in the 5 PM window
-        }
-
-        const todayKey = new Date().toISOString().split('T')[0];
-        const cycleKey = `five-pm-cycle-${todayKey}`;
-        if (localStorage.getItem(cycleKey)) {
-            return; // Already executed for this day
-        }
-
-        // First archive the previous cycle, then generate the next cycle
-        await archivePreviousCycleAtFive();
-        await triggerCrossOverContentGeneration();
-
-        localStorage.setItem(cycleKey, new Date().toISOString());
-        console.log('🔁 5 PM: Daily cycle completed');
     }
     
     /**
@@ -2366,14 +2459,14 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         console.log('☀️ Day Module: Using content that was previewed in Night Module');
     }
 
-     async function renderCrossoverModule() {
+    async function renderCrossoverModule() {
         const lifePointerEl = document.getElementById('life-pointer-display-crossover');
         if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
 
         renderTasks('tasks-list-crossover');
         
-         // CrossOver Module: Generate next cycle's content (5 PM boundary)
-         await triggerCrossOverContentGeneration();
+        // CrossOver Module: Generate tomorrow's content
+        await triggerCrossOverContentGeneration();
     }
 
     async function renderNightModule() {
@@ -2385,8 +2478,8 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         
         renderTasks('tasks-list-night');
         
-         // Night Module: Archive current cycle's content
-         await archiveTodaysContent();
-         console.log('🌙 Night Module: Current cycle archived');
+        // Night Module: Archive today's content and show tomorrow's preview
+        await archiveTodaysContent();
+        console.log('🌙 Night Module: Today\'s content archived, tomorrow\'s content previewed');
     }
 });
