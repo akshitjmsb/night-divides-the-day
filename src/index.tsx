@@ -353,6 +353,78 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- POETRY RECENTS PERSISTENCE ---
+    type PoetrySelection = { poet: string; language: string; timestamp: number };
+    const POETRY_RECENTS_LOCAL_KEY = 'poetryRecents';
+    const POETRY_RECENTS_CLOUD_KEY = 'poetry-recent-selections';
+    const MAX_POETRY_RECENTS = 6;
+
+    async function loadPoetryRecents(): Promise<PoetrySelection[]> {
+        // 1) Try cloud first to sync across devices
+        try {
+            const res = await fetch(`${CLOUD_CACHE_BASE_URL}/${POETRY_RECENTS_CLOUD_KEY}`);
+            if (res.ok) {
+                const text = await res.text();
+                if (text) {
+                    const parsed = JSON.parse(text);
+                    if (Array.isArray(parsed)) {
+                        localStorage.setItem(POETRY_RECENTS_LOCAL_KEY, JSON.stringify(parsed));
+                        return parsed as PoetrySelection[];
+                    }
+                    if (parsed && Array.isArray(parsed.recents)) {
+                        localStorage.setItem(POETRY_RECENTS_LOCAL_KEY, JSON.stringify(parsed.recents));
+                        return parsed.recents as PoetrySelection[];
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Could not load poetry recents from cloud, falling back to local.', e);
+        }
+
+        // 2) Local fallback
+        try {
+            const local = localStorage.getItem(POETRY_RECENTS_LOCAL_KEY);
+            if (local) {
+                const parsed = JSON.parse(local);
+                if (Array.isArray(parsed)) return parsed as PoetrySelection[];
+            }
+        } catch (e) {
+            console.warn('Could not parse local poetry recents.', e);
+        }
+        return [];
+    }
+
+    async function savePoetryRecents(recents: PoetrySelection[]): Promise<void> {
+        try {
+            localStorage.setItem(POETRY_RECENTS_LOCAL_KEY, JSON.stringify(recents));
+        } catch (e) {
+            console.warn('Failed saving poetry recents to local storage.', e);
+        }
+        try {
+            await fetch(`${CLOUD_CACHE_BASE_URL}/${POETRY_RECENTS_CLOUD_KEY}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ recents })
+            });
+        } catch (e) {
+            console.warn('Failed saving poetry recents to cloud cache.', e);
+        }
+    }
+
+    function recordPoetrySelection(recents: PoetrySelection[], poet: string, language: string): PoetrySelection[] {
+        const next: PoetrySelection[] = [{ poet, language, timestamp: Date.now() }, ...recents];
+        // Deduplicate consecutive duplicates and cap size
+        const unique: PoetrySelection[] = [];
+        for (const item of next) {
+            const last = unique[unique.length - 1];
+            if (!last || last.poet !== item.poet || last.language !== item.language) {
+                unique.push(item);
+            }
+            if (unique.length >= MAX_POETRY_RECENTS) break;
+        }
+        return unique;
+    }
+
     // --- DYNAMIC CONTENT GENERATION & CACHING ---
     async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', date: Date): Promise<any> {
         const dateKey = date.toISOString().split('T')[0];
@@ -1138,12 +1210,16 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
                 <div class="text-sm">
                     <p class="font-semibold mb-1">Best YouTube Lesson</p>
-                    <a href="${safe(ytSearchUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">Search on YouTube</a>
+                    <a href="${safe(chosenYouTubeUrl)}" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">
+                        ${safe(chosenYouTubeTitle)}
+                    </a>
                 </div>
 
                 <div class="text-sm">
                     <p class="font-semibold mb-1">Listen on Spotify</p>
-                    <a href="${safe(spSearchUrl)}" target="_blank" rel="noopener noreferrer" class="text-green-700 underline">Search on Spotify</a>
+                    <a href="${safe(chosenSpotifyUrl)}" target="_blank" rel="noopener noreferrer" class="text-green-700 underline">
+                        ${safe(chosenSpotifyUrl)}
+                    </a>
                 </div>
             </div>
         `;
@@ -1231,21 +1307,32 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
+            const poetryRecents = await loadPoetryRecents();
+            const recentPoets = poetryRecents.map(r => r.poet).filter(Boolean);
+            const recentLanguages = poetryRecents.map(r => r.language).filter(Boolean);
             console.log('Day of year:', dayOfYear);
             
-            const prompt = `Generate a random famous couplet from any language: Urdu, Hindi, Punjabi, English, or Persian. 
+            const prompt = `Task: Create a mini poetry moment with simple words.
 
-Choose any famous poet randomly from any of these language traditions. Do not limit yourself to specific names - select from the vast universe of poets in these languages.
+Constraints:
+- Pick a famous couplet from one poet in one language chosen from: Urdu, Hindi, Punjabi, English, Persian.
+- Avoid using any poet in this do-not-repeat list: ${JSON.stringify(recentPoets)}
+- Avoid using any language in this do-not-repeat list: ${JSON.stringify(recentLanguages)}
+- Use day number ${dayOfYear} to help pick variety.
 
-Today is day ${dayOfYear} of the year. Use this number to randomly select a different poet and couplet each time.
+Write:
+1) scene: 6–10 short sentences, present tense, simple everyday words. Place the poet clearly in their real historical era and place. Show what is happening around them that might inspire the couplet. Focus on clear, concrete details (what they see, hear, touch). End the scene right before the couplet is spoken, so the couplet feels like a natural result of the moment.
+2) couplet: the exact couplet in the original script.
+3) transliteration: simple romanized version.
+4) translation: one or two short, plain sentences.
+5) aboutWriter: 2–3 short lines about the poet.
+6) poet: the poet's name.
+7) language: the language of the couplet.
 
-Write a unique scene in the present tense, as if it is unfolding right now—no instructions, just cinematic, sensory storytelling.
-Become the poet in their unique place and era. Describe the setting deeply: sights, sounds, smells, touch, and emotion. Show the poet's body language, thoughts, and actions as they write, read, and feel the couplet.
-Include the actual couplet (in original script and transliteration), plus a simple translation right after the poet speaks it.
-Let the inner meaning and longing be felt in the poet's thoughts and in what is sensed around them—make the reader live the poem's birth as if it is happening now.
-End with a short "About the Writer," describing the poet's real-life history and spirit.
-
-IMPORTANT: Make sure this is completely different from any previous responses. Use the day number to ensure variety.`;
+Rules:
+- Keep language plain and readable.
+- Respect the do-not-repeat lists for poet and language.
+- Respond ONLY as strict JSON matching the provided schema.`;
             
             console.log('About to call AI with prompt:', prompt.substring(0, 100) + '...');
             
@@ -1276,9 +1363,17 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
                             aboutWriter: {
                                 type: Type.STRING,
                                 description: 'A short description of the poet\'s real-life history and spirit.'
+                            },
+                            poet: {
+                                type: Type.STRING,
+                                description: 'Poet\'s name.'
+                            },
+                            language: {
+                                type: Type.STRING,
+                                description: 'Language of the couplet.'
                             }
                         },
-                        required: ["scene", "couplet", "transliteration", "translation", "aboutWriter"]
+                        required: ["scene", "couplet", "transliteration", "translation", "aboutWriter", "poet", "language"]
                     }
                 }
             });
@@ -1292,7 +1387,11 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
                 try {
                     const data = JSON.parse(response.text);
                     html += `<div class="mb-6">`;
-                    html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
+                    html += `<h4 class="text-lg font-bold mb-1 text-center">Poetry in Motion</h4>`;
+                    if (data.poet || data.language) {
+                        const byline = [data.poet, data.language].filter(Boolean).join(' · ');
+                        if (byline) html += `<p class="text-center text-xs text-gray-600 mb-2">${escapeHtml(byline)}</p>`;
+                    }
                     html += `<div class="bg-gray-50 p-4 rounded-lg mb-4">`;
                     html += `<div class="text-sm leading-relaxed mb-4">${escapeHtml(data.scene)}</div>`;
                     html += `<div class="border-l-4 border-blue-500 pl-4 my-4">`;
@@ -1305,6 +1404,12 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
                     html += `<p class="text-sm leading-relaxed">${escapeHtml(data.aboutWriter)}</p>`;
                     html += `</div>`;
                     html += `</div>`;
+
+                    // Record and persist selection to avoid repeats next time
+                    const poetName = typeof data.poet === 'string' ? data.poet : '';
+                    const langName = typeof data.language === 'string' ? data.language : '';
+                    const updatedRecents = recordPoetrySelection(poetryRecents, poetName, langName);
+                    await savePoetryRecents(updatedRecents);
                 } catch (parseError) {
                     // Fallback if JSON parsing fails
                     html += `<div class="mb-6">`;
