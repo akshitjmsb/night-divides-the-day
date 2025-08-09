@@ -1261,7 +1261,7 @@ Constraints:
 - Use day number ${dayOfYear} to help pick variety.
 
 Write:
-1) scene: 6–10 short sentences, present tense, simple everyday words. Describe a small scene where the poet is present. Focus on clear, concrete details (what they see, hear, touch). No purple prose.
+1) scene: 6–10 short sentences, present tense, simple everyday words. Place the poet clearly in their real historical era and place. Show what is happening around them that might inspire the couplet. Focus on clear, concrete details (what they see, hear, touch). End the scene right before the couplet is spoken, so the couplet feels like a natural result of the moment.
 2) couplet: the exact couplet in the original script.
 3) transliteration: simple romanized version.
 4) translation: one or two short, plain sentences.
