@@ -29,6 +29,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
-    "@google/genai": "^1.12.0"
+    "@google/genai": "^1.12.0",
+    "@vercel/kv": "^2.0.0"
   }
 }
