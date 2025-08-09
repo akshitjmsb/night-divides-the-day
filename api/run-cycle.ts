@@ -19,6 +19,49 @@ function ymdFromDate(d: Date): string {
   return `${y}-${m}-${da}`;
 }
 
+async function callGemini(prompt: string, opts?: { jsonSchema?: any; googleSearch?: boolean; asText?: boolean }): Promise<any> {
+  const apiKey = (process.env as any).GEMINI_API_KEY as string;
+  if (!apiKey) throw new Error('GEMINI_API_KEY not set');
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=' + encodeURIComponent(apiKey);
+  const body: any = {
+    contents: [{ role: 'user', parts: [{ text: prompt }] }]
+  };
+  if (opts?.jsonSchema) {
+    body.generationConfig = { response_mime_type: 'application/json' };
+  }
+  if (opts?.googleSearch) {
+    body.tools = [{ googleSearch: {} }];
+  }
+  const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+  if (!res.ok) throw new Error(`Gemini HTTP ${res.status}`);
+  const data = await res.json();
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  if (opts?.jsonSchema && text) {
+    try { return JSON.parse(text); } catch { return null; }
+  }
+  return opts?.asText ? (text || '') : text;
+}
+
+async function generateForDate(dateKey: string): Promise<{ food: string; french: any; analytics: any; transport: any }> {
+  // Food (text)
+  const foodPrompt = `Create a full-day meal plan using only whole, minimally processed foods that naturally support libido for ${dateKey}. Format: simple list with headings (Breakfast, Lunch, Dinner, Snack). Be concise. Avoid markdown.`;
+  const food = await callGemini(foodPrompt, { asText: true });
+
+  // French (json)
+  const frenchPrompt = `Act as a French phonetics teacher planning a long-term course. For the date ${dateKey}, create a self-contained lesson for a single, unique French phoneme. Provide { "sound": "...", "words": [{"word":"...","cue":"...","meaning":"..."}] } with exactly 10 words. No markdown.`;
+  const french = await callGemini(frenchPrompt, { jsonSchema: {} });
+
+  // Analytics (json)
+  const analyticsPrompt = `Generate a unique, new set of daily technical topics for an analytics engineer for ${dateKey}. Provide JSON with keys sql{title,prompt,solution}, dax{title,prompt,solution}, snowflake{title,prompt,solution}, dbt{title,prompt,solution}, dataManagement{title,explanation}, dataQuality{title,explanation}.`;
+  const analytics = await callGemini(analyticsPrompt, { jsonSchema: {} });
+
+  // Transportation Physics (json)
+  const transportPrompt = `For the date ${dateKey}, explain a single, fundamental physics principle behind a common mode of transportation. Provide JSON: { "title": "...", "explanation": "..." } using simple language.`;
+  const transport = await callGemini(transportPrompt, { jsonSchema: {} });
+
+  return { food, french, analytics, transport };
+}
+
 export default async function handler(req: Request): Promise<Response> {
   try {
     const { hour, now } = getEasternNow();
@@ -58,18 +101,12 @@ export default async function handler(req: Request): Promise<Response> {
     };
     await kv.set(`archive:${prevKey}`, archiveBlob);
 
-    // Generate next cycle content via existing model prompts is client code; here we only ensure placeholders exist
-    // Clients will not generate; server can be extended later to fetch Gemini.
-    // For now, if missing, copy forward previous as a fallback to ensure consistency.
-    const ensure = async (key: string, fallback: any) => {
-      const exists = await kv.get(key);
-      if (!exists && fallback) await kv.set(key, fallback);
-    };
-
-    await ensure(`content:food:${activeKey}`, foodPrev || '');
-    await ensure(`content:french:${activeKey}`, frPrev || {});
-    await ensure(`content:analytics:${activeKey}`, anPrev || {});
-    await ensure(`content:transport:${activeKey}`, tpPrev || {});
+    // Generate fresh content for the active cycle date and store in KV
+    const gen = await generateForDate(activeKey);
+    await kv.set(`content:food:${activeKey}`, gen.food || foodPrev || '');
+    await kv.set(`content:french:${activeKey}`, gen.french || frPrev || {});
+    await kv.set(`content:analytics:${activeKey}`, gen.analytics || anPrev || {});
+    await kv.set(`content:transport:${activeKey}`, gen.transport || tpPrev || {});
 
     await kv.set(cycleFlagKey, new Date().toISOString());
 
