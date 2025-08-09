@@ -1,49 +1,36 @@
 import { kv } from '@vercel/kv';
 
-export const config = { runtime: 'edge' };
+export const config = { runtime: 'edge' } as const;
 
-function getETDate(date?: Date): { year: number; month: number; day: number; str: string } {
-  const d = date ?? new Date();
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-    .formatToParts(d)
-    .reduce<Record<string, string>>((acc, p) => {
-      if (p.type !== 'literal') acc[p.type] = p.value;
-      return acc;
-    }, {});
-  const str = `${parts.year}-${parts.month}-${parts.day}`;
-  return { year: Number(parts.year), month: Number(parts.month), day: Number(parts.day), str };
+function json(data: unknown, init?: number | ResponseInit): Response {
+  const initObj: ResponseInit =
+    typeof init === 'number' ? { status: init } : init ?? {};
+  return new Response(JSON.stringify(data), {
+    headers: { 'content-type': 'application/json' },
+    ...initObj,
+  });
 }
 
-export default async function handler(req: Request): Promise<Response> {
-  const url = new URL(req.url);
-  const limit = Number(url.searchParams.get('limit') ?? 30);
+export default async function handler(): Promise<Response> {
+  try {
+    // Return the last 30 content entries available
+    const now = new Date();
+    const keys: string[] = [];
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(now);
+      d.setDate(now.getDate() - i);
+      const iso = d.toISOString().split('T')[0];
+      keys.push(`content:${iso}`);
+    }
+    const values = await kv.mget(...keys);
+    const items = keys
+      .map((k, idx) => ({ key: k, value: values[idx] }))
+      .filter((x) => x.value != null);
 
-  if (req.method !== 'GET') {
-    return new Response('Method Not Allowed', { status: 405 });
+    return json({ ok: true, items });
+  } catch (error) {
+    return json({ ok: false, error: `${error}` }, 500);
   }
-
-  // Simple rolling archive: fetch last N days of content keys if present
-  const items: Array<{ date: string; data: unknown | null }> = [];
-  const today = getETDate();
-
-  for (let i = 0; i < limit; i++) {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - i);
-    const { str } = getETDate(d);
-    // eslint-disable-next-line no-await-in-loop
-    const data = await kv.get(`content:${str}`);
-    if (data) items.push({ date: str, data });
-  }
-
-  return new Response(JSON.stringify({ count: items.length, items }), {
-    status: 200,
-    headers: { 'content-type': 'application/json' },
-  });
 }
 
 
