@@ -426,7 +426,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- DYNAMIC CONTENT GENERATION & CACHING ---
-    async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound', date: Date): Promise<any> {
+    async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', date: Date): Promise<any> {
         const dateKey = date.toISOString().split('T')[0];
         const localKey = `dynamic-content-${contentType}-${dateKey}`;
         const cloudKey = `${contentType}-${dateKey}`;
@@ -483,7 +483,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return generatedContent;
     }
     
-    async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound', dateKey: string): Promise<any> {
+    async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', dateKey: string): Promise<any> {
         let prompt = '';
         let responseSchema: any = {};
 
@@ -549,6 +549,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 },
                 required: ["sound", "words"]
+            };
+        } else if (contentType === 'classic-rock-500') {
+            // Request a 500 entry pool of classic rock songs
+            prompt = `Generate a JSON array of exactly 500 items. Each item must have two string fields: title and artist. The list should be classic rock (and closely related rock) songs that are well-known/popular for guitar learners. Keep it diverse across decades and artists; avoid duplicates. Return JSON only.`;
+            responseSchema = {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        title: { type: Type.STRING },
+                        artist: { type: Type.STRING }
+                    },
+                    required: ['title', 'artist']
+                }
             };
         } else {
             return null;
@@ -1056,8 +1070,42 @@ Use actual current tournament data and highlight Canadian players with <strong> 
 
         try {
             const dayOfYear = getDayOfYear(activeContentDate);
-            const prompt = `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https://",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Use a well-known Classic Rock song with beginner-friendly parts.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
 
+            // Load a 500-song classic rock pool from cache (local/cloud) and pick one at random
+            let songPool: Array<{ title: string; artist: string }> = [];
+            try {
+                const pool = await getOrGenerateDynamicContent('classic-rock-500', activeContentDate);
+                if (Array.isArray(pool) && pool.length > 0) {
+                    songPool = pool
+                        .filter(item => item && typeof item.title === 'string' && typeof item.artist === 'string')
+                        .map(item => ({ title: item.title, artist: item.artist }));
+                }
+            } catch (e) {
+                console.warn('Could not load classic-rock-500 pool. Falling back to AI-random.', e);
+            }
+
+            // Recent history to avoid repeats
+            const RECENT_KEY = 'guitarRecentPicks';
+            const loadRecent = (): string[] => {
+                try { const raw = localStorage.getItem(RECENT_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
+            };
+            const saveRecent = (arr: string[]) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(0, 30))); } catch {} };
+            const recent = loadRecent();
+
+            let pickedTitle = '';
+            let pickedArtist = '';
+            if (songPool.length > 0) {
+                const pool = songPool.filter(s => !recent.includes(`${s.title} — ${s.artist}`));
+                const selectionPool = pool.length > 0 ? pool : songPool;
+                const idx = Math.floor(Math.random() * selectionPool.length);
+                const picked = selectionPool[idx];
+                pickedTitle = picked.title; pickedArtist = picked.artist;
+                saveRecent([`${picked.title} — ${picked.artist}`, ...recent.filter(x => x !== `${picked.title} — ${picked.artist}`)]);
+            }
+
+            const prompt = pickedTitle && pickedArtist
+                ? `Create a concise guitar lesson for the specific classic rock song below. Return JSON ONLY with these exact fields. Do not add extra text.\n\nSong: "${pickedTitle}" by "${pickedArtist}"\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`
+                : `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash',
                 contents: prompt,
@@ -1112,14 +1160,26 @@ Use actual current tournament data and highlight Canadian players with <strong> 
         }
 
         const safe = (s: string) => escapeHtml((s || '').replace(/\*/g, ''));
-        const isValidYouTubeUrl = (url: string) => /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i.test(url || '');
-        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\//i.test(url || '');
+        const isValidYouTubeUrl = (url: string) => {
+            if (!url) return false;
+            const badPatterns = /\/shorts\//i;
+            const validPatterns = /^(https?:\/\/)?(www\.)?(youtube\.com\/watch\?v=|youtu\.be\/)/i;
+            return validPatterns.test(url) && !badPatterns.test(url);
+        };
+        const isLikelyGuitarLesson = (title: string, url: string) => {
+            const t = (title || '').toLowerCase();
+            const hasKeywords = t.includes('guitar') && (t.includes('lesson') || t.includes('tutorial') || t.includes('how to') || t.includes('tabs'));
+            const notLiveOrShorts = !/\blive\b/i.test(t) && !/\/shorts\//i.test(url || '');
+            return hasKeywords && notLiveOrShorts;
+        };
+        const isValidSpotifyTrackUrl = (url: string) => /^(https?:\/\/)?open\.spotify\.com\/track\/[A-Za-z0-9]{22}(\?.*)?$/i.test(url || '');
 
         const ytSearchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(`${data.title} ${data.artist} guitar lesson`)}`;
         const spSearchUrl = `https://open.spotify.com/search/${encodeURIComponent(`${data.title} ${data.artist}`)}`;
 
-        const chosenYouTubeUrl = isValidYouTubeUrl(data.youtubeLessonUrl) ? data.youtubeLessonUrl : ytSearchUrl;
-        const chosenYouTubeTitle = isValidYouTubeUrl(data.youtubeLessonUrl)
+        const ytIsUsable = isValidYouTubeUrl(data.youtubeLessonUrl) && isLikelyGuitarLesson(data.youtubeLessonTitle, data.youtubeLessonUrl);
+        const chosenYouTubeUrl = ytIsUsable ? data.youtubeLessonUrl : ytSearchUrl;
+        const chosenYouTubeTitle = ytIsUsable
             ? data.youtubeLessonTitle
             : `Search YouTube for ${data.title} ${data.artist} guitar lesson`;
         const chosenSpotifyUrl = isValidSpotifyTrackUrl(data.spotifyUrl) ? data.spotifyUrl : spSearchUrl;
