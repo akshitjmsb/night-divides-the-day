@@ -185,8 +185,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const { now, hour } = getCanonicalTime();
 
         // Determine the active content date based on the time.
-        // From midnight to 7:59 AM, the "active day" is still considered the previous calendar day.
-        if (hour < 8) {
+        // From midnight to 4:59 PM, the active content is the previous calendar day (5 PM boundary).
+        if (hour < 17) {
             activeContentDate = new Date(now);
             activeContentDate.setDate(now.getDate() - 1);
         } else {
@@ -517,7 +517,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Proactively generates the next day's content after 5 PM.
+     * Proactively generates the next cycle's content after 5 PM.
      * This function is triggered on app load and periodically to "warm the cache",
      * creating the experience of an autonomous sync process for the user.
      */
@@ -531,7 +531,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateForGeneration = previewContentDate;
         const dateKeyForGeneration = dateForGeneration.toISOString().split('T')[0];
 
-        // Check if we are in the window to generate tomorrow's content (i.e., it's after 5 PM today).
+        // Check if we are in the window to generate the next cycle (i.e., after 5 PM boundary).
         if (!isContentReadyForPreview(dateForGeneration)) {
             return; // Not time to generate yet.
         }
@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         isAutoGenerating = true;
-        showSyncStatus('⚙️ Synchronizing next day\'s content...');
+        showSyncStatus('⚙️ Synchronizing next cycle\'s content...');
         console.log(`It's after 5 PM. Triggering background content generation for ${dateKeyForGeneration}...`);
         
         try {
@@ -2099,19 +2099,19 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         const todayKey = new Date().toISOString().split('T')[0];
         const generationKey = `cross-over-generation-${todayKey}`;
         
-        // Check if we've already generated content for tomorrow today
+        // Check if we've already generated content for the next cycle today
         if (localStorage.getItem(generationKey)) {
-            console.log('🔄 CrossOver: Content already generated for tomorrow');
+            console.log('🔄 CrossOver: Content already generated for next cycle');
             return;
         }
         
-        console.log('🚀 CrossOver: Starting content generation for tomorrow...', {
+        console.log('🚀 CrossOver: Starting content generation for next cycle...', {
             currentTime: now.toISOString(),
             todayKey: todayKey,
             hour: hour,
             previewContentDate: previewContentDate.toISOString()
         });
-        showSyncStatus('🔄 Generating tomorrow\'s content...', false);
+        showSyncStatus('🔄 Generating next cycle\'s content...', false);
         
         try {
             // Generate all content types for tomorrow
@@ -2124,10 +2124,10 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
             
             await Promise.all(promises);
             
-            // Mark that we've generated content for tomorrow
+            // Mark that we've generated content for the next cycle
             localStorage.setItem(generationKey, new Date().toISOString());
-            console.log('✅ CrossOver: Content generation completed for tomorrow');
-            showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
+            console.log('✅ CrossOver: Content generation completed for next cycle');
+            showSyncStatus('✅ Next cycle\'s content generated successfully!', true);
             
         } catch (error) {
             console.error('❌ CrossOver: Content generation failed', error);
@@ -2298,14 +2298,14 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         console.log('☀️ Day Module: Using content that was previewed in Night Module');
     }
 
-    async function renderCrossoverModule() {
+     async function renderCrossoverModule() {
         const lifePointerEl = document.getElementById('life-pointer-display-crossover');
         if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
 
         renderTasks('tasks-list-crossover');
         
-        // CrossOver Module: Generate tomorrow's content
-        await triggerCrossOverContentGeneration();
+         // CrossOver Module: Generate next cycle's content (5 PM boundary)
+         await triggerCrossOverContentGeneration();
     }
 
     async function renderNightModule() {
@@ -2317,8 +2317,8 @@ IMPORTANT: Make sure this is completely different from any previous responses. U
         
         renderTasks('tasks-list-night');
         
-        // Night Module: Archive today's content and show tomorrow's preview
-        await archiveTodaysContent();
-        console.log('🌙 Night Module: Today\'s content archived, tomorrow\'s content previewed');
+         // Night Module: Archive current cycle's content
+         await archiveTodaysContent();
+         console.log('🌙 Night Module: Current cycle archived');
     }
 });
