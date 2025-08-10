@@ -4,7 +4,6 @@ import { kv } from '@vercel/kv';
 export const config = { runtime: 'edge' } as const;
 
 function getEnv(key: string): string | undefined {
-  // Avoid depending on Node types during type-checking
   const env = (globalThis as any)?.process?.env ?? {};
   return env[key];
 }
@@ -33,16 +32,23 @@ function json(data: unknown, init?: number | ResponseInit): Response {
 }
 
 export default async function handler(req: Request): Promise<Response> {
+  // Only allow POST requests for security
+  if (req.method !== 'POST') {
+    return json({ 
+      ok: false, 
+      error: 'Method not allowed. Use POST to trigger content generation.' 
+    }, 405);
+  }
+
   const url = new URL(req.url);
   const date = url.searchParams.get('date') || formatDateInEastern();
   
-  console.log(`[run-cycle] Starting content generation for date: ${date}`);
-  console.log(`[run-cycle] Request URL: ${req.url}`);
-  console.log(`[run-cycle] User Agent: ${req.headers.get('user-agent')}`);
+  console.log(`[manual-trigger] Manual content generation triggered for date: ${date}`);
+  console.log(`[manual-trigger] Request URL: ${req.url}`);
 
   const apiKey = getEnv('GEMINI_API_KEY') || getEnv('API_KEY');
   if (!apiKey) {
-    console.error('[run-cycle] Missing API key - GEMINI_API_KEY and API_KEY are both undefined');
+    console.error('[manual-trigger] Missing API key');
     return json({ 
       ok: false, 
       error: 'Missing GEMINI_API_KEY', 
@@ -52,12 +58,10 @@ export default async function handler(req: Request): Promise<Response> {
     }, 500);
   }
 
-  console.log(`[run-cycle] API key found, length: ${apiKey.length}`);
-
   const ai = new GoogleGenAI({ apiKey });
 
   try {
-    console.log(`[run-cycle] Calling Gemini API for date: ${date}`);
+    console.log(`[manual-trigger] Calling Gemini API for date: ${date}`);
     
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -67,7 +71,7 @@ export default async function handler(req: Request): Promise<Response> {
     const summary = (response.text || '').replace(/\*/g, '');
     
     if (!summary) {
-      console.error('[run-cycle] Gemini API returned empty response');
+      console.error('[manual-trigger] Gemini API returned empty response');
       return json({ 
         ok: false, 
         error: 'empty_response', 
@@ -77,29 +81,24 @@ export default async function handler(req: Request): Promise<Response> {
       }, 500);
     }
 
-    console.log(`[run-cycle] Generated summary length: ${summary.length} characters`);
+    console.log(`[manual-trigger] Generated summary length: ${summary.length} characters`);
 
-    console.log(`[run-cycle] Saving to KV store with key: content:${date}`);
     await kv.set(`content:${date}`, {
       summary,
       generatedAt: new Date().toISOString(),
     });
 
-    console.log(`[run-cycle] Successfully saved content for date: ${date}`);
+    console.log(`[manual-trigger] Successfully saved content for date: ${date}`);
 
     return json({ 
       ok: true, 
       date,
       timestamp: new Date().toISOString(),
-      summaryLength: summary.length
+      summaryLength: summary.length,
+      summary: summary.substring(0, 100) + '...' // Return first 100 chars for verification
     });
   } catch (error) {
-    console.error(`[run-cycle] Error during content generation:`, error);
-    console.error(`[run-cycle] Error details:`, {
-      name: error.name,
-      message: error.message,
-      stack: error.stack
-    });
+    console.error(`[manual-trigger] Error during content generation:`, error);
     
     return json({ 
       ok: false, 
@@ -110,5 +109,3 @@ export default async function handler(req: Request): Promise<Response> {
     }, 500);
   }
 }
-
-

@@ -5,6 +5,6 @@
   "installCommand": "npm install",
   "devCommand": "npm run dev",
   "crons": [
-    { "path": "/api/run-cycle", "schedule": "0 17 * * *" }
+    { "path": "/api/run-cycle", "schedule": "0 22 * * *" }
   ]
 } 
