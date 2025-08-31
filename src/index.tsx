@@ -485,7 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
         if (reflectionPromptEl) reflectionPromptEl.textContent = '';
 
-        renderTasks('tasks-list-day');
+        renderTasks(tasks, 'tasks-list-day');
         
         // Day Module: Content from yesterday's Night Module preview is now active
         console.log('☀️ Day Module: Using content that was previewed in Night Module');
@@ -495,7 +495,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lifePointerEl = document.getElementById('life-pointer-display-crossover');
         if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
 
-        renderTasks('tasks-list-crossover');
+        renderTasks(tasks, 'tasks-list-crossover');
         
         // CrossOver Module: Generate tomorrow's content
         await triggerCrossOverContentGeneration();
@@ -508,7 +508,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const lifePointerEl = document.getElementById('life-pointer-display-night');
         if (lifePointerEl) lifePointerEl.textContent = tomorrowsLifePointer;
         
-        renderTasks('tasks-list-night');
+        renderTasks(tasks, 'tasks-list-night');
         
         // Night Module: Archive today's content and show tomorrow's preview
         await archiveTodaysContent();
