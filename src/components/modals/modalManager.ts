@@ -24,8 +24,8 @@ type ModalDependencies = {
         archive: string;
     };
     chatState: {
-        chat: Chat;
-        mainChat: Chat;
+        chat: Chat | null;
+        mainChat: Chat | null;
         chatHistory: ChatMessage[];
         mainChatHistory: ChatMessage[];
     }
@@ -79,11 +79,15 @@ export function initializeModalManager(
 
         const chatModal = document.getElementById('chat-modal');
         if (target.closest('#chat-open-btn') && chatModal) {
-            chatState.chat = chatState.mainChat;
-            chatState.chatHistory = [...chatState.mainChatHistory];
-            renderChatHistory();
-            chatModal.classList.remove('hidden');
-            chatModal.classList.add('flex');
+            if (chatState.mainChat) {
+                chatState.chat = chatState.mainChat;
+                chatState.chatHistory = [...chatState.mainChatHistory];
+                renderChatHistory();
+                chatModal.classList.remove('hidden');
+                chatModal.classList.add('flex');
+            } else {
+                alert("Chat functionality is not available without an API key. Please set VITE_GEMINI_API_KEY in your .env file.");
+            }
             return;
         }
     });

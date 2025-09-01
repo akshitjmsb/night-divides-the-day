@@ -11,6 +11,11 @@ export async function fetchAndShowCoffeeTip(activeContentDate: Date) {
     modal.classList.add('flex');
     contentEl.innerHTML = '<p>Loading today\'s coffee lesson...</p>';
 
+    if (!ai) {
+        contentEl.innerHTML = '<p>AI functionality is not available. Please check your API key configuration.</p>';
+        return;
+    }
+    
     let coffeeData;
     try {
         const dayOfYear = getDayOfYear(activeContentDate);

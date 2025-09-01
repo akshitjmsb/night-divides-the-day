@@ -58,11 +58,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Active chat state for the modal UI
     let chatHistory: { role: 'user' | 'model'; text: string }[] = [];
-    let chat: Chat; // This will hold the currently active chat instance (main or contextual)
+    let chat: Chat | null; // This will hold the currently active chat instance (main or contextual)
 
     // Persistent state for the main chat feature
     let mainChatHistory: { role: 'user' | 'model'; text: string }[] = [];
-    let mainChat: Chat; // This holds the main, persistent chat instance
+    let mainChat: Chat | null; // This holds the main, persistent chat instance
 
 
     // --- DATA PERSISTENCE ---
@@ -256,7 +256,12 @@ document.addEventListener('DOMContentLoaded', () => {
             mainChatHistory = await loadChatHistory();
 
             // Initialize the main chat instance with its loaded history
-            mainChat = ai.chats.create({ model: 'gemini-2.5-flash', history: mainChatHistory });
+            if (ai) {
+                mainChat = ai.chats.create({ model: 'gemini-2.5-flash', history: mainChatHistory });
+            } else {
+                console.warn("Chat functionality disabled - no API key available");
+                mainChat = null;
+            }
             
             await mainRender();
 

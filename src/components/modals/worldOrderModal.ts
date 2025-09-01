@@ -12,6 +12,11 @@ export async function fetchAndShowWorldOrder() {
     headlinesContent.innerHTML = '<p>Searching the web for the latest headlines...</p>';
 
     try {
+        if (!ai) {
+            headlinesContent.innerHTML = `<p>AI functionality is not available. Please check your API key configuration.</p>`;
+            return;
+        }
+
         const prompt = "Be extremely brief. First, what is the single most important, recent headline about Donald Trump? State it in 10 words or less. Then, list the 5 most critical world order headlines (US/Canada focused) as ultra-short, scannable bullet points. Finally, list the 5 latest major headlines from India in the same brief format. Do not use asterisks or any markdown formatting.";
 
         const response = await ai.models.generateContent({

@@ -1,10 +1,21 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
 const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY) as string;
-if (!apiKey) {
-    console.error("API Key is missing! Make sure VITE_GEMINI_API_KEY is set in your .env file.");
+let ai: any = null;
+
+if (apiKey && apiKey !== 'test_key_for_development') {
+    try {
+        ai = new GoogleGenAI({apiKey: apiKey});
+    } catch (error) {
+        console.warn("Failed to initialize Gemini API:", error);
+        ai = null;
+    }
+} else {
+    console.warn("Using development mode without Gemini API key");
+    ai = null;
 }
-export const ai = new GoogleGenAI({apiKey: apiKey!});
+
+export { ai };
 
 const CLOUD_CACHE_BASE_URL = 'https://kvdb.io/akki-boy-dashboard-cache';
 
@@ -66,6 +77,11 @@ export async function getOrGenerateDynamicContent(contentType: 'analytics' | 'tr
 }
 
 export async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', dateKey: string): Promise<any> {
+    // If no API key, return fallback content
+    if (!ai) {
+        return getFallbackContent(contentType, dateKey);
+    }
+    
     let prompt = '';
     let responseSchema: any = {};
 
@@ -229,6 +245,11 @@ export async function getOrGeneratePlanForDate(date: Date, dateKey: string): Pro
 }
 
 export async function generateFoodPlanForDate(date: Date): Promise<string> {
+    // If no API key, return fallback food plan
+    if (!ai) {
+        return getFallbackFoodPlan(date);
+    }
+    
     const dayOfWeek = date.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
     let prompt = `Create a full-day meal plan using only whole, minimally processed foods that naturally support libido. Format the output as a simple, scannable list with clear headings (Breakfast, Lunch, Dinner, Snack). Be very concise. Prioritize ingredients known to boost sexual health: oysters, leafy greens, avocados, nuts, dark chocolate, berries, watermelon, olive oil, eggs, fatty fish, ginger, cinnamon. Avoid processed foods, refined sugar, and alcohol. Do not use any markdown formatting like asterisks.`;
 
@@ -247,5 +268,82 @@ export async function generateFoodPlanForDate(date: Date): Promise<string> {
     } catch (error) {
         console.error("Error fetching food plan:", error);
         return "Could not generate a food plan at this time.";
+    }
+}
+
+// Fallback content for development mode
+function getFallbackContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', dateKey: string): any {
+    if (contentType === 'analytics') {
+        return {
+            sql: {
+                title: "Sample SQL Challenge",
+                prompt: "Write a query to find the top 10 customers by total purchase amount.",
+                solution: "SELECT customer_id, SUM(amount) as total_purchase FROM orders GROUP BY customer_id ORDER BY total_purchase DESC LIMIT 10;"
+            },
+            dax: {
+                title: "Sample DAX Challenge",
+                prompt: "Create a measure to calculate year-over-year growth.",
+                solution: "YoY Growth = DIVIDE([Current Year Sales] - [Previous Year Sales], [Previous Year Sales])"
+            },
+            snowflake: {
+                title: "Sample Snowflake Challenge",
+                prompt: "How do you handle time travel in Snowflake?",
+                solution: "Use AT or BEFORE clauses with timestamps to query historical data."
+            },
+            dbt: {
+                title: "Sample dbt Challenge",
+                prompt: "Create a model that transforms raw data into a clean fact table.",
+                solution: "Use incremental models with proper tests and documentation."
+            },
+            dataManagement: {
+                title: "Data Governance",
+                explanation: "Data governance ensures data quality, security, and compliance across the organization."
+            },
+            dataQuality: {
+                title: "String Data Quality Issues",
+                dataType: "String (VARCHAR)",
+                issues: ["Null values", "Empty strings", "Inconsistent formatting", "Special characters"],
+                transformations: ["COALESCE to handle nulls", "TRIM to remove whitespace", "UPPER/LOWER for consistency", "REGEXP_REPLACE for special chars"]
+            }
+        };
+    } else if (contentType === 'transportation-physics') {
+        return {
+            title: "How Airplane Wings Work",
+            explanation: "Airplane wings create lift by creating a pressure difference. Air moves faster over the top of the wing, creating lower pressure, while slower air underneath creates higher pressure, pushing the wing upward."
+        };
+    } else if (contentType === 'french-sound') {
+        return {
+            sound: "on",
+            words: [
+                { word: "bon", cue: "like 'bone'", meaning: "good" },
+                { word: "mon", cue: "like 'moan'", meaning: "my" },
+                { word: "ton", cue: "like 'tone'", meaning: "your" },
+                { word: "son", cue: "like 'sown'", meaning: "his/her" },
+                { word: "non", cue: "like 'known'", meaning: "no" },
+                { word: "don", cue: "like 'dawn'", meaning: "gift" },
+                { word: "pont", cue: "like 'pawn'", meaning: "bridge" },
+                { word: "front", cue: "like 'frawn'", meaning: "front" },
+                { word: "mont", cue: "like 'mawn'", meaning: "mountain" },
+                { word: "compte", cue: "like 'kawn'", meaning: "account" }
+            ]
+        };
+    }
+    return null;
+}
+
+function getFallbackFoodPlan(date: Date): string {
+    const dayOfWeek = date.getDay();
+    const isNoMeatDay = dayOfWeek === 2 || dayOfWeek === 4;
+    
+    if (isNoMeatDay) {
+        return `Breakfast: Oatmeal with berries, nuts, and cinnamon
+Lunch: Quinoa salad with avocado, leafy greens, and olive oil
+Dinner: Grilled salmon with steamed vegetables
+Snack: Dark chocolate and mixed nuts`;
+    } else {
+        return `Breakfast: Scrambled eggs with spinach and avocado
+Lunch: Grilled chicken with mixed greens and olive oil dressing
+Dinner: Lean beef stir-fry with vegetables
+Snack: Berries with Greek yogurt`;
     }
 }
