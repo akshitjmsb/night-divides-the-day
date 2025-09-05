@@ -23,6 +23,10 @@ export class DashboardManager {
     private modalPoolSection: HTMLElement;
     private emptyDashboard: HTMLElement;
     private goToPoolBtn: HTMLElement;
+    private showDragDemoBtn: HTMLElement;
+    private dragDemoModal: HTMLElement;
+    private closeDemoModalBtn: HTMLElement;
+    private closeDemoModalBtn2: HTMLElement;
     
     private currentLayout: DashboardLayout = { items: [], lastUpdated: new Date().toISOString() };
     private draggedElement: HTMLElement | null = null;
@@ -44,6 +48,10 @@ export class DashboardManager {
         this.modalPoolSection = document.getElementById('modal-pool')!;
         this.emptyDashboard = document.getElementById('empty-dashboard')!;
         this.goToPoolBtn = document.getElementById('go-to-pool-btn')!;
+        this.showDragDemoBtn = document.getElementById('show-drag-demo')!;
+        this.dragDemoModal = document.getElementById('drag-demo-modal')!;
+        this.closeDemoModalBtn = document.getElementById('close-demo-modal')!;
+        this.closeDemoModalBtn2 = document.getElementById('close-demo-modal-2')!;
     }
 
     private setupEventListeners(): void {
@@ -51,6 +59,9 @@ export class DashboardManager {
         this.homeTab.addEventListener('click', () => this.switchTab('home'));
         this.poolTab.addEventListener('click', () => this.switchTab('pool'));
         this.goToPoolBtn.addEventListener('click', () => this.switchTab('pool'));
+        this.showDragDemoBtn.addEventListener('click', () => this.showDragDemo());
+        this.closeDemoModalBtn.addEventListener('click', () => this.hideDragDemo());
+        this.closeDemoModalBtn2.addEventListener('click', () => this.hideDragDemo());
 
         // Drag and drop for modal pool items
         this.setupModalPoolDragAndDrop();
@@ -374,6 +385,16 @@ export class DashboardManager {
         this.saveDashboardLayout();
         this.renderDashboard();
         this.showNotification('BaseCamp reset successfully!', 'success');
+    }
+
+    private showDragDemo(): void {
+        this.dragDemoModal.classList.remove('hidden');
+        this.dragDemoModal.classList.add('flex');
+    }
+
+    private hideDragDemo(): void {
+        this.dragDemoModal.classList.add('hidden');
+        this.dragDemoModal.classList.remove('flex');
     }
 }
 
