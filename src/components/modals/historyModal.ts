@@ -48,8 +48,9 @@ export async function fetchAndShowHistory() {
             const uniqueSources = Array.from(new Map(groundingChunks.map(chunk => [chunk.web?.uri, chunk])).values());
 
             uniqueSources.forEach(chunk => {
-                if (chunk.web && chunk.web.uri) {
-                    html += `<li><a href="${chunk.web.uri}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${chunk.web.title || chunk.web.uri}</a></li>`;
+                if (chunk && typeof chunk === 'object' && 'web' in chunk && chunk.web && typeof chunk.web === 'object' && 'uri' in chunk.web) {
+                    const webChunk = chunk.web as { uri: string; title?: string };
+                    html += `<li><a href="${webChunk.uri}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">${webChunk.title || webChunk.uri}</a></li>`;
                 }
             });
             html += '</ul>';
