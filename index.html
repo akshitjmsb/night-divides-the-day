@@ -19,14 +19,58 @@
     </script>
 
     <style>
-        body { font-family: 'Special Elite', monospace; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 0.5rem; }
-        .app-container { position: relative; background-color: #ffffff; padding: 1.5rem; max-width: 800px; width: 100%; border-radius: 8px; }
+        body { 
+            font-family: 'Special Elite', monospace; 
+            background-color: #f4f4f4; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 0.5rem;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .app-container { 
+            position: relative; 
+            background-color: #ffffff; 
+            padding: 1rem; 
+            max-width: 800px; 
+            width: 100%; 
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Mobile-first responsive padding */
+        @media (min-width: 640px) {
+            .app-container {
+                padding: 1.5rem;
+            }
+        }
+        
+        /* Mobile viewport optimization */
+        @media (max-width: 640px) {
+            body {
+                padding: 0.25rem;
+            }
+            .app-container {
+                padding: 0.75rem;
+                border-radius: 12px;
+            }
+        }
         .module { display: block; }
         .module.active { display: block; }
         h1, h2, h3 { font-family: 'Special Elite', monospace; }
-        h1 { font-size: 1.75rem; }
-        h2 { font-size: 1.5rem; margin-top: 1.5rem; }
-        h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+        h1 { font-size: 1.5rem; }
+        h2 { font-size: 1.25rem; margin-top: 1rem; }
+        h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+        
+        /* Responsive typography */
+        @media (min-width: 640px) {
+            h1 { font-size: 1.75rem; }
+            h2 { font-size: 1.5rem; margin-top: 1.5rem; }
+            h3 { font-size: 1.1rem; }
+        }
         .frenchy-table th, .frenchy-table td { padding: 10px 8px; text-align: left; vertical-align: middle; border-bottom: 1px solid #dddddd; font-size: 0.9rem; }
         .frenchy-table th { font-weight: bold; }
         .frenchy-table tr:last-child td { border-bottom: none; }
@@ -44,7 +88,32 @@
         }
         .footer-btn { text-decoration: underline; font-size: 0.8rem; margin: 0 0.5rem; color: #6b7280; }
         .preview-card {
-             padding: 0.75rem; border-radius: 0.5rem; cursor: pointer;
+             padding: 0.75rem; 
+             border-radius: 0.5rem; 
+             cursor: pointer;
+             transition: all 0.2s ease;
+             min-height: 44px; /* Touch-friendly minimum */
+             display: flex;
+             align-items: center;
+             justify-content: center;
+        }
+        
+        .preview-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .preview-card:active {
+            transform: translateY(0);
+        }
+        
+        /* Mobile-optimized preview cards */
+        @media (max-width: 640px) {
+            .preview-card {
+                padding: 0.5rem;
+                border-radius: 0.75rem;
+                min-height: 48px;
+            }
         }
         .life-pointer {
             padding: 1rem;
@@ -93,6 +162,284 @@
         /* --- MODAL STYLES --- */
         .modal-content-panel { background-color: #ffffff; color: #111111; }
 
+        /* --- ANALYTICS CARD STYLES --- */
+        .analytics-card {
+            min-width: 100%;
+            height: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border-radius: 16px;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            overflow-y: auto;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Mobile-first responsive padding */
+        @media (min-width: 640px) {
+            .analytics-card {
+                padding: 1.5rem;
+                border-radius: 12px;
+            }
+        }
+        
+        .analytics-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid #e5e7eb;
+            flex-shrink: 0;
+        }
+        
+        .analytics-card-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #1f2937;
+            line-height: 1.3;
+            flex: 1;
+            margin-right: 0.5rem;
+        }
+        
+        /* Responsive title sizing */
+        @media (min-width: 640px) {
+            .analytics-card-title {
+                font-size: 1.25rem;
+            }
+        }
+        
+        .analytics-card-type {
+            background: #111111;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        
+        /* Responsive type badge */
+        @media (min-width: 640px) {
+            .analytics-card-type {
+                padding: 0.25rem 0.75rem;
+                font-size: 0.75rem;
+            }
+        }
+        
+        .analytics-card-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+        
+        .analytics-card-question {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 12px;
+            border-left: 4px solid #111111;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            flex-shrink: 0;
+        }
+        
+        /* Responsive question padding */
+        @media (min-width: 640px) {
+            .analytics-card-question {
+                padding: 1rem;
+                border-radius: 8px;
+            }
+        }
+        
+        .analytics-card-solution-btn {
+            background: #111111;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.25rem;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            align-self: center;
+            margin-top: auto;
+            font-size: 0.875rem;
+            min-height: 44px; /* Touch-friendly minimum */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+        }
+        
+        .analytics-card-solution-btn:hover {
+            background: #333333;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 15px -3px rgba(0, 0, 0, 0.4);
+        }
+        
+        .analytics-card-solution-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Responsive button sizing */
+        @media (min-width: 640px) {
+            .analytics-card-solution-btn {
+                padding: 0.75rem 1.5rem;
+                border-radius: 8px;
+                font-size: 0.9rem;
+            }
+        }
+        
+        .analytics-card-solution {
+            background: #f8f9fa;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 0.75rem;
+            margin-top: 1rem;
+            display: none;
+            animation: slideDown 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .analytics-card-solution.show {
+            display: block;
+        }
+        
+        /* Responsive solution padding */
+        @media (min-width: 640px) {
+            .analytics-card-solution {
+                padding: 1rem;
+                border-radius: 8px;
+            }
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .card-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #d1d5db;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            min-width: 10px;
+            min-height: 10px;
+        }
+        
+        .card-indicator.active {
+            background: #111111;
+            transform: scale(1.3);
+            box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.2);
+        }
+        
+        .card-indicator:hover {
+            background: #9ca3af;
+            transform: scale(1.1);
+        }
+        
+        .analytics-card-explanation {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 12px;
+            border-left: 4px solid #6b7280;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Responsive explanation padding */
+        @media (min-width: 640px) {
+            .analytics-card-explanation {
+                padding: 1rem;
+                border-radius: 8px;
+            }
+        }
+        
+        .analytics-card-issues {
+            background: white;
+            padding: 0.75rem;
+            border-radius: 12px;
+            border-left: 4px solid #374151;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        
+        /* Responsive issues padding */
+        @media (min-width: 640px) {
+            .analytics-card-issues {
+                padding: 1rem;
+                border-radius: 8px;
+            }
+        }
+        
+        .analytics-card-issues h5 {
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        /* Responsive heading size */
+        @media (min-width: 640px) {
+            .analytics-card-issues h5 {
+                font-size: 1rem;
+            }
+        }
+        
+        .analytics-card-issues ul {
+            margin-left: 1rem;
+        }
+        
+        .analytics-card-issues li {
+            margin-bottom: 0.25rem;
+            color: #374151;
+            font-size: 0.875rem;
+            line-height: 1.4;
+        }
+        
+        /* Responsive list item size */
+        @media (min-width: 640px) {
+            .analytics-card-issues li {
+                font-size: 0.9rem;
+            }
+        }
+        
+        /* Mobile-optimized modal container */
+        @media (max-width: 640px) {
+            #analytics-engineer-modal .modal-content-panel {
+                margin: 0.5rem;
+                max-height: calc(100vh - 1rem);
+                border-radius: 20px;
+            }
+        }
+        
+        /* Enhanced touch targets for mobile */
+        @media (max-width: 640px) {
+            #prev-card-btn, #next-card-btn {
+                min-width: 44px;
+                min-height: 44px;
+                padding: 0.75rem;
+            }
+        }
+        
+        /* Mobile-optimized card container */
+        @media (max-width: 640px) {
+            #analytics-cards-container {
+                margin: 0 -0.5rem;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -136,13 +483,13 @@
                 <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
             </section>
             <section class="mobile-section">
-                <div class="category-grid grid grid-cols-6 gap-2">
-                    <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
-                    <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
-                    <div id="history-clickable" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
-                    <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
+                <div class="category-grid grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2">
+                    <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">World Order</h3></div>
+                    <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Tennis</h3></div>
+                    <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Coffee</h3></div>
+                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Guitar</h3></div>
+                    <div id="history-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">History</h3></div>
+                    <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Poetry</h3></div>
                 </div>
             </section>
             <section class="mobile-section">
@@ -155,10 +502,12 @@
             </section>
             <section class="mobile-section">
                 <h2>Learn</h2>
-                <div id="frenchy-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
-                <div id="food-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
-                <div id="analytics-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
-                <div id="hood-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    <div id="frenchy-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
+                    <div id="food-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
+                    <div id="analytics-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
+                    <div id="hood-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
+                </div>
             </section>
         </div>
         
@@ -281,16 +630,44 @@
             </div>
         </div>
 
-        <div id="analytics-engineer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Analytics Topics</h3>
-                    <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
+        <div id="analytics-engineer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-2 sm:p-4 z-50">
+            <div class="modal-content-panel p-3 sm:p-4 rounded-lg max-w-4xl w-full mx-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-3 sm:mb-4 flex-shrink-0">
+                    <h3 class="text-base sm:text-lg font-bold">Analytics Topics</h3>
+                    <button class="modal-close-btn text-2xl sm:text-3xl leading-none font-bold hover:text-black transition-colors p-1">
+                        &times;
+                    </button>
                 </div>
-                <div id="analytics-engineer-content" class="flex-grow overflow-y-auto space-y-4 pr-2">
-                    <!-- JS will populate this -->
+                
+                <!-- Card Navigation -->
+                <div class="flex justify-center items-center mb-3 sm:mb-4 space-x-2 flex-shrink-0">
+                    <button id="prev-card-btn" class="p-2 sm:p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-sm">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="card-indicators" class="flex space-x-1.5 sm:space-x-2">
+                        <!-- Indicators will be populated by JS -->
+                    </div>
+                    <button id="next-card-btn" class="p-2 sm:p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-sm">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
                 </div>
-                <div class="text-center mt-4 pt-2 border-t"><button class="chat-context-btn footer-btn">Chat about this</button></div>
+                
+                <!-- Card Container -->
+                <div id="analytics-cards-container" class="flex-grow relative overflow-hidden min-h-0">
+                    <div id="analytics-cards-wrapper" class="flex transition-transform duration-300 ease-in-out h-full">
+                        <!-- Cards will be populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="text-center mt-3 sm:mt-4 pt-2 border-t flex-shrink-0">
+                    <button class="chat-context-btn footer-btn text-sm sm:text-base">Chat about this</button>
+                </div>
             </div>
         </div>
     

@@ -3,6 +3,13 @@ import { escapeHtml } from "../../utils/escapeHtml";
 
 export async function getSolutionExplanation(questionPrompt: string, questionSolution: string): Promise<string> {
     try {
+        // Check if AI is available
+        if (!ai) {
+            return `<h5 class="font-bold text-sm mb-1">Solution Code</h5>
+                    <div class="bg-gray-100 p-3 rounded-md text-sm"><pre class="text-gray-800">${escapeHtml(questionSolution)}</pre></div>
+                    <p class="text-xs text-gray-500 mt-2">AI explanation not available. Displaying original solution.</p>`;
+        }
+
         const prompt = `You are an expert cloud analytics engineering mentor. A junior engineer has the following question and provided solution.
 
 **Question:**
