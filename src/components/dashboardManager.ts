@@ -29,8 +29,6 @@ export class DashboardManager {
     private closeDemoModalBtn2: HTMLElement;
     
     private currentLayout: DashboardLayout = { items: [], lastUpdated: new Date().toISOString() };
-    private draggedElement: HTMLElement | null = null;
-    private dragOverElement: HTMLElement | null = null;
 
     constructor() {
         this.initializeElements();
@@ -63,90 +61,27 @@ export class DashboardManager {
         this.closeDemoModalBtn.addEventListener('click', () => this.hideDragDemo());
         this.closeDemoModalBtn2.addEventListener('click', () => this.hideDragDemo());
 
-        // Drag and drop for modal pool items
-        this.setupModalPoolDragAndDrop();
-        
-        // Drag and drop for dashboard grid
-        this.setupDashboardDragAndDrop();
+        // Plus button clicks for modal pool items
+        this.setupModalPoolPlusButtons();
 
         // Click handlers for dashboard items (to open modals)
         this.dashboardGrid.addEventListener('click', (e) => this.handleDashboardItemClick(e));
     }
 
-    private setupModalPoolDragAndDrop(): void {
-        const modalPoolItems = this.modalPool.querySelectorAll('.modal-pool-item');
+    private setupModalPoolPlusButtons(): void {
+        const plusButtons = this.modalPool.querySelectorAll('.add-to-basecamp-btn');
         
-        modalPoolItems.forEach(item => {
-            item.addEventListener('dragstart', (e) => this.handleDragStart(e));
-            item.addEventListener('dragend', (e) => this.handleDragEnd(e));
+        plusButtons.forEach(button => {
+            button.addEventListener('click', (e) => this.handlePlusButtonClick(e));
         });
     }
 
-    private setupDashboardDragAndDrop(): void {
-        this.dashboardGrid.addEventListener('dragover', (e) => this.handleDragOver(e));
-        this.dashboardGrid.addEventListener('drop', (e) => this.handleDrop(e));
-        this.dashboardGrid.addEventListener('dragenter', (e) => this.handleDragEnter(e));
-        this.dashboardGrid.addEventListener('dragleave', (e) => this.handleDragLeave(e));
-    }
-
-    private handleDragStart(e: DragEvent): void {
-        const target = e.target as HTMLElement;
-        const modalPoolItem = target.closest('.modal-pool-item') as HTMLElement;
-        
-        console.log('Drag start:', { target, modalPoolItem }); // Debug log
-        
-        if (modalPoolItem) {
-            this.draggedElement = modalPoolItem;
-            modalPoolItem.classList.add('dragging');
-            
-            const modalType = modalPoolItem.getAttribute('data-modal');
-            console.log('Dragging modal:', modalType); // Debug log
-            
-            if (e.dataTransfer) {
-                e.dataTransfer.setData('text/plain', modalType || '');
-                e.dataTransfer.effectAllowed = 'copy';
-            }
-        }
-    }
-
-    private handleDragEnd(e: DragEvent): void {
-        const target = e.target as HTMLElement;
-        const modalPoolItem = target.closest('.modal-pool-item') as HTMLElement;
-        
-        if (modalPoolItem) {
-            modalPoolItem.classList.remove('dragging');
-        }
-        
-        this.draggedElement = null;
-        this.dashboardGrid.classList.remove('drag-over');
-    }
-
-    private handleDragOver(e: DragEvent): void {
-        e.preventDefault();
-        if (e.dataTransfer) {
-            e.dataTransfer.dropEffect = 'copy';
-        }
-    }
-
-    private handleDragEnter(e: DragEvent): void {
-        e.preventDefault();
-        this.dashboardGrid.classList.add('drag-over');
-    }
-
-    private handleDragLeave(e: DragEvent): void {
-        // Only remove drag-over if we're leaving the dashboard grid entirely
-        if (!this.dashboardGrid.contains(e.relatedTarget as Node)) {
-            this.dashboardGrid.classList.remove('drag-over');
-        }
-    }
-
-    private handleDrop(e: DragEvent): void {
-        e.preventDefault();
+    private handlePlusButtonClick(e: Event): void {
         e.stopPropagation();
-        this.dashboardGrid.classList.remove('drag-over');
+        const target = e.target as HTMLElement;
+        const modalType = target.getAttribute('data-modal');
         
-        const modalType = e.dataTransfer?.getData('text/plain');
-        console.log('Drop event:', { modalType, target: e.target }); // Debug log
+        console.log('Plus button clicked:', modalType); // Debug log
         
         if (modalType) {
             this.addModalToDashboard(modalType);
@@ -210,7 +145,7 @@ export class DashboardManager {
         dropZone.innerHTML = `
             <div class="text-center">
                 <div class="text-4xl mb-2">🏕️</div>
-                <p class="text-sm text-gray-500">Drop tools here to build your BaseCamp</p>
+                <p class="text-sm text-gray-500">Add tools from Explorer to build your BaseCamp</p>
             </div>
         `;
         this.dashboardGrid.appendChild(dropZone);

@@ -540,8 +540,8 @@
         }
 
         .modal-pool-item {
-            cursor: grab;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         .modal-pool-item:hover {
@@ -549,13 +549,39 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .modal-pool-item:active {
-            cursor: grabbing;
+        .add-to-basecamp-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: scale(0.8);
         }
 
-        .modal-pool-item.dragging {
-            opacity: 0.5;
-            transform: rotate(2deg);
+        .modal-pool-item:hover .add-to-basecamp-btn {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .add-to-basecamp-btn:hover {
+            background: #2563eb;
+            transform: scale(1.1);
+        }
+
+        .add-to-basecamp-btn:active {
+            transform: scale(0.95);
         }
 
         .empty-dashboard {
@@ -647,8 +673,16 @@
                 font-size: 0.75rem;
             }
             
+            .add-to-basecamp-btn {
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
+                top: -6px;
+                right: -6px;
+            }
+            
             /* Tutorial adjustments */
-            .drag-tutorial {
+            .add-tutorial {
                 padding: 0.75rem;
             }
             
@@ -734,13 +768,13 @@
             <div id="empty-dashboard" class="empty-dashboard text-center py-12">
                 <div class="text-6xl mb-4">🏕️</div>
                 <h3 class="text-lg font-semibold mb-2">Your BaseCamp is empty</h3>
-                <p class="text-gray-600 mb-4">Go to Explorer and drag some tools here to build your command center!</p>
+                <p class="text-gray-600 mb-4">Go to Explorer and add some tools here to build your command center!</p>
                 
-                <!-- Drag Tutorial -->
-                <div class="drag-tutorial bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 max-w-sm mx-auto">
+                <!-- Add Tutorial -->
+                <div class="add-tutorial bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 max-w-sm mx-auto">
                     <div class="text-sm text-blue-700 text-center">
-                        <div class="mb-2">🎯 <strong>Drag tools from Explorer to BaseCamp</strong></div>
-                        <div class="text-xs text-blue-600">Click & hold → Drag → Drop</div>
+                        <div class="mb-2">🎯 <strong>Add tools from Explorer to BaseCamp</strong></div>
+                        <div class="text-xs text-blue-600">Hover over tools → Click + button</div>
                     </div>
                 </div>
                 
@@ -753,12 +787,12 @@
         <div id="modal-pool" class="dashboard-section">
             <div class="dashboard-header mb-4">
                 <h2 class="text-xl font-bold text-center">Explorer</h2>
-                <p class="text-sm text-gray-600 text-center">Discover and drag tools to your BaseCamp to build your workspace</p>
+                <p class="text-sm text-gray-600 text-center">Discover and add tools to your BaseCamp to build your workspace</p>
                 
                 <!-- Quick Hint -->
                 <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mt-3 max-w-sm mx-auto">
                     <div class="text-center text-yellow-800">
-                        <span class="text-sm">💡 Click & hold → drag to BaseCamp</span>
+                        <span class="text-sm">💡 Hover over tools → click + to add</span>
                     </div>
                 </div>
             </div>
@@ -766,81 +800,93 @@
             <!-- Available Modals Grid -->
             <div class="modal-pool-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 <!-- Modal Pool Items -->
-                <div class="modal-pool-item" draggable="true" data-modal="tennis">
+                <div class="modal-pool-item" data-modal="tennis">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">🎾 Tennis</h3>
+                        <button class="add-to-basecamp-btn" data-modal="tennis">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="analytics">
+                <div class="modal-pool-item" data-modal="analytics">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">📊 Analytics</h3>
+                        <button class="add-to-basecamp-btn" data-modal="analytics">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="coffee">
+                <div class="modal-pool-item" data-modal="coffee">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">☕ Coffee</h3>
+                        <button class="add-to-basecamp-btn" data-modal="coffee">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="guitar">
+                <div class="modal-pool-item" data-modal="guitar">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">🎸 Guitar</h3>
+                        <button class="add-to-basecamp-btn" data-modal="guitar">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="poetry">
+                <div class="modal-pool-item" data-modal="poetry">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">📝 Poetry</h3>
+                        <button class="add-to-basecamp-btn" data-modal="poetry">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="food">
+                <div class="modal-pool-item" data-modal="food">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">🍽️ Food</h3>
+                        <button class="add-to-basecamp-btn" data-modal="food">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="french">
+                <div class="modal-pool-item" data-modal="french">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">🇫🇷 French</h3>
+                        <button class="add-to-basecamp-btn" data-modal="french">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="hood">
+                <div class="modal-pool-item" data-modal="hood">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">🔧 Under the Hood</h3>
+                        <button class="add-to-basecamp-btn" data-modal="hood">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="geopolitics">
+                <div class="modal-pool-item" data-modal="geopolitics">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">🌍 World Order</h3>
+                        <button class="add-to-basecamp-btn" data-modal="geopolitics">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="history">
+                <div class="modal-pool-item" data-modal="history">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">📚 History</h3>
+                        <button class="add-to-basecamp-btn" data-modal="history">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="chat">
+                <div class="modal-pool-item" data-modal="chat">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">💬 Chat</h3>
+                        <button class="add-to-basecamp-btn" data-modal="chat">+</button>
                     </div>
                 </div>
                 
-                <div class="modal-pool-item" draggable="true" data-modal="archive">
+                <div class="modal-pool-item" data-modal="archive">
                     <div class="preview-card">
                         <h3 class="font-bold text-xs sm:text-sm">📦 Archive</h3>
+                        <button class="add-to-basecamp-btn" data-modal="archive">+</button>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Drag & Drop Demo Modal -->
+        <!-- Add Tools Demo Modal -->
         <div id="drag-demo-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
             <div class="modal-content-panel p-4 rounded-lg max-w-md w-full mx-auto">
                 <div class="flex justify-between items-center mb-4">
@@ -856,12 +902,12 @@
                     
                     <div class="text-center">
                         <div class="text-4xl mb-2">👆</div>
-                        <p class="text-sm text-gray-600">2. Click & hold any tool</p>
+                        <p class="text-sm text-gray-600">2. Hover over any tool</p>
                     </div>
                     
                     <div class="text-center">
-                        <div class="text-4xl mb-2">🏕️</div>
-                        <p class="text-sm text-gray-600">3. Drag to BaseCamp & drop</p>
+                        <div class="text-4xl mb-2">➕</div>
+                        <p class="text-sm text-gray-600">3. Click the + button</p>
                     </div>
                     
                     <div class="text-center">
