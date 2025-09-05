@@ -82,11 +82,15 @@ export class DashboardManager {
         const target = e.target as HTMLElement;
         const modalPoolItem = target.closest('.modal-pool-item') as HTMLElement;
         
+        console.log('Drag start:', { target, modalPoolItem }); // Debug log
+        
         if (modalPoolItem) {
             this.draggedElement = modalPoolItem;
             modalPoolItem.classList.add('dragging');
             
             const modalType = modalPoolItem.getAttribute('data-modal');
+            console.log('Dragging modal:', modalType); // Debug log
+            
             if (e.dataTransfer) {
                 e.dataTransfer.setData('text/plain', modalType || '');
                 e.dataTransfer.effectAllowed = 'copy';
@@ -127,9 +131,12 @@ export class DashboardManager {
 
     private handleDrop(e: DragEvent): void {
         e.preventDefault();
+        e.stopPropagation();
         this.dashboardGrid.classList.remove('drag-over');
         
         const modalType = e.dataTransfer?.getData('text/plain');
+        console.log('Drop event:', { modalType, target: e.target }); // Debug log
+        
         if (modalType) {
             this.addModalToDashboard(modalType);
         }
@@ -172,6 +179,8 @@ export class DashboardManager {
         
         if (this.currentLayout.items.length === 0) {
             this.showEmptyDashboard();
+            // Add a drop zone indicator when empty
+            this.addDropZoneIndicator();
             return;
         }
 
@@ -182,6 +191,18 @@ export class DashboardManager {
             const dashboardItem = this.createDashboardItem(item);
             this.dashboardGrid.appendChild(dashboardItem);
         });
+    }
+
+    private addDropZoneIndicator(): void {
+        const dropZone = document.createElement('div');
+        dropZone.className = 'drop-zone';
+        dropZone.innerHTML = `
+            <div class="text-center">
+                <div class="text-4xl mb-2">📥</div>
+                <p class="text-sm text-gray-500">Drop modals here to add them to your dashboard</p>
+            </div>
+        `;
+        this.dashboardGrid.appendChild(dropZone);
     }
 
     private createDashboardItem(item: DashboardItem): HTMLElement {
