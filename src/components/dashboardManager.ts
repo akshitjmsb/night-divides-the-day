@@ -194,13 +194,13 @@ export class DashboardManager {
         // Map modal types to their corresponding click handlers
         const modalHandlers: { [key: string]: string } = {
             'tennis': 'tennis-clickable',
-            'analytics': 'analytics-clickable',
+            'analytics': 'analytics-clickable-day',
             'coffee': 'coffee-clickable',
             'guitar': 'guitar-clickable',
             'poetry': 'poetry-clickable',
-            'food': 'food-clickable',
-            'french': 'frenchy-clickable',
-            'hood': 'hood-clickable',
+            'food': 'food-clickable-day',
+            'french': 'frenchy-clickable-day',
+            'hood': 'hood-clickable-day',
             'geopolitics': 'geopolitics-clickable',
             'history': 'history-clickable',
             'chat': 'chat-open-btn',
@@ -211,8 +211,13 @@ export class DashboardManager {
         if (clickableId) {
             const element = document.getElementById(clickableId);
             if (element) {
+                console.log('Triggering modal for:', modalType, 'using element:', clickableId);
                 element.click();
+            } else {
+                console.error('Could not find element with ID:', clickableId);
             }
+        } else {
+            console.error('No handler found for modal type:', modalType);
         }
     }
 
