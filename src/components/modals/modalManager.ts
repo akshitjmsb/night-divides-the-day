@@ -28,7 +28,7 @@ type ModalDependencies = {
         mainChat: Chat | null;
         chatHistory: ChatMessage[];
         mainChatHistory: ChatMessage[];
-    }
+    };
     renderChatHistory: () => void;
 };
 
