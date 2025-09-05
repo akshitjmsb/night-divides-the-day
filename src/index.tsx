@@ -9,6 +9,7 @@ import { initializeQuantumTimer } from "./components/quantumTimer";
 import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
 import { initializeModalManager } from "./components/modals/modalManager";
+import { initializeDashboardManager } from "./components/dashboardManager";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DATA ---
@@ -242,6 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     renderChatHistory: renderChatHistory,
                 };
                 initializeModalManager(appContainer, modalDependencies);
+                initializeDashboardManager();
                 initializeTaskForms(tasks, mainRender);
             }
 

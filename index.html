@@ -440,6 +440,175 @@
             }
         }
 
+        /* Dashboard System Styles */
+        .dashboard-nav {
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 1rem;
+        }
+
+        .dashboard-tab {
+            background: transparent;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-tab:hover {
+            border-color: #3b82f6;
+            color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .dashboard-tab.active {
+            background: #3b82f6;
+            border-color: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .dashboard-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        .dashboard-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .dashboard-grid {
+            position: relative;
+            min-height: 400px;
+            border: 2px dashed #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            background: #f9fafb;
+        }
+
+        .dashboard-grid.drag-over {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .dashboard-item {
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-item:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-item .remove-btn {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            font-size: 12px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .dashboard-item:hover .remove-btn {
+            display: flex;
+        }
+
+        .modal-pool-item {
+            cursor: grab;
+            transition: all 0.3s ease;
+        }
+
+        .modal-pool-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .modal-pool-item:active {
+            cursor: grabbing;
+        }
+
+        .modal-pool-item.dragging {
+            opacity: 0.5;
+            transform: rotate(5deg);
+        }
+
+        .empty-dashboard {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1;
+        }
+
+        .drop-zone {
+            border: 2px dashed #d1d5db;
+            border-radius: 8px;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .drop-zone.drag-over {
+            border-color: #3b82f6;
+            background: #eff6ff;
+            color: #3b82f6;
+        }
+
+        .drop-zone.has-content {
+            border-style: solid;
+            border-color: #e5e7eb;
+            background: white;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 640px) {
+            .dashboard-tab {
+                padding: 0.5rem 1rem;
+                font-size: 0.875rem;
+            }
+            
+            .dashboard-grid {
+                min-height: 300px;
+                padding: 0.5rem;
+            }
+            
+            .dashboard-item {
+                min-height: 60px;
+                padding: 0.75rem;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -472,43 +641,117 @@
         <!-- Sync Status -->
         <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>
 
-        <!-- DYNAMIC MODULE (Always visible, content adapts based on time) -->
-        <div id="day-module" class="module active">
-            <section>
-                <h2>Reflect</h2>
-                <div id="life-pointer-display-day" class="life-pointer mt-3"></div>
-                <div class="text-center mt-4">
-                    <button id="reflection-btn-day" class="gemini-btn">✨ Reflect on this</button>
+        <!-- Dashboard Navigation Tabs -->
+        <div class="dashboard-nav mb-6">
+            <div class="flex justify-center space-x-4">
+                <button id="home-tab" class="dashboard-tab active">🏠 Home Screen</button>
+                <button id="pool-tab" class="dashboard-tab">📚 Modal Pool</button>
+            </div>
+        </div>
+
+        <!-- Home Screen Dashboard -->
+        <div id="home-screen" class="dashboard-section active">
+            <div class="dashboard-header mb-4">
+                <h2 class="text-xl font-bold text-center">Your Custom Dashboard</h2>
+                <p class="text-sm text-gray-600 text-center">Drag modals from the pool to customize your home screen</p>
+            </div>
+            
+            <!-- Dashboard Grid -->
+            <div id="dashboard-grid" class="dashboard-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 min-h-96">
+                <!-- Drop zones will be dynamically created here -->
+            </div>
+            
+            <!-- Empty State -->
+            <div id="empty-dashboard" class="empty-dashboard text-center py-12">
+                <div class="text-6xl mb-4">🎯</div>
+                <h3 class="text-lg font-semibold mb-2">Your dashboard is empty</h3>
+                <p class="text-gray-600 mb-4">Go to the Modal Pool and drag some modals here to get started!</p>
+                <button id="go-to-pool-btn" class="gemini-btn">Browse Modal Pool</button>
+            </div>
+        </div>
+
+        <!-- Modal Pool -->
+        <div id="modal-pool" class="dashboard-section">
+            <div class="dashboard-header mb-4">
+                <h2 class="text-xl font-bold text-center">Modal Pool</h2>
+                <p class="text-sm text-gray-600 text-center">Drag any modal to your home screen to add it to your dashboard</p>
+            </div>
+            
+            <!-- Available Modals Grid -->
+            <div class="modal-pool-grid grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
+                <!-- Modal Pool Items -->
+                <div class="modal-pool-item" draggable="true" data-modal="tennis">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">🎾 Tennis</h3>
+                    </div>
                 </div>
-                <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
-            </section>
-            <section class="mobile-section">
-                <div class="category-grid grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2">
-                    <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">World Order</h3></div>
-                    <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Guitar</h3></div>
-                    <div id="history-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">History</h3></div>
-                    <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Poetry</h3></div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="analytics">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">📊 Analytics</h3>
+                    </div>
                 </div>
-            </section>
-            <section class="mobile-section">
-                <h2>Focus</h2>
-                <div id="tasks-list-day" class="mt-2 text-base"></div>
-                <form id="add-task-form-day" class="add-task-form flex mt-3">
-                    <input type="text" placeholder="Add a new focus..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
-                    <button type="submit" class="bg-gray-700 text-white px-3 rounded-r-md hover:bg-black text-sm">Add</button>
-                </form>
-            </section>
-            <section class="mobile-section">
-                <h2>Learn</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                    <div id="frenchy-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
-                    <div id="food-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
-                    <div id="analytics-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
-                    <div id="hood-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="coffee">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">☕ Coffee</h3>
+                    </div>
                 </div>
-            </section>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="guitar">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">🎸 Guitar</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="poetry">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">📝 Poetry</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="food">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">🍽️ Food</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="french">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">🇫🇷 French</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="hood">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">🔧 Under the Hood</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="geopolitics">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">🌍 World Order</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="history">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">📚 History</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="chat">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">💬 Chat</h3>
+                    </div>
+                </div>
+                
+                <div class="modal-pool-item" draggable="true" data-modal="archive">
+                    <div class="preview-card">
+                        <h3 class="font-bold text-xs sm:text-sm">📦 Archive</h3>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <footer class="text-center mt-8 py-4 border-t">
