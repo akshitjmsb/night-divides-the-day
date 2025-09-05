@@ -143,10 +143,10 @@ export class DashboardManager {
     }
 
     private addModalToDashboard(modalType: string): void {
-        // Check if modal already exists in dashboard
+        // Check if modal already exists in BaseCamp
         const existingItem = this.currentLayout.items.find(item => item.modalType === modalType);
         if (existingItem) {
-            this.showNotification('This modal is already in your dashboard!', 'warning');
+            this.showNotification('This tool is already in your BaseCamp!', 'warning');
             return;
         }
 
@@ -163,7 +163,7 @@ export class DashboardManager {
         
         this.saveDashboardLayout();
         this.renderDashboard();
-        this.showNotification(`${this.getModalDisplayName(modalType)} added to dashboard!`, 'success');
+        this.showNotification(`${this.getModalDisplayName(modalType)} added to BaseCamp!`, 'success');
     }
 
     private removeModalFromDashboard(itemId: string): void {
@@ -198,8 +198,8 @@ export class DashboardManager {
         dropZone.className = 'drop-zone';
         dropZone.innerHTML = `
             <div class="text-center">
-                <div class="text-4xl mb-2">📥</div>
-                <p class="text-sm text-gray-500">Drop modals here to add them to your dashboard</p>
+                <div class="text-4xl mb-2">🏕️</div>
+                <p class="text-sm text-gray-500">Drop tools here to build your BaseCamp</p>
             </div>
         `;
         this.dashboardGrid.appendChild(dropZone);
@@ -373,7 +373,7 @@ export class DashboardManager {
         this.currentLayout = { items: [], lastUpdated: new Date().toISOString() };
         this.saveDashboardLayout();
         this.renderDashboard();
-        this.showNotification('Dashboard reset successfully!', 'success');
+        this.showNotification('BaseCamp reset successfully!', 'success');
     }
 }
 
