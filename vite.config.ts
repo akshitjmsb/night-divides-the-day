@@ -15,12 +15,8 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         rollupOptions: {
-          external: ['@google/genai'],
-          output: {
-            globals: {
-              '@google/genai': 'GoogleGenAI'
-            }
-          }
+          // Remove external configuration for @google/genai since it's used client-side
+          // The import map in HTML will handle the external dependency
         }
       }
     };
