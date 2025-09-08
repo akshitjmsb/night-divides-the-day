@@ -1,10 +1,10 @@
-import { Chat, GenerateContentResponse, Type } from "@google/genai";
+import { GenerateContentResponse, Type } from "@google/genai";
 
 import { escapeHtml } from "./utils/escapeHtml";
 import { getDayOfYear } from "./utils/date";
-import { getCanonicalTime, isContentReadyForPreview } from "./core/time";
-import { Task, ChatMessage, PoetrySelection } from "./types";
-import { loadTasks, saveTasks, loadChatHistory, saveChatHistory, loadPoetryRecents, savePoetryRecents, recordPoetrySelection } from "./core/persistence";
+import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } from "./core/time";
+import { Task, PoetrySelection } from "./types";
+import { loadTasks, saveTasks, loadPoetryRecents, savePoetryRecents, recordPoetrySelection } from "./core/persistence";
 import { initializeQuantumTimer } from "./components/quantumTimer";
 import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
@@ -17,8 +17,8 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
     
     // --- STATE & DERIVED DATA ---
-    let todayKey: string, tomorrowKey: string, tomorrowDay: number, archiveKey: string;
-    let activeContentDate: Date, previewContentDate: Date, archiveDate: Date;
+    let todayKey: string, tomorrowKey: string, tomorrowDay: number;
+    let activeContentDate: Date, previewContentDate: Date;
     let todaysLifePointer: any;
     let isAutoGenerating = false;
     let lastApiCall = 0;
@@ -28,8 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const { now, hour } = getCanonicalTime();
 
         // Determine the active content date based on the time.
-        // From midnight to 7:59 AM, the "active day" is still considered the previous calendar day.
-        if (hour < 8) {
+        // From midnight to 5:59 AM, the "active day" is still considered the previous calendar day.
+        if (hour < 6) {
             activeContentDate = new Date(now);
             activeContentDate.setDate(now.getDate() - 1);
         } else {
@@ -40,14 +40,11 @@ document.addEventListener('DOMContentLoaded', () => {
         previewContentDate = new Date(activeContentDate);
         previewContentDate.setDate(activeContentDate.getDate() + 1);
 
-        // The archive date is always the day before the active content date.
-        archiveDate = new Date(activeContentDate);
-        archiveDate.setDate(activeContentDate.getDate() - 1);
+        // Archive functionality removed for simplicity
 
         // Derive keys and other data from these canonical dates.
         todayKey = activeContentDate.toISOString().split('T')[0];
         tomorrowKey = previewContentDate.toISOString().split('T')[0];
-        archiveKey = archiveDate.toISOString().split('T')[0];
         tomorrowDay = previewContentDate.getDay();
         
         const dayOfYear = getDayOfYear(activeContentDate);
@@ -57,12 +54,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let tasks: { text: string; completed: boolean }[] = [];
 
     // Active chat state for the modal UI
-    let chatHistory: { role: 'user' | 'model'; text: string }[] = [];
-    let chat: Chat | null; // This will hold the currently active chat instance (main or contextual)
+    // Chat functionality removed for simplicity
 
-    // Persistent state for the main chat feature
-    let mainChatHistory: { role: 'user' | 'model'; text: string }[] = [];
-    let mainChat: Chat | null; // This holds the main, persistent chat instance
+    // Chat functionality removed for simplicity
 
 
     // --- DATA PERSISTENCE ---
@@ -88,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Proactively generates the next day's content after 5 PM.
+     * Proactively generates the next day's content during Night mode.
      * This function is triggered on app load and periodically to "warm the cache",
      * creating the experience of an autonomous sync process for the user.
      */
@@ -102,12 +96,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const dateForGeneration = previewContentDate;
         const dateKeyForGeneration = dateForGeneration.toISOString().split('T')[0];
 
-        // Check if we are in the window to generate tomorrow's content (i.e., it's after 5 PM today).
-        if (!isContentReadyForPreview(dateForGeneration)) {
+        // Check if we are in Night mode to generate tomorrow's content
+        if (!isNightMode()) {
             return; // Not time to generate yet.
         }
 
-        // This key prevents re-triggering the generation process every 5 minutes after 5 PM.
+        // This key prevents re-triggering the generation process every 5 minutes during Night mode.
         const generationAttemptedKey = `auto-generation-attempted-${dateKeyForGeneration}`;
         if (localStorage.getItem(generationAttemptedKey)) {
             return; // We've already run auto-generation for this date.
@@ -115,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         isAutoGenerating = true;
         showSyncStatus('⚙️ Synchronizing next day\'s content...');
-        console.log(`It's after 5 PM. Triggering background content generation for ${dateKeyForGeneration}...`);
+        console.log(`It's Night mode. Triggering background content generation for ${dateKeyForGeneration}...`);
         
         try {
             // We "warm the cache" by calling the generation functions.
@@ -156,14 +150,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // --- RENDER FUNCTIONS ---
     
-    function renderChatHistory() {
-        const chatHistoryDisplay = document.getElementById('chat-history');
-        if (!chatHistoryDisplay) return;
-        chatHistoryDisplay.innerHTML = chatHistory.map(msg => 
-            `<div class="chat-message ${msg.role === 'user' ? 'user-message' : 'gemini-message'}">${msg.text}</div>`
-        ).join('');
-        chatHistoryDisplay.scrollTop = chatHistoryDisplay.scrollHeight;
-    }
+    // renderChatHistory function removed for simplicity
     
     async function mainRender() {
         // Recalculate time-sensitive variables each time render is called
@@ -188,12 +175,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const iconEl = document.getElementById('dynamic-time-icon') as HTMLElement;
         if (!iconEl) return;
         
-        if (hour >= 8 && hour < 17) {
+        if (isDayMode()) {
             iconEl.textContent = '☀️';
             iconEl.className = 'theme-icon day-mode';
-        } else if (hour >= 17 && hour < 18) {
-            iconEl.textContent = '🌇';
-            iconEl.className = 'theme-icon crossover-mode';
         } else {
             iconEl.textContent = '🌙';
             iconEl.className = 'theme-icon night-mode';
@@ -226,20 +210,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     dates: {
                         active: activeContentDate,
                         preview: previewContentDate,
-                        archive: archiveDate,
                     },
                     keys: {
                         today: todayKey,
                         tomorrow: tomorrowKey,
-                        archive: archiveKey,
                     },
-                    chatState: {
-                        chat: chat,
-                        mainChat: mainChat,
-                        chatHistory: chatHistory,
-                        mainChatHistory: mainChatHistory,
-                    },
-                    renderChatHistory: renderChatHistory,
                 };
                 initializeModalManager(appContainer, modalDependencies);
                 initializeTaskForms(tasks, mainRender);
@@ -253,15 +228,7 @@ document.addEventListener('DOMContentLoaded', () => {
             updateTime();
             
             // Load persistent data on startup
-            mainChatHistory = await loadChatHistory();
-
-            // Initialize the main chat instance with its loaded history
-            if (ai) {
-                mainChat = ai.chats.create({ model: 'gemini-2.5-flash', history: mainChatHistory });
-            } else {
-                console.warn("Chat functionality disabled - no API key available");
-                mainChat = null;
-            }
+            // Chat functionality removed for simplicity
             
             await mainRender();
 
@@ -283,27 +250,27 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ENHANCED CONTENT FLOW SYSTEM ---
     
     /**
-     * Enhanced content generation specifically for CrossOver Module (5 PM - 6 PM)
+     * Enhanced content generation specifically for Night Mode (6 PM - 6 AM)
      */
-    async function triggerCrossOverContentGeneration(): Promise<void> {
+    async function triggerNightContentGeneration(): Promise<void> {
         const { hour, now } = getCanonicalTime();
         
-        // Only generate during CrossOver Module (5 PM - 6 PM)
-        if (hour < 17 || hour >= 18) {
-            console.log(`⏰ CrossOver: Not in CrossOver time window (current hour: ${hour})`);
+        // Only generate during Night Mode (6 PM - 6 AM)
+        if (!isNightMode()) {
+            console.log(`⏰ Night: Not in Night time window (current hour: ${hour})`);
             return;
         }
         
         const todayKey = new Date().toISOString().split('T')[0];
-        const generationKey = `cross-over-generation-${todayKey}`;
+        const generationKey = `night-generation-${todayKey}`;
         
         // Check if we've already generated content for tomorrow today
         if (localStorage.getItem(generationKey)) {
-            console.log('🔄 CrossOver: Content already generated for tomorrow');
+            console.log('🔄 Night: Content already generated for tomorrow');
             return;
         }
         
-        console.log('🚀 CrossOver: Starting content generation for tomorrow...', {
+        console.log('🚀 Night: Starting content generation for tomorrow...', {
             currentTime: now.toISOString(),
             todayKey: todayKey,
             hour: hour,
@@ -324,24 +291,24 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Mark that we've generated content for tomorrow
             localStorage.setItem(generationKey, new Date().toISOString());
-            console.log('✅ CrossOver: Content generation completed for tomorrow');
+            console.log('✅ Night: Content generation completed for tomorrow');
             showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
             
         } catch (error) {
-            console.error('❌ CrossOver: Content generation failed', error);
+            console.error('❌ Night: Content generation failed', error);
             showSyncStatus('⚠️ Content generation failed. Will retry.', true);
         }
     }
     
     /**
-     * Archives today's content during Night Module (6 PM - 8 AM)
+     * Archives today's content during Day Mode (6 AM - 6 PM)
      */
     async function archiveTodaysContent(): Promise<void> {
         const { hour, now } = getCanonicalTime();
         
-        // Only archive during Night Module (6 PM - 8 AM)
-        if (hour >= 8 && hour < 18) {
-            console.log(`⏰ Night: Not in Night time window (current hour: ${hour})`);
+        // Only archive during Day Mode (6 AM - 6 PM)
+        if (!isDayMode()) {
+            console.log(`⏰ Day: Not in Day time window (current hour: ${hour})`);
             return;
         }
         
@@ -350,11 +317,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Check if we've already archived today's content
         if (localStorage.getItem(archiveKey)) {
-            console.log('🔄 Night: Content already archived for today');
+            console.log('🔄 Day: Content already archived for today');
             return;
         }
         
-        console.log('📦 Night: Archiving today\'s content...', {
+        console.log('📦 Day: Archiving today\'s content...', {
             currentTime: now.toISOString(),
             todayKey: todayKey,
             hour: hour,
@@ -375,10 +342,10 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Save to archive
             localStorage.setItem(archiveKey, JSON.stringify(archiveData));
-            console.log('✅ Night: Content archived successfully for today');
+            console.log('✅ Day: Content archived successfully for today');
             
         } catch (error) {
-            console.error('❌ Night: Content archiving failed', error);
+            console.error('❌ Day: Content archiving failed', error);
         }
     }
     
@@ -492,31 +459,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         renderTasks(tasks, 'tasks-list-day');
         
-        // Day Module: Content from yesterday's Night Module preview is now active
-        console.log('☀️ Day Module: Using content that was previewed in Night Module');
-    }
-
-    async function renderCrossoverModule() {
-        const lifePointerEl = document.getElementById('life-pointer-display-crossover');
-        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
-
-        renderTasks(tasks, 'tasks-list-crossover');
-        
-        // CrossOver Module: Generate tomorrow's content
-        await triggerCrossOverContentGeneration();
-    }
-
-    async function renderNightModule() {
-        const dayOfYear = getDayOfYear(previewContentDate);
-        const tomorrowsLifePointer = lifePointers[(dayOfYear - 1) % lifePointers.length];
-        
-        const lifePointerEl = document.getElementById('life-pointer-display-night');
-        if (lifePointerEl) lifePointerEl.textContent = tomorrowsLifePointer;
-        
-        renderTasks(tasks, 'tasks-list-night');
-        
-        // Night Module: Archive today's content and show tomorrow's preview
-        await archiveTodaysContent();
-        console.log('🌙 Night Module: Today\'s content archived, tomorrow\'s content previewed');
+        if (isDayMode()) {
+            // Day Mode: Use today's content
+            console.log('☀️ Day Mode: Using today\'s content');
+        } else {
+            // Night Mode: Generate tomorrow's content and show preview
+            await triggerNightContentGeneration();
+            console.log('🌙 Night Mode: Generating tomorrow\'s content, showing preview');
+        }
     }
 });

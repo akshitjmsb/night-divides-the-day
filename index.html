@@ -156,7 +156,6 @@
             transition: all 0.3s ease;
         }
         .theme-icon.day-mode { color: #f59e0b; }
-        .theme-icon.crossover-mode { color: #f97316; }
         .theme-icon.night-mode { color: #6366f1; }
 
         /* --- MODAL STYLES --- */
@@ -477,9 +476,7 @@
             <section>
                 <h2>Reflect</h2>
                 <div id="life-pointer-display-day" class="life-pointer mt-3"></div>
-                <div class="text-center mt-4">
-                    <button id="reflection-btn-day" class="gemini-btn">✨ Reflect on this</button>
-                </div>
+                <!-- Reflection button removed for simplicity -->
                 <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
             </section>
             <section class="mobile-section">
@@ -512,8 +509,7 @@
         </div>
         
         <footer class="text-center mt-8 py-4 border-t">
-            <button id="archive-open-btn" class="footer-btn">The Archive</button>
-            <button id="chat-open-btn" class="footer-btn">Chat</button>
+            <!-- Footer content removed for simplicity -->
         </footer>
     
         <!-- MODALS -->
@@ -671,29 +667,7 @@
             </div>
         </div>
     
-        <div id="archive-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-md w-full mx-auto">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">The Archive</h3>
-                    <button id="archive-close-btn" class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="archive-list" class="flex flex-col space-y-2"></div>
-            </div>
-        </div>
-    
-        <div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto flex flex-col h-3/4">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Chat with Gemini</h3>
-                    <button id="chat-close-btn" class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="chat-history" class="flex-grow overflow-y-auto mb-4 flex flex-col space-y-2 p-2 bg-gray-50 rounded"></div>
-                <form id="chat-form" class="flex">
-                    <input type="text" id="chat-input" placeholder="Ask anything..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
-                    <button type="submit" class="bg-gray-700 text-white px-4 rounded-r-md hover:bg-black text-sm">Send</button>
-                </form>
-            </div>
-        </div>
+        <!-- Archive and Chat modals removed for simplicity -->
     </div>
 
     <script type="module" src="src/index.tsx"></script>

@@ -8,28 +8,17 @@ import { fetchAndShowCoffeeTip } from './coffeeModal';
 import { fetchAndShowGuitarTab } from './guitarModal';
 import { fetchAndShowHistory } from './historyModal';
 import { fetchAndShowPoetry } from './poetryModal';
-import { renderArchive } from './archiveModal';
-import { Chat } from '@google/genai';
-import { ChatMessage } from '../../types';
+// Archive and Chat imports removed for simplicity
 
 type ModalDependencies = {
     dates: {
         active: Date;
         preview: Date;
-        archive: Date;
     };
     keys: {
         today: string;
         tomorrow: string;
-        archive: string;
     };
-    chatState: {
-        chat: Chat | null;
-        mainChat: Chat | null;
-        chatHistory: ChatMessage[];
-        mainChatHistory: ChatMessage[];
-    };
-    renderChatHistory: () => void;
 };
 
 export function initializeModalManager(
@@ -69,26 +58,6 @@ export function initializeModalManager(
         if (target.closest('#history-clickable') || target.closest('#history-clickable-crossover') || target.closest('#history-clickable-night')) return fetchAndShowHistory();
         if (target.closest('#poetry-clickable') || target.closest('#poetry-clickable-crossover') || target.closest('#poetry-clickable-night')) return fetchAndShowPoetry(dates.active);
 
-        const archiveModal = document.getElementById('archive-modal');
-        if (target.closest('#archive-open-btn') && archiveModal) {
-             renderArchive(keys.archive);
-             archiveModal.classList.remove('hidden');
-             archiveModal.classList.add('flex');
-             return;
-        }
-
-        const chatModal = document.getElementById('chat-modal');
-        if (target.closest('#chat-open-btn') && chatModal) {
-            if (chatState.mainChat) {
-                chatState.chat = chatState.mainChat;
-                chatState.chatHistory = [...chatState.mainChatHistory];
-                renderChatHistory();
-                chatModal.classList.remove('hidden');
-                chatModal.classList.add('flex');
-            } else {
-                alert("Chat functionality is not available without an API key. Please set VITE_GEMINI_API_KEY in your .env file.");
-            }
-            return;
-        }
+        // Archive and Chat functionality removed for simplicity
     });
 }

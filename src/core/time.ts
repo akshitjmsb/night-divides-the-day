@@ -49,7 +49,7 @@ export function getCanonicalTime(): { now: Date, hour: number } {
             original: testTimeOverride.toISOString(),
             canonical: canonicalNow.toISOString(),
             hour: hour,
-            module: hour >= 8 && hour < 17 ? 'DAY' : hour >= 17 && hour < 18 ? 'CROSSOVER' : 'NIGHT'
+            module: hour >= 6 && hour < 18 ? 'DAY' : 'NIGHT'
         });
     }
 
@@ -57,27 +57,35 @@ export function getCanonicalTime(): { now: Date, hour: number } {
 }
 
 /**
+ * Determines if we're currently in Day mode (6 AM - 6 PM)
+ */
+export function isDayMode(): boolean {
+    const { hour } = getCanonicalTime();
+    return hour >= 6 && hour < 18;
+}
+
+/**
+ * Determines if we're currently in Night mode (6 PM - 6 AM)
+ */
+export function isNightMode(): boolean {
+    return !isDayMode();
+}
+
+/**
  * Time zone testing utilities (available in browser console)
  */
 (window as any).testTimeZone = {
-    // Test CrossOver Module (5 PM - 6 PM)
-    testCrossOver: () => {
-        testTimeOverride = new Date('2024-01-15T17:30:00.000-05:00'); // EST
-        console.log('🧪 Testing CrossOver Module (5:30 PM Eastern Time)');
-        location.reload();
-    },
-
-    // Test Night Module (6 PM - 8 AM)
-    testNight: () => {
-        testTimeOverride = new Date('2024-01-15T19:00:00.000-05:00'); // EST
-        console.log('🧪 Testing Night Module (7:00 PM Eastern Time)');
-        location.reload();
-    },
-
-    // Test Day Module (8 AM - 5 PM)
+    // Test Day Mode (6 AM - 6 PM)
     testDay: () => {
         testTimeOverride = new Date('2024-01-15T10:00:00.000-05:00'); // EST
-        console.log('🧪 Testing Day Module (10:00 AM Eastern Time)');
+        console.log('🧪 Testing Day Mode (10:00 AM Eastern Time)');
+        location.reload();
+    },
+
+    // Test Night Mode (6 PM - 6 AM)
+    testNight: () => {
+        testTimeOverride = new Date('2024-01-15T20:00:00.000-05:00'); // EST
+        console.log('🧪 Testing Night Mode (8:00 PM Eastern Time)');
         location.reload();
     },
 
@@ -100,14 +108,15 @@ export function getCanonicalTime(): { now: Date, hour: number } {
         console.log('📊 Test Status:', {
             testTimeOverride: testTimeOverride?.toISOString(),
             canonicalTime: getCanonicalTime(),
-            isTesting: !!testTimeOverride
+            isTesting: !!testTimeOverride,
+            currentMode: isDayMode() ? 'DAY' : 'NIGHT'
         });
     }
 };
 
 /**
  * Checks if content for a future date (preview) is ready to be generated or viewed.
- * Content is considered ready after 5 PM (17:00) on the day before the content's date.
+ * Content is considered ready after 6 PM (18:00) on the day before the content's date.
  * @param {Date} previewDate The date of the content to be previewed.
  * @returns {boolean} True if the content is ready.
  */
@@ -115,7 +124,7 @@ export function isContentReadyForPreview(previewDate: Date): boolean {
     const { now } = getCanonicalTime(); // Use canonical "now" for comparison
     const generationUnlockTime = new Date(previewDate);
     generationUnlockTime.setDate(previewDate.getDate() - 1); // Day before
-    generationUnlockTime.setHours(17, 0, 0, 0); // At 5 PM
+    generationUnlockTime.setHours(18, 0, 0, 0); // At 6 PM
 
     return now.getTime() >= generationUnlockTime.getTime();
 }
