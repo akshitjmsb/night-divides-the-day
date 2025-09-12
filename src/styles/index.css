@@ -2,6 +2,13 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import component styles */
+@import './base.css';
+@import './components.css';
+@import './modals.css';
+@import './analytics.css';
+@import './exercise.css';
+
 /* Mobile Responsive Foundation for Night Divides the Day */
 
 /* Mobile-first base styles */

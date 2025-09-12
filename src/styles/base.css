@@ -1,0 +1,78 @@
+/* Base styles for Night Divides the Day */
+
+body { 
+    font-family: 'Special Elite', monospace; 
+    background-color: #f4f4f4; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    min-height: 100vh; 
+    margin: 0; 
+    padding: 0.5rem;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+.app-container { 
+    position: relative; 
+    background-color: #ffffff; 
+    padding: 1rem; 
+    max-width: 800px; 
+    width: 100%; 
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Mobile-first responsive padding */
+@media (min-width: 640px) {
+    .app-container {
+        padding: 1.5rem;
+    }
+}
+
+/* Mobile viewport optimization */
+@media (max-width: 640px) {
+    body {
+        padding: 0.25rem;
+    }
+    .app-container {
+        padding: 0.75rem;
+        border-radius: 12px;
+    }
+}
+
+.module { display: block; }
+.module.active { display: block; }
+
+h1, h2, h3 { font-family: 'Special Elite', monospace; }
+h1 { font-size: 1.5rem; }
+h2 { font-size: 1.25rem; margin-top: 1rem; }
+h3 { font-size: 1rem; margin-bottom: 0.5rem; }
+
+/* Responsive typography */
+@media (min-width: 640px) {
+    h1 { font-size: 1.75rem; }
+    h2 { font-size: 1.5rem; margin-top: 1.5rem; }
+    h3 { font-size: 1.1rem; }
+}
+
+.logo-container { margin-bottom: 0.5rem; }
+.logo-svg {
+    width: 50px;
+    height: auto;
+    stroke: #111111;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+}
+
+.footer-btn { text-decoration: underline; font-size: 0.8rem; margin: 0 0.5rem; color: #6b7280; }
+
+.theme-icon { 
+    font-size: 1.5rem; 
+    margin-left: 0.5rem; 
+    transition: all 0.3s ease;
+}
+.theme-icon.day-mode { color: #f59e0b; }
+.theme-icon.night-mode { color: #6366f1; }
