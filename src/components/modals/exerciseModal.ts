@@ -43,6 +43,7 @@ export async function showExerciseModal(
         }
 
         renderExerciseContent(contentEl, exerciseData, date);
+        setupExerciseEventListeners();
 
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Exercise modal (${mode})`);
@@ -50,6 +51,55 @@ export async function showExerciseModal(
         ErrorHandler.showUserError(appError);
         contentEl.innerHTML = '<p>Could not load the exercise plan.</p>';
     }
+}
+
+function setupExerciseEventListeners() {
+    // Initialize Swiper for exercise cards
+    const swiperContainer = document.querySelector('.swiper-container');
+    if (swiperContainer) {
+        // Add Swiper CSS and JS dynamically
+        if (!document.querySelector('link[href*="swiper"]')) {
+            const swiperCSS = document.createElement('link');
+            swiperCSS.rel = 'stylesheet';
+            swiperCSS.href = 'https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css';
+            document.head.appendChild(swiperCSS);
+        }
+        
+        if (!window.Swiper) {
+            const swiperJS = document.createElement('script');
+            swiperJS.src = 'https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js';
+            swiperJS.onload = () => {
+                initializeSwiper();
+            };
+            document.head.appendChild(swiperJS);
+        } else {
+            initializeSwiper();
+        }
+    }
+}
+
+function initializeSwiper() {
+    new window.Swiper('.swiper-container', {
+        slidesPerView: 1,
+        spaceBetween: 0,
+        centeredSlides: true,
+        loop: true,
+        effect: 'cards',
+        cardsEffect: {
+            perSlideOffset: 8,
+            perSlideRotate: 2,
+            rotate: true,
+            slideShadows: true,
+        },
+        pagination: {
+            el: '.swiper-pagination',
+            clickable: true,
+        },
+        navigation: {
+            nextEl: '.swiper-button-next',
+            prevEl: '.swiper-button-prev',
+        },
+    });
 }
 
 function renderExerciseContent(container: HTMLElement, data: any, date: Date) {
@@ -78,9 +128,10 @@ function renderExerciseContent(container: HTMLElement, data: any, date: Date) {
 }
 
 function getWorkoutType(dayOfWeek: number): string {
-    // 4-day schedule: Push, Pull, Legs, Rest
-    // Monday: Push, Tuesday: Pull, Wednesday: Legs, Thursday: Rest, Friday: Push, Saturday: Pull, Sunday: Legs
-    const schedule = ['Legs', 'Push', 'Pull', 'Legs', 'Rest', 'Push', 'Pull'];
+    // 4-day schedule: Monday, Wednesday, Friday, Saturday
+    // Monday: Push, Wednesday: Pull, Friday: Legs, Saturday: Upper Body
+    // Tuesday, Thursday, Sunday: Rest days
+    const schedule = ['Rest', 'Push', 'Rest', 'Pull', 'Rest', 'Legs', 'Upper'];
     return schedule[dayOfWeek];
 }
 
@@ -92,94 +143,127 @@ function renderWorkoutSection(workoutData: any): string {
     return `
         <div class="workout-section">
             <h4 class="font-semibold mb-3 text-gray-800">Today's Exercises</h4>
-            <div class="exercise-list">
-                ${workoutData.exercises ? workoutData.exercises.map((exercise: any, index: number) => 
-                    renderExercise(exercise, index + 1)
-                ).join('') : '<p>No exercises planned for today.</p>'}
-            </div>
-            
-            ${workoutData.notes ? `
-                <div class="workout-notes mt-4 p-3 bg-blue-50 rounded-lg">
-                    <h5 class="font-medium text-blue-800 mb-2">Notes:</h5>
-                    <p class="text-blue-700 text-sm">${createSafeHtml(workoutData.notes)}</p>
+            <div class="exercise-list swiper-container">
+                <div class="swiper-wrapper">
+                    ${workoutData.exercises ? workoutData.exercises.map((exercise: any, index: number) => 
+                        `<div class="swiper-slide">${renderExercise(exercise, index + 1)}</div>`
+                    ).join('') : '<p>No exercises planned for today.</p>'}
                 </div>
-            ` : ''}
+                <div class="swiper-button-prev"></div>
+                <div class="swiper-button-next"></div>
+                <div class="swiper-pagination"></div>
+            </div>
         </div>
     `;
 }
 
 function renderExercise(exercise: any, number: number): string {
+    const exerciseName = exercise.name || 'Exercise';
+    const muscleWikiUrl = getMuscleWikiUrl(exerciseName);
+    
     return `
-        <div class="exercise-item mb-4 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div class="exercise-header flex justify-between items-start mb-2">
-                <h5 class="font-medium text-gray-800">${number}. ${createSafeHtml(exercise.name || 'Exercise')}</h5>
-                <span class="text-sm text-gray-500">${exercise.muscleGroup || 'Full Body'}</span>
+        <div class="exercise-card">
+            <div class="exercise-header">
+                <h5 class="exercise-title">${number}. ${createSafeHtml(exerciseName)}</h5>
+                <span class="muscle-group">${exercise.muscleGroup || 'Full Body'}</span>
             </div>
             
-            <div class="exercise-details grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div class="exercise-details">
                 <div class="detail-item">
-                    <span class="font-medium text-gray-600">Sets:</span>
-                    <span class="ml-1">${exercise.sets || '3-4'}</span>
+                    <span class="detail-label">Sets</span>
+                    <span class="detail-value">${exercise.sets || '3-4'}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="font-medium text-gray-600">Reps:</span>
-                    <span class="ml-1">${exercise.reps || '8-12'}</span>
+                    <span class="detail-label">Reps</span>
+                    <span class="detail-value">${exercise.reps || '8-12'}</span>
                 </div>
                 <div class="detail-item">
-                    <span class="font-medium text-gray-600">Rest:</span>
-                    <span class="ml-1">${exercise.rest || '60-90s'}</span>
+                    <span class="detail-label">Rest</span>
+                    <span class="detail-value">${exercise.rest || '60-90s'}</span>
                 </div>
             </div>
             
-            ${exercise.instructions ? `
-                <div class="exercise-instructions mt-2 text-sm text-gray-600">
-                    <span class="font-medium">Instructions:</span>
-                    <p class="mt-1">${createSafeHtml(exercise.instructions)}</p>
-                </div>
-            ` : ''}
-            
-            ${exercise.tips ? `
-                <div class="exercise-tips mt-2 p-2 bg-yellow-50 rounded text-sm">
-                    <span class="font-medium text-yellow-800">💡 Tip:</span>
-                    <span class="text-yellow-700 ml-1">${createSafeHtml(exercise.tips)}</span>
-                </div>
-            ` : ''}
+            <div class="exercise-actions">
+                <a href="${muscleWikiUrl}" target="_blank" rel="noopener noreferrer" 
+                   class="musclewiki-link">
+                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
+                    </svg>
+                    MuscleWiki
+                </a>
+            </div>
         </div>
     `;
+}
+
+
+function getMuscleWikiUrl(exerciseName: string): string {
+    // Convert exercise name to MuscleWiki format
+    const exerciseMap: { [key: string]: string } = {
+        'bench press': 'bench-press',
+        'squat': 'squat',
+        'deadlift': 'deadlift',
+        'overhead press': 'overhead-press',
+        'barbell row': 'bent-over-row',
+        'pull-up': 'pull-up',
+        'push-up': 'push-up',
+        'dumbbell press': 'dumbbell-press',
+        'dumbbell row': 'dumbbell-row',
+        'lateral raise': 'lateral-raise',
+        'bicep curl': 'bicep-curl',
+        'tricep dip': 'tricep-dip',
+        'leg press': 'leg-press',
+        'lunges': 'lunges',
+        'calf raise': 'calf-raise',
+        'plank': 'plank',
+        'sit-up': 'sit-up',
+        'crunch': 'crunch',
+        'mountain climber': 'mountain-climber',
+        'burpee': 'burpee'
+    };
+    
+    const normalizedName = exerciseName.toLowerCase().trim();
+    const muscleWikiSlug = exerciseMap[normalizedName] || normalizedName.replace(/\s+/g, '-');
+    
+    return `https://musclewiki.com/exercises/${muscleWikiSlug}`;
 }
 
 function renderWeeklySchedule(data: any): string {
     return `
         <div class="weekly-schedule mt-6">
-            <h4 class="font-semibold mb-3 text-gray-800">Weekly Schedule</h4>
+            <h4 class="font-semibold mb-3 text-gray-800">4-Day Workout Schedule</h4>
             <div class="schedule-grid grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
                     <div class="font-medium text-sm">Monday</div>
-                    <div class="text-xs text-gray-600">Push</div>
+                    <div class="text-xs font-semibold">Push</div>
+                    <div class="text-xs text-gray-600 mt-1">Chest, Shoulders, Triceps</div>
                 </div>
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day rest-day p-3 rounded text-center border border-gray-300">
                     <div class="font-medium text-sm">Tuesday</div>
-                    <div class="text-xs text-gray-600">Pull</div>
+                    <div class="text-xs text-gray-500">Rest</div>
                 </div>
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
                     <div class="font-medium text-sm">Wednesday</div>
-                    <div class="text-xs text-gray-600">Legs</div>
+                    <div class="text-xs font-semibold">Pull</div>
+                    <div class="text-xs text-gray-600 mt-1">Back, Biceps</div>
                 </div>
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day rest-day p-3 rounded text-center border border-gray-300">
                     <div class="font-medium text-sm">Thursday</div>
-                    <div class="text-xs text-gray-600">Rest</div>
+                    <div class="text-xs text-gray-500">Rest</div>
                 </div>
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
                     <div class="font-medium text-sm">Friday</div>
-                    <div class="text-xs text-gray-600">Push</div>
+                    <div class="text-xs font-semibold">Legs</div>
+                    <div class="text-xs text-gray-600 mt-1">Quads, Hamstrings, Glutes</div>
                 </div>
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
                     <div class="font-medium text-sm">Saturday</div>
-                    <div class="text-xs text-gray-600">Pull</div>
+                    <div class="text-xs font-semibold">Upper</div>
+                    <div class="text-xs text-gray-600 mt-1">Full Upper Body</div>
                 </div>
-                <div class="schedule-day p-3 bg-gray-100 rounded text-center">
+                <div class="schedule-day rest-day p-3 rounded text-center border border-gray-300">
                     <div class="font-medium text-sm">Sunday</div>
-                    <div class="text-xs text-gray-600">Legs</div>
+                    <div class="text-xs text-gray-500">Rest</div>
                 </div>
             </div>
         </div>
