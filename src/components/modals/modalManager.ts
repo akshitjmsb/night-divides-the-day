@@ -2,6 +2,7 @@ import { showFoodModal } from './foodModal';
 import { showFrenchModal } from './frenchModal';
 import { showAnalyticsModal, cleanupAnalyticsEventListeners } from './analyticsModal';
 import { showHoodModal } from './hoodModal';
+import { showExerciseModal } from './exerciseModal';
 import { fetchAndShowWorldOrder } from './worldOrderModal';
 import { fetchAndShowTennisMatches } from './tennisModal';
 import { fetchAndShowCoffeeTip } from './coffeeModal';
@@ -55,6 +56,9 @@ export function initializeModalManager(
 
         if (target.closest('#hood-clickable-day')) return showHoodModal('today', dates);
         if (target.closest('#hood-preview-clickable-crossover') || target.closest('#hood-preview-clickable-night')) return showHoodModal('tomorrow', dates);
+
+        if (target.closest('#exercise-clickable-day')) return showExerciseModal('today', dates);
+        if (target.closest('#exercise-preview-clickable-crossover') || target.closest('#exercise-preview-clickable-night')) return showExerciseModal('tomorrow', dates);
 
         if (target.closest('#geopolitics-clickable') || target.closest('#geopolitics-clickable-crossover') || target.closest('#geopolitics-clickable-night')) return fetchAndShowWorldOrder();
         if (target.closest('#tennis-clickable') || target.closest('#tennis-clickable-crossover') || target.closest('#tennis-clickable-night')) return fetchAndShowTennisMatches();

@@ -20,7 +20,15 @@ export { ai };
 
 const CLOUD_CACHE_BASE_URL = 'https://kvdb.io/akki-boy-dashboard-cache';
 
-export async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', date: Date): Promise<any> {
+// Helper function to determine workout type based on day of week
+function getWorkoutType(dayOfWeek: number): string {
+    // 4-day schedule: Push, Pull, Legs, Rest
+    // Monday: Push, Tuesday: Pull, Wednesday: Legs, Thursday: Rest, Friday: Push, Saturday: Pull, Sunday: Legs
+    const schedule = ['Legs', 'Push', 'Pull', 'Legs', 'Rest', 'Push', 'Pull'];
+    return schedule[dayOfWeek];
+}
+
+export async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', date: Date): Promise<any> {
     const dateKey = date.toISOString().split('T')[0];
     const localKey = `dynamic-content-${contentType}-${dateKey}`;
     const cloudKey = `${contentType}-${dateKey}`;
@@ -77,7 +85,7 @@ export async function getOrGenerateDynamicContent(contentType: 'analytics' | 'tr
     return generatedContent;
 }
 
-export async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', dateKey: string): Promise<any> {
+export async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', dateKey: string): Promise<any> {
     // If no API key, return fallback content
     if (!ai) {
         return getFallbackContent(contentType, dateKey);
@@ -162,6 +170,98 @@ export async function generateDynamicContent(contentType: 'analytics' | 'transpo
                 },
                 required: ['title', 'artist']
             }
+        };
+    } else if (contentType === 'exercise-plan') {
+        const dayOfWeek = new Date(dateKey).getDay();
+        const workoutType = getWorkoutType(dayOfWeek);
+        
+        prompt = `Generate a comprehensive ${workoutType} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.`;
+        
+        responseSchema = {
+            type: Type.OBJECT,
+            properties: {
+                push: {
+                    type: Type.OBJECT,
+                    properties: {
+                        exercises: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    muscleGroup: { type: Type.STRING },
+                                    sets: { type: Type.STRING },
+                                    reps: { type: Type.STRING },
+                                    rest: { type: Type.STRING },
+                                    instructions: { type: Type.STRING },
+                                    tips: { type: Type.STRING }
+                                },
+                                required: ["name", "muscleGroup", "sets", "reps", "rest", "instructions"]
+                            }
+                        },
+                        notes: { type: Type.STRING }
+                    },
+                    required: ["exercises"]
+                },
+                pull: {
+                    type: Type.OBJECT,
+                    properties: {
+                        exercises: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    muscleGroup: { type: Type.STRING },
+                                    sets: { type: Type.STRING },
+                                    reps: { type: Type.STRING },
+                                    rest: { type: Type.STRING },
+                                    instructions: { type: Type.STRING },
+                                    tips: { type: Type.STRING }
+                                },
+                                required: ["name", "muscleGroup", "sets", "reps", "rest", "instructions"]
+                            }
+                        },
+                        notes: { type: Type.STRING }
+                    },
+                    required: ["exercises"]
+                },
+                legs: {
+                    type: Type.OBJECT,
+                    properties: {
+                        exercises: {
+                            type: Type.ARRAY,
+                            items: {
+                                type: Type.OBJECT,
+                                properties: {
+                                    name: { type: Type.STRING },
+                                    muscleGroup: { type: Type.STRING },
+                                    sets: { type: Type.STRING },
+                                    reps: { type: Type.STRING },
+                                    rest: { type: Type.STRING },
+                                    instructions: { type: Type.STRING },
+                                    tips: { type: Type.STRING }
+                                },
+                                required: ["name", "muscleGroup", "sets", "reps", "rest", "instructions"]
+                            }
+                        },
+                        notes: { type: Type.STRING }
+                    },
+                    required: ["exercises"]
+                },
+                rest: {
+                    type: Type.OBJECT,
+                    properties: {
+                        activities: {
+                            type: Type.ARRAY,
+                            items: { type: Type.STRING }
+                        },
+                        notes: { type: Type.STRING }
+                    },
+                    required: ["activities"]
+                }
+            },
+            required: ["push", "pull", "legs", "rest"]
         };
     } else {
         return null;
@@ -276,7 +376,7 @@ export async function generateFoodPlanForDate(date: Date): Promise<string> {
 }
 
 // Fallback content for development mode
-function getFallbackContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500', dateKey: string): any {
+function getFallbackContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', dateKey: string): any {
     if (contentType === 'analytics') {
         return {
             sql: {
@@ -330,6 +430,117 @@ function getFallbackContent(contentType: 'analytics' | 'transportation-physics' 
                 { word: "mont", cue: "like 'mawn'", meaning: "mountain" },
                 { word: "compte", cue: "like 'kawn'", meaning: "account" }
             ]
+        };
+    } else if (contentType === 'exercise-plan') {
+        const dayOfWeek = new Date(dateKey).getDay();
+        const workoutType = getWorkoutType(dayOfWeek);
+        
+        return {
+            push: {
+                exercises: [
+                    {
+                        name: "Bench Press",
+                        muscleGroup: "Chest, Shoulders, Triceps",
+                        sets: "4",
+                        reps: "8-10",
+                        rest: "90s",
+                        instructions: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up explosively",
+                        tips: "Keep core tight, maintain neutral spine"
+                    },
+                    {
+                        name: "Overhead Press",
+                        muscleGroup: "Shoulders, Triceps",
+                        sets: "3",
+                        reps: "8-12",
+                        rest: "60s",
+                        instructions: "Stand with feet hip-width, press weight overhead, lower to shoulders",
+                        tips: "Engage core, avoid arching back"
+                    },
+                    {
+                        name: "Dips",
+                        muscleGroup: "Chest, Triceps",
+                        sets: "3",
+                        reps: "8-15",
+                        rest: "60s",
+                        instructions: "Support body on bars, lower until shoulders below elbows, press up",
+                        tips: "Lean slightly forward for chest emphasis"
+                    }
+                ],
+                notes: "Focus on compound movements for maximum muscle activation"
+            },
+            pull: {
+                exercises: [
+                    {
+                        name: "Pull-ups",
+                        muscleGroup: "Lats, Biceps, Rear Delts",
+                        sets: "4",
+                        reps: "5-10",
+                        rest: "90s",
+                        instructions: "Hang from bar, pull body up until chin over bar, lower with control",
+                        tips: "Use full range of motion, engage lats"
+                    },
+                    {
+                        name: "Bent-over Rows",
+                        muscleGroup: "Lats, Rhomboids, Biceps",
+                        sets: "3",
+                        reps: "8-12",
+                        rest: "60s",
+                        instructions: "Hinge at hips, row weight to lower chest, squeeze shoulder blades",
+                        tips: "Keep back straight, core engaged"
+                    },
+                    {
+                        name: "Face Pulls",
+                        muscleGroup: "Rear Delts, Rhomboids",
+                        sets: "3",
+                        reps: "12-15",
+                        rest: "45s",
+                        instructions: "Pull cable to face, separate hands at face level",
+                        tips: "Focus on external rotation"
+                    }
+                ],
+                notes: "Emphasize pulling movements to balance pushing exercises"
+            },
+            legs: {
+                exercises: [
+                    {
+                        name: "Squats",
+                        muscleGroup: "Quads, Glutes, Hamstrings",
+                        sets: "4",
+                        reps: "8-12",
+                        rest: "90s",
+                        instructions: "Stand with feet shoulder-width, lower until thighs parallel, drive up through heels",
+                        tips: "Keep chest up, knees tracking over toes"
+                    },
+                    {
+                        name: "Romanian Deadlifts",
+                        muscleGroup: "Hamstrings, Glutes",
+                        sets: "3",
+                        reps: "8-10",
+                        rest: "90s",
+                        instructions: "Hinge at hips, lower weight along legs, feel stretch in hamstrings",
+                        tips: "Keep back straight, slight knee bend"
+                    },
+                    {
+                        name: "Walking Lunges",
+                        muscleGroup: "Quads, Glutes, Hamstrings",
+                        sets: "3",
+                        reps: "10 each leg",
+                        rest: "60s",
+                        instructions: "Step forward into lunge, push back to standing, alternate legs",
+                        tips: "Keep torso upright, control the movement"
+                    }
+                ],
+                notes: "Focus on proper form and full range of motion"
+            },
+            rest: {
+                activities: [
+                    "Light stretching or yoga",
+                    "Walking or light cardio",
+                    "Foam rolling",
+                    "Meditation or relaxation"
+                ],
+                notes: "Active recovery helps with muscle repair and reduces soreness"
+            }
         };
     }
     return null;
