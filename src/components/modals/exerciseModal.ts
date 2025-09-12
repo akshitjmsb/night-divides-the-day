@@ -3,6 +3,13 @@ import { isContentReadyForPreview } from "../../core/time";
 import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
 import { createSafeHtml } from "../../utils/escapeHtml";
 
+// Global type declaration for Swiper
+declare global {
+  interface Window {
+    Swiper: any;
+  }
+}
+
 // Exercise modal with 4-day workout schedule and swipable cards
 // Deployed to Vercel from base-app-development branch
 

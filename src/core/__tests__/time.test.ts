@@ -43,6 +43,21 @@ const expect = (actual: any) => ({
         if (!(actual instanceof expected)) {
             throw new Error(`Expected ${actual} to be instance of ${expected}`);
         }
+    },
+    toHaveProperty: (property: string) => {
+        if (!(property in actual)) {
+            throw new Error(`Expected object to have property '${property}'`);
+        }
+    },
+    toBeGreaterThanOrEqual: (expected: number) => {
+        if (actual < expected) {
+            throw new Error(`Expected ${actual} to be greater than or equal to ${expected}`);
+        }
+    },
+    toBeLessThanOrEqual: (expected: number) => {
+        if (actual > expected) {
+            throw new Error(`Expected ${actual} to be less than or equal to ${expected}`);
+        }
     }
 });
 
@@ -71,7 +86,7 @@ describe('isDayMode', () => {
                 if (args.length === 0) {
                     super(2024, 0, 15, 10, 0, 0); // 10 AM
                 } else {
-                    super(...args);
+                    super(...(args as [any, ...any[]]));
                 }
             }
         } as any;
