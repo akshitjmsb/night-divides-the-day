@@ -9,6 +9,57 @@
      display: flex;
      align-items: center;
      justify-content: center;
+     position: relative;
+}
+
+.module-card {
+     display: flex;
+     flex-direction: column;
+     align-items: center;
+     justify-content: center;
+     gap: 0.25rem;
+     min-height: 44px;
+}
+
+.module-card:hover .edit-btn {
+     display: block;
+}
+
+.module-name {
+     outline: none;
+     border: none;
+     background: transparent;
+     text-align: center;
+     width: 100%;
+     cursor: text;
+}
+
+.module-name:focus {
+     background: rgba(255, 255, 255, 0.8);
+     border-radius: 4px;
+     padding: 2px 4px;
+}
+
+.edit-btn {
+     position: absolute;
+     top: 2px;
+     right: 2px;
+     background: rgba(255, 255, 255, 0.9);
+     border: none;
+     border-radius: 50%;
+     width: 20px;
+     height: 20px;
+     font-size: 10px;
+     cursor: pointer;
+     display: none;
+     align-items: center;
+     justify-content: center;
+     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.edit-btn:hover {
+     background: rgba(255, 255, 255, 1);
+     transform: scale(1.1);
 }
 
 .preview-card:hover {
