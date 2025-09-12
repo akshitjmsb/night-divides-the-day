@@ -3,6 +3,9 @@ import { isContentReadyForPreview } from "../../core/time";
 import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
 import { createSafeHtml } from "../../utils/escapeHtml";
 
+// Exercise modal with 4-day workout schedule and swipable cards
+// Deployed to Vercel from base-app-development branch
+
 export async function showExerciseModal(
     mode: 'today' | 'tomorrow' | 'archive',
     dates: { active: Date, preview: Date, archive?: Date }

@@ -51,38 +51,72 @@
 
         <!-- DYNAMIC MODULE (Always visible, content adapts based on time) -->
         <div id="day-module" class="module active">
+            <!-- REFLECT SECTION -->
             <section>
                 <h2>Reflect</h2>
                 <div id="life-pointer-display-day" class="life-pointer mt-3"></div>
                 <!-- Reflection button removed for simplicity -->
                 <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
             </section>
+            
+            <!-- TO DO SECTION -->
             <section class="mobile-section">
-                <div class="category-grid grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2">
-                    <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">World Order</h3></div>
-                    <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Guitar</h3></div>
-                    <div id="history-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">History</h3></div>
-                    <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Poetry</h3></div>
-                </div>
-            </section>
-            <section class="mobile-section">
-                <h2>Focus</h2>
-                <div id="tasks-list-day" class="mt-2 text-base"></div>
+                <h2>To do</h2>
+                <div id="tasks-list-day" class="mt-3 text-base"></div>
                 <form id="add-task-form-day" class="add-task-form flex mt-3">
-                    <input type="text" placeholder="Add a new focus..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
+                    <input type="text" placeholder="Add a new task..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
                     <button type="submit" class="bg-gray-700 text-white px-3 rounded-r-md hover:bg-black text-sm">Add</button>
                 </form>
             </section>
+            
+            <!-- LEARN SECTION -->
             <section class="mobile-section">
                 <h2>Learn</h2>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                    <div id="frenchy-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
-                    <div id="food-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
-                    <div id="analytics-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
-                    <div id="hood-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
-                    <div id="exercise-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Exercise</h3></div>
+                <div class="category-grid grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2 mt-3">
+                    <div id="geopolitics-clickable" class="preview-card module-card" data-module="geopolitics">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="World Order">World Order</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="tennis-clickable" class="preview-card module-card" data-module="tennis">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Tennis">Tennis</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="coffee-clickable" class="preview-card module-card" data-module="coffee">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Coffee">Coffee</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="guitar-clickable" class="preview-card module-card" data-module="guitar">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Guitar">Guitar</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="history-clickable" class="preview-card module-card" data-module="history">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="History">History</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="poetry-clickable" class="preview-card module-card" data-module="poetry">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Poetry">Poetry</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="frenchy-clickable-day" class="preview-card cursor-pointer module-card" data-module="french">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="French">French</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="food-clickable-day" class="preview-card cursor-pointer module-card" data-module="food">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Today's Food">Today's Food</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="analytics-clickable-day" class="preview-card cursor-pointer module-card" data-module="analytics">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Analytics">Analytics</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="hood-clickable-day" class="preview-card cursor-pointer module-card" data-module="hood">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Curious">Curious</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
+                    <div id="exercise-clickable-day" class="preview-card cursor-pointer module-card" data-module="exercise">
+                        <h3 class="font-bold text-xs sm:text-sm module-name" contenteditable="true" data-original="Exercise">Exercise</h3>
+                        <button class="edit-btn hidden" onclick="editModule(this)">✏️</button>
+                    </div>
                 </div>
             </section>
         </div>
