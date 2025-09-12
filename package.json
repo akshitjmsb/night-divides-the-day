@@ -1,6 +1,7 @@
 {
   "name": "night-divides-the-day",
-  "version": "2.0.0",
+  "version": "1.0.0",
+  "type": "module",
   "description": "A personal dashboard application.",
   "main": "src/index.tsx",
   "scripts": {
@@ -8,7 +9,8 @@
     "build": "vite build",
     "dev": "vite",
     "compile": "tsc src/index.tsx --outDir dist --target es2020 --module es2020 --moduleResolution node",
-    "test": "echo \"✅ Tests passed (basic check)\" && exit 0",
+    "test": "node test-runner.js",
+    "test:basic": "echo \"✅ Tests passed (basic check)\" && exit 0",
     "lint": "echo \"✅ Linting passed (basic check)\" && exit 0",
     "format": "echo \"✅ Formatting passed (basic check)\" && exit 0",
     "format:check": "echo \"✅ Format check passed (basic check)\" && exit 0",
@@ -24,11 +26,15 @@
   "license": "ISC",
   "devDependencies": {
     "@types/node": "^24.2.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
     "serve": "^14.2.1",
+    "tailwindcss": "^3.3.6",
     "typescript": "^5.9.2",
     "vite": "^5.0.0"
   },
   "dependencies": {
-    "@google/genai": "^1.12.0"
+    "@google/genai": "^1.12.0",
+    "@vercel/kv": "^2.0.0"
   }
 }

@@ -1,0 +1,113 @@
+/* Component styles for Night Divides the Day */
+
+.preview-card {
+     padding: 0.75rem; 
+     border-radius: 0.5rem; 
+     cursor: pointer;
+     transition: all 0.2s ease;
+     min-height: 44px; /* Touch-friendly minimum */
+     display: flex;
+     align-items: center;
+     justify-content: center;
+}
+
+.preview-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.preview-card:active {
+    transform: translateY(0);
+}
+
+/* Mobile-optimized preview cards */
+@media (max-width: 640px) {
+    .preview-card {
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+        min-height: 48px;
+    }
+}
+
+.life-pointer {
+    padding: 1rem;
+    font-size: 1.1rem;
+    text-align: center;
+    border-radius: 4px;
+}
+
+.preview-card, .life-pointer { 
+    background-color: #f8f9fa; 
+    border: 1px solid #e5e7eb; 
+}
+
+.gemini-btn {
+    border: 1px solid #e2e8f0;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+    color: #4a5568;
+}
+
+.gemini-btn:hover { background-color: #f0f4f9; }
+
+.chat-message { 
+    padding: 0.5rem 1rem; 
+    border-radius: 1rem; 
+    margin-bottom: 0.5rem; 
+    max-width: 80%; 
+}
+
+.user-message { 
+    background-color: #e5e7eb; 
+    align-self: flex-end; 
+}
+
+.gemini-message { 
+    background-color: #f3f4f6; 
+    align-self: flex-start; 
+}
+
+.task-item { 
+    display: flex; 
+    align-items: center; 
+    padding: 0.5rem 0.25rem; 
+    border-bottom: 1px solid #dddddd; 
+}
+
+.task-item:last-child { border-bottom: none; }
+
+.task-item input[type="checkbox"] { 
+    width: 1.25rem; 
+    height: 1.25rem; 
+    margin-right: 0.75rem; 
+}
+
+.task-item label.completed { 
+    text-decoration: line-through; 
+    color: #999999; 
+}
+
+.delete-btn { 
+    background: none; 
+    border: none; 
+    font-size: 1.2rem; 
+    cursor: pointer; 
+    margin-left: auto; 
+    color: #999; 
+}
+
+.delete-btn:hover { color: #111; }
+
+.solution-content {
+    padding: 1rem;
+    margin-top: 1rem;
+    border-radius: 4px;
+    display: none;
+}
+
+.solution-content pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}

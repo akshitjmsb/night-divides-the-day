@@ -4,11 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Night Divides the Day</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="src/index.css">
+    <link rel="stylesheet" href="src/styles/index.css">
     
     <script type="importmap">
     {
@@ -18,75 +17,7 @@
     }
     </script>
 
-    <style>
-        body { font-family: 'Special Elite', monospace; background-color: #f4f4f4; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 0.5rem; }
-        .app-container { position: relative; background-color: #ffffff; padding: 1.5rem; max-width: 800px; width: 100%; border-radius: 8px; }
-        .module { display: none; }
-        .module.active { display: block; }
-        h1, h2, h3 { font-family: 'Special Elite', monospace; }
-        h1 { font-size: 1.75rem; }
-        h2 { font-size: 1.5rem; margin-top: 1.5rem; }
-        h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-        .frenchy-table th, .frenchy-table td { padding: 10px 8px; text-align: left; vertical-align: middle; border-bottom: 1px solid #dddddd; font-size: 0.9rem; }
-        .frenchy-table th { font-weight: bold; }
-        .frenchy-table tr:last-child td { border-bottom: none; }
-        .play-btn { background: none; border: none; font-size: 1.25rem; cursor: pointer; transition: transform 0.2s; }
-        .play-btn:hover { transform: scale(1.1); }
-        .logo-container { margin-bottom: 0.5rem; }
-        .logo-svg {
-            width: 50px;
-            height: auto;
-            stroke: #111111;
-            stroke-width: 2.5;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            fill: none;
-        }
-        .footer-btn { text-decoration: underline; font-size: 0.8rem; margin: 0 0.5rem; color: #6b7280; }
-        .preview-card {
-             padding: 0.75rem; border-radius: 0.5rem; cursor: pointer;
-        }
-        .life-pointer {
-            padding: 1rem;
-            font-size: 1.1rem;
-            text-align: center;
-            border-radius: 4px;
-        }
-        .preview-card, .life-pointer { background-color: #f8f9fa; border: 1px solid #e5e7eb; }
-        .gemini-btn {
-            border: 1px solid #e2e8f0;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            font-size: 0.9rem;
-            transition: background-color 0.2s;
-            color: #4a5568;
-        }
-        .gemini-btn:hover { background-color: #f0f4f9; }
-        .chat-message { padding: 0.5rem 1rem; border-radius: 1rem; margin-bottom: 0.5rem; max-width: 80%; }
-        .user-message { background-color: #e5e7eb; align-self: flex-end; }
-        .gemini-message { background-color: #f3f4f6; align-self: flex-start; }
-        .task-item { display: flex; align-items: center; padding: 0.5rem 0.25rem; border-bottom: 1px solid #dddddd; }
-        .task-item:last-child { border-bottom: none; }
-        .task-item input[type="checkbox"] { width: 1.25rem; height: 1.25rem; margin-right: 0.75rem; }
-        .task-item label.completed { text-decoration: line-through; color: #999999; }
-        .delete-btn { background: none; border: none; font-size: 1.2rem; cursor: pointer; margin-left: auto; color: #999; }
-        .delete-btn:hover { color: #111; }
-        .solution-content {
-            padding: 1rem;
-            margin-top: 1rem;
-            border-radius: 4px;
-            display: none;
-        }
-        .solution-content pre {
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }
-        .theme-icon { font-size: 1.5rem; margin-left: 0.5rem; display: none; }
-
-        /* --- MODAL STYLES --- */
-        .modal-content-panel { background-color: #ffffff; color: #111111; }
-
-    </style>
+    <!-- All styles moved to external CSS files -->
 </head>
 <body>
 
@@ -104,9 +35,7 @@
             </div>
             <div class="flex justify-center items-center">
                 <h1>Night Divides the Day</h1>
-                <span id="sun-icon" class="theme-icon">☀️</span>
-                <span id="sunset-icon" class="theme-icon">🌇</span>
-                <span id="moon-icon" class="theme-icon">🌙</span>
+                <span id="dynamic-time-icon" class="theme-icon">☀️</span>
             </div>
             <p id="current-datetime" class="text-xs mt-2"></p>
         </header>
@@ -120,24 +49,22 @@
         <!-- Sync Status -->
         <div id="sync-status" class="hidden text-center text-sm text-gray-600 bg-gray-100 p-2 rounded-md mb-4 transition-opacity duration-300"></div>
 
-        <!-- DAY MODULE (8am - 5pm) -->
-        <div id="day-module" class="module">
+        <!-- DYNAMIC MODULE (Always visible, content adapts based on time) -->
+        <div id="day-module" class="module active">
             <section>
                 <h2>Reflect</h2>
                 <div id="life-pointer-display-day" class="life-pointer mt-3"></div>
-                <div class="text-center mt-4">
-                    <button id="reflection-btn-day" class="gemini-btn">✨ Reflect on this</button>
-                </div>
+                <!-- Reflection button removed for simplicity -->
                 <div id="reflection-prompt-display-day" class="mt-4 text-center italic"></div>
             </section>
             <section class="mobile-section">
-                <div class="category-grid grid grid-cols-6 gap-2">
-                    <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
-                    <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
-                    <div id="history-clickable" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
-                    <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
+                <div class="category-grid grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-2">
+                    <div id="geopolitics-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">World Order</h3></div>
+                    <div id="tennis-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Tennis</h3></div>
+                    <div id="coffee-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Coffee</h3></div>
+                    <div id="guitar-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Guitar</h3></div>
+                    <div id="history-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">History</h3></div>
+                    <div id="poetry-clickable" class="preview-card"><h3 class="font-bold text-xs sm:text-sm">Poetry</h3></div>
                 </div>
             </section>
             <section class="mobile-section">
@@ -150,72 +77,18 @@
             </section>
             <section class="mobile-section">
                 <h2>Learn</h2>
-                <div id="frenchy-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
-                <div id="food-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
-                <div id="analytics-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
-                <div id="hood-clickable-day" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
-            </section>
-        </div>
-
-        <!-- CROSSOVER MODULE (5pm - 6pm) -->
-        <div id="crossover-module" class="module">
-             <section>
-                <h2>Today's State</h2>
-                <div id="life-pointer-display-crossover" class="life-pointer mt-3"></div>
-                <div id="tasks-list-crossover" class="mt-4"></div>
-            </section>
-            <section class="mobile-section">
-                <div class="category-grid grid grid-cols-6 gap-2">
-                    <div id="geopolitics-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
-                    <div id="tennis-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
-                    <div id="history-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
-                    <div id="poetry-clickable-crossover" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                    <div id="frenchy-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">French</h3></div>
+                    <div id="food-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Today's Food</h3></div>
+                    <div id="analytics-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Analytics</h3></div>
+                    <div id="hood-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Under the Hood</h3></div>
+                    <div id="exercise-clickable-day" class="preview-card cursor-pointer"><h3 class="font-bold text-sm">Exercise</h3></div>
                 </div>
-            </section>
-            <section class="mobile-section">
-                <h2>Tomorrow's Preview</h2>
-                <div id="frenchy-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">French</h3></div>
-                <div id="food-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Food</h3></div>
-                <div id="analytics-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Analytics</h3></div>
-                <div id="hood-preview-clickable-crossover" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Under the Hood</h3></div>
-            </section>
-        </div>
-
-        <!-- NIGHT MODULE (6pm - 8am) -->
-        <div id="night-module" class="module">
-            <section>
-                <h2>Tomorrow's Preview</h2>
-                <div id="life-pointer-display-night" class="life-pointer mt-3"></div>
-                <div id="frenchy-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">French</h3></div>
-                <div id="food-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Food</h3></div>
-                <div id="analytics-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Analytics</h3></div>
-                <div id="hood-preview-clickable-night" class="preview-card mt-4 cursor-pointer"><h3 class="font-bold">Under the Hood</h3></div>
-            </section>
-            <section class="mobile-section">
-                <div class="category-grid grid grid-cols-6 gap-2">
-                    <div id="geopolitics-clickable-night" class="preview-card"><h3 class="font-bold text-sm">World Order</h3></div>
-                    <div id="tennis-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Tennis</h3></div>
-                    <div id="coffee-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Coffee</h3></div>
-                    <div id="guitar-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Guitar</h3></div>
-                    <div id="history-clickable-night" class="preview-card"><h3 class="font-bold text-sm">History</h3></div>
-                    <div id="poetry-clickable-night" class="preview-card"><h3 class="font-bold text-sm">Poetry</h3></div>
-                </div>
-            </section>
-             <section class="mt-6">
-                <h2>Focus (Today)</h2>
-                <div id="tasks-list-night" class="mt-2 text-base"></div>
-                <form id="add-task-form-night" class="flex mt-3">
-                    <input type="text" placeholder="Add a new focus..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
-                    <button type="submit" class="bg-gray-700 text-white px-3 rounded-r-md hover:bg-black text-sm">Add</button>
-                </form>
             </section>
         </div>
         
         <footer class="text-center mt-8 py-4 border-t">
-            <button id="archive-open-btn" class="footer-btn">The Archive</button>
-            <button id="chat-open-btn" class="footer-btn">Chat</button>
+            <!-- Footer content removed for simplicity -->
         </footer>
     
         <!-- MODALS -->
@@ -332,42 +205,63 @@
             </div>
         </div>
 
-        <div id="analytics-engineer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto max-h-[90vh] flex flex-col">
+        <div id="exercise-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
+            <div class="modal-content-panel p-4 rounded-lg max-w-4xl w-full mx-auto max-h-[90vh] flex flex-col">
                 <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Analytics Topics</h3>
+                    <h3 id="exercise-modal-title" class="text-lg font-bold">Exercise Plan</h3>
                     <button class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
                 </div>
-                <div id="analytics-engineer-content" class="flex-grow overflow-y-auto space-y-4 pr-2">
-                    <!-- JS will populate this -->
+                <div id="exercise-content" class="overflow-y-auto flex-grow">
+                    <!-- Exercise content will be populated by JS -->
                 </div>
-                <div class="text-center mt-4 pt-2 border-t"><button class="chat-context-btn footer-btn">Chat about this</button></div>
+                <div class="text-center mt-4 pt-2 border-t">
+                    <button class="chat-context-btn footer-btn">Chat about this</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="analytics-engineer-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-2 sm:p-4 z-50">
+            <div class="modal-content-panel p-3 sm:p-4 rounded-lg max-w-4xl w-full mx-auto max-h-[95vh] sm:max-h-[90vh] flex flex-col">
+                <!-- Header -->
+                <div class="flex justify-between items-center mb-3 sm:mb-4 flex-shrink-0">
+                    <h3 class="text-base sm:text-lg font-bold">Analytics Topics</h3>
+                    <button class="modal-close-btn text-2xl sm:text-3xl leading-none font-bold hover:text-black transition-colors p-1">
+                        &times;
+                    </button>
+                </div>
+                
+                <!-- Card Navigation -->
+                <div class="flex justify-center items-center mb-3 sm:mb-4 space-x-2 flex-shrink-0">
+                    <button id="prev-card-btn" class="p-2 sm:p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-sm">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                    </button>
+                    <div id="card-indicators" class="flex space-x-1.5 sm:space-x-2">
+                        <!-- Indicators will be populated by JS -->
+                    </div>
+                    <button id="next-card-btn" class="p-2 sm:p-3 rounded-full bg-gray-200 hover:bg-gray-300 transition-all duration-200 shadow-sm">
+                        <svg class="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <!-- Card Container -->
+                <div id="analytics-cards-container" class="flex-grow relative overflow-hidden min-h-0">
+                    <div id="analytics-cards-wrapper" class="flex transition-transform duration-300 ease-in-out h-full">
+                        <!-- Cards will be populated by JS -->
+                    </div>
+                </div>
+                
+                <!-- Footer -->
+                <div class="text-center mt-3 sm:mt-4 pt-2 border-t flex-shrink-0">
+                    <button class="chat-context-btn footer-btn text-sm sm:text-base">Chat about this</button>
+                </div>
             </div>
         </div>
     
-        <div id="archive-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-md w-full mx-auto">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">The Archive</h3>
-                    <button id="archive-close-btn" class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="archive-list" class="flex flex-col space-y-2"></div>
-            </div>
-        </div>
-    
-        <div id="chat-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center p-4 z-50">
-            <div class="modal-content-panel p-4 rounded-lg max-w-2xl w-full mx-auto flex flex-col h-3/4">
-                <div class="flex justify-between items-center mb-3">
-                    <h3 class="text-lg font-bold">Chat with Gemini</h3>
-                    <button id="chat-close-btn" class="modal-close-btn text-3xl leading-none font-bold hover:text-black">&times;</button>
-                </div>
-                <div id="chat-history" class="flex-grow overflow-y-auto mb-4 flex flex-col space-y-2 p-2 bg-gray-50 rounded"></div>
-                <form id="chat-form" class="flex">
-                    <input type="text" id="chat-input" placeholder="Ask anything..." class="flex-grow p-2 border border-gray-300 rounded-l-md text-sm">
-                    <button type="submit" class="bg-gray-700 text-white px-4 rounded-r-md hover:bg-black text-sm">Send</button>
-                </form>
-            </div>
-        </div>
+        <!-- Archive and Chat modals removed for simplicity -->
     </div>
 
     <script type="module" src="src/index.tsx"></script>
