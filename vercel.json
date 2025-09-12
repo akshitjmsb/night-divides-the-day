@@ -6,7 +6,7 @@
   "devCommand": "npm run dev",
   "functions": {
     "api/*.ts": {
-      "runtime": "edge"
+      "runtime": "nodejs18.x"
     }
   },
   "crons": [
