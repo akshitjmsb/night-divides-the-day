@@ -86,7 +86,8 @@ describe('isDayMode', () => {
                 if (args.length === 0) {
                     super(2024, 0, 15, 10, 0, 0); // 10 AM
                 } else {
-                    super(...(args as [any, ...any[]]));
+                    // Use apply instead of spread to avoid TypeScript tuple requirement
+                    super.apply(this, args);
                 }
             }
         } as any;
