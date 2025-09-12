@@ -1,6 +1,6 @@
 import { showFoodModal } from './foodModal';
 import { showFrenchModal } from './frenchModal';
-import { showAnalyticsModal } from './analyticsModal';
+import { showAnalyticsModal, cleanupAnalyticsEventListeners } from './analyticsModal';
 import { showHoodModal } from './hoodModal';
 import { fetchAndShowWorldOrder } from './worldOrderModal';
 import { fetchAndShowTennisMatches } from './tennisModal';
@@ -33,11 +33,16 @@ export function initializeModalManager(
         if (activeModal && (target.closest('.modal-close-btn') || target === activeModal)) {
             activeModal.classList.add('hidden');
             activeModal.classList.remove('flex');
+            
+            // Clean up analytics modal event listeners if it's the analytics modal
+            if (activeModal.id === 'analytics-engineer-modal') {
+                cleanupAnalyticsEventListeners();
+            }
             return;
         }
 
         // Modal Openers
-        const { dates, keys, chatState, renderChatHistory } = dependencies;
+        const { dates, keys } = dependencies;
 
         if (target.closest('#food-clickable-day')) return showFoodModal('today', dates, keys);
         if (target.closest('#food-preview-clickable-crossover') || target.closest('#food-preview-clickable-night')) return showFoodModal('tomorrow', dates, keys);

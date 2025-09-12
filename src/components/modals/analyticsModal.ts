@@ -8,9 +8,24 @@ let currentCardIndex = 0;
 let totalCards = 0;
 let analyticsData: any = null;
 
+// Event listener cleanup
+let keyboardListener: ((e: KeyboardEvent) => void) | null = null;
+let solutionButtonListener: ((e: Event) => void) | null = null;
+
+export function cleanupAnalyticsEventListeners() {
+    if (keyboardListener) {
+        document.removeEventListener('keydown', keyboardListener);
+        keyboardListener = null;
+    }
+    if (solutionButtonListener) {
+        document.removeEventListener('click', solutionButtonListener);
+        solutionButtonListener = null;
+    }
+}
+
 export async function showAnalyticsModal(
     mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive: Date }
+    dates: { active: Date, preview: Date, archive?: Date }
 ) {
     const modal = document.getElementById('analytics-engineer-modal');
     const cardsWrapper = document.getElementById('analytics-cards-wrapper');
@@ -24,6 +39,12 @@ export async function showAnalyticsModal(
     modal.classList.add('flex');
     
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
+    
+    if (mode === 'archive' && !dates.archive) {
+        console.error('Archive mode requested but archive data not available');
+        cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Archive functionality not available.</p></div>';
+        return;
+    }
 
     if (mode === 'tomorrow' && !isContentReadyForPreview(date)) {
         cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Topics for tomorrow will be available after 5 PM.</p></div>';
@@ -324,7 +345,8 @@ function setupCardNavigation() {
     });
 
     // Add keyboard navigation support
-    document.addEventListener('keydown', (e) => {
+    cleanupAnalyticsEventListeners(); // Clean up any existing listeners
+    keyboardListener = (e: KeyboardEvent) => {
         const modal = document.getElementById('analytics-engineer-modal');
         if (!modal || modal.classList.contains('hidden')) return;
 
@@ -339,8 +361,10 @@ function setupCardNavigation() {
         } else if (e.key === 'Escape') {
             modal.classList.add('hidden');
             modal.classList.remove('flex');
+            cleanupAnalyticsEventListeners(); // Clean up when modal closes
         }
-    });
+    };
+    document.addEventListener('keydown', keyboardListener);
 }
 
 function updateCardPosition() {
@@ -384,7 +408,8 @@ function updateNavigationState() {
 
 function setupCardInteractions() {
     // Handle solution button clicks
-    document.addEventListener('click', async (e) => {
+    cleanupAnalyticsEventListeners(); // Clean up any existing listeners
+    solutionButtonListener = async (e: Event) => {
         const target = e.target as HTMLElement;
         if (target.classList.contains('analytics-card-solution-btn')) {
             const prompt = atob(target.getAttribute('data-prompt') || '');
@@ -413,5 +438,6 @@ function setupCardInteractions() {
                 target.textContent = 'Show Solution';
             }
         }
-    });
+    };
+    document.addEventListener('click', solutionButtonListener);
 }

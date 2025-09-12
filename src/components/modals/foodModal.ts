@@ -1,10 +1,11 @@
 import { getOrGeneratePlanForDate } from "../../api/gemini";
 import { isContentReadyForPreview } from "../../core/time";
+import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
 
 export async function showFoodModal(
     mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive: Date },
-    keys: { today: string, tomorrow: string, archive: string }
+    dates: { active: Date, preview: Date, archive?: Date },
+    keys: { today: string, tomorrow: string, archive?: string }
 ) {
     const modal = document.getElementById('food-modal');
     if (!modal) return;
@@ -26,6 +27,11 @@ export async function showFoodModal(
         title = "Tomorrow's Food";
         key = keys.tomorrow;
     } else { // archive
+        if (!dates.archive || !keys.archive) {
+            console.error('Archive mode requested but archive data not available');
+            contentEl.innerHTML = '<p>Archive functionality not available.</p>';
+            return;
+        }
         date = dates.archive;
         title = "Previous Day's Food";
         key = keys.archive;
@@ -46,7 +52,9 @@ export async function showFoodModal(
         const plan = await getOrGeneratePlanForDate(date, key);
         contentEl.innerHTML = plan.replace(/\n/g, '<br>');
     } catch (error) {
-        console.error('Error fetching food plan for modal', error);
+        const appError = ErrorHandler.handleApiError(error, `Food modal (${mode})`);
+        ErrorHandler.logError(appError);
+        ErrorHandler.showUserError(appError);
         contentEl.innerHTML = '<p>Could not load the food plan.</p>';
     }
 }

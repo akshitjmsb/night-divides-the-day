@@ -1,6 +1,6 @@
 import { Task } from "../types";
 import { saveTasks } from "../core/persistence";
-import { escapeHtml } from "../utils/escapeHtml";
+import { escapeHtml, sanitizeTaskInput, createSafeHtml } from "../utils/escapeHtml";
 
 export function renderTasks(tasks: Task[], listId: string) {
     const listEl = document.getElementById(listId);
@@ -8,7 +8,7 @@ export function renderTasks(tasks: Task[], listId: string) {
     listEl.innerHTML = tasks.map((task, index) => `
         <div class="task-item">
             <input type="checkbox" data-index="${index}" ${task.completed ? 'checked' : ''}>
-            <label class="${task.completed ? 'completed' : ''}">${escapeHtml(task.text)}</label>
+            <label class="${task.completed ? 'completed' : ''}">${createSafeHtml(task.text, { maxLength: 200 })}</label>
             <button class="delete-btn" data-index="${index}">&times;</button>
         </div>
     `).join('');
@@ -23,13 +23,17 @@ function handleTaskSubmit(e: Event, tasks: Task[], mainRender: () => void) {
     const taskText = input.value.trim();
     if (!taskText) return;
 
-    const sanitizedText = escapeHtml(taskText).substring(0, 200);
+    const sanitizedText = sanitizeTaskInput(taskText);
 
     if (sanitizedText) {
         tasks.push({ text: sanitizedText, completed: false });
         input.value = '';
         saveTasks(tasks);
         mainRender();
+    } else {
+        // Show user feedback for invalid input
+        console.warn('Task input was rejected due to security concerns');
+        input.value = ''; // Clear the input
     }
 }
 

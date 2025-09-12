@@ -4,7 +4,7 @@ import { escapeHtml } from "../../utils/escapeHtml";
 
 export async function showHoodModal(
     mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive: Date }
+    dates: { active: Date, preview: Date, archive?: Date }
 ) {
     const modal = document.getElementById('hood-modal');
     if (!modal) return;
@@ -16,6 +16,14 @@ export async function showHoodModal(
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
+    
+    if (mode === 'archive' && !dates.archive) {
+        console.error('Archive mode requested but archive data not available');
+        if (contentEl) {
+            contentEl.innerHTML = '<div class="p-4">Archive functionality not available.</div>';
+        }
+        return;
+    }
 
     if (mode === 'tomorrow' && !isContentReadyForPreview(date)) {
         titleEl.textContent = 'Under the Hood';

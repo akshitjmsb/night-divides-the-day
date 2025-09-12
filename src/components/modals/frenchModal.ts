@@ -3,7 +3,7 @@ import { isContentReadyForPreview } from "../../core/time";
 
 export async function showFrenchModal(
     mode: 'today' | 'tomorrow' | 'archive',
-    dates: { active: Date, preview: Date, archive: Date }
+    dates: { active: Date, preview: Date, archive?: Date }
 ) {
     const modal = document.getElementById('frenchy-modal');
     if (!modal) return;
@@ -14,6 +14,14 @@ export async function showFrenchModal(
     const titleEl = modal.querySelector('#modal-frenchy-title') as HTMLElement;
     const tableBodyEl = modal.querySelector('#modal-frenchy-table-body') as HTMLElement;
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
+    
+    if (mode === 'archive' && !dates.archive) {
+        console.error('Archive mode requested but archive data not available');
+        if (tableBodyEl) {
+            tableBodyEl.innerHTML = '<tr><td colspan="3" class="text-center p-4">Archive functionality not available.</td></tr>';
+        }
+        return;
+    }
 
     if (!titleEl || !tableBodyEl) return;
 

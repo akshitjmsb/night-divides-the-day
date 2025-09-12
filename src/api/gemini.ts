@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { ErrorHandler, ErrorType, withErrorHandling } from "../utils/errorHandling";
 
 const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY) as string;
 let ai: any = null;
@@ -177,8 +178,10 @@ export async function generateDynamicContent(contentType: 'analytics' | 'transpo
         });
         return JSON.parse(response.text);
     } catch (error) {
-        console.error(`Error generating content for ${contentType}:`, error);
-        return null; // Return null on error
+        const appError = ErrorHandler.handleApiError(error, `Content generation for ${contentType}`);
+        ErrorHandler.logError(appError);
+        // Don't show user error for background content generation
+        return null;
     }
 }
 
@@ -266,7 +269,8 @@ export async function generateFoodPlanForDate(date: Date): Promise<string> {
         const text = response.text.replace(/\*/g, '');
         return text || "Could not generate a food plan. The response was empty.";
     } catch (error) {
-        console.error("Error fetching food plan:", error);
+        const appError = ErrorHandler.handleApiError(error, 'Food plan generation');
+        ErrorHandler.logError(appError);
         return "Could not generate a food plan at this time.";
     }
 }
