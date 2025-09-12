@@ -9,17 +9,6 @@
       "runtime": "edge"
     }
   },
-  "headers": [
-    {
-      "source": "/(.*\\.(js|ts|tsx|jsx))$",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/javascript; charset=utf-8"
-        }
-      ]
-    }
-  ],
   "crons": [
     { "path": "/api/run-cycle", "schedule": "0 22 * * *" }
   ]
