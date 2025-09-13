@@ -247,64 +247,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initializeApp();
     
-    // --- MODULE EDITING FUNCTIONALITY ---
-    
-    // Load saved module names from localStorage
-    function loadModuleNames() {
-        const savedNames = localStorage.getItem('module-names');
-        if (savedNames) {
-            const names = JSON.parse(savedNames);
-            Object.keys(names).forEach(moduleId => {
-                const element = document.querySelector(`[data-module="${moduleId}"] .module-name`);
-                if (element) {
-                    element.textContent = names[moduleId];
-                }
-            });
-        }
-    }
-    
-    // Save module names to localStorage
-    function saveModuleNames() {
-        const names: { [key: string]: string } = {};
-        document.querySelectorAll('.module-card').forEach(card => {
-            const moduleId = card.getAttribute('data-module');
-            const nameElement = card.querySelector('.module-name');
-            if (moduleId && nameElement) {
-                names[moduleId] = nameElement.textContent || '';
-            }
-        });
-        localStorage.setItem('module-names', JSON.stringify(names));
-    }
-    
-    // Global function for editing modules (called from HTML onclick)
-    (window as any).editModule = function(button: HTMLElement) {
-        const card = button.closest('.module-card');
-        const nameElement = card?.querySelector('.module-name') as HTMLElement;
-        
-        if (nameElement) {
-            nameElement.focus();
-            nameElement.addEventListener('blur', function() {
-                saveModuleNames();
-            });
-            nameElement.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    nameElement.blur();
-                }
-                if (e.key === 'Escape') {
-                    e.preventDefault();
-                    const original = nameElement.getAttribute('data-original');
-                    if (original) {
-                        nameElement.textContent = original;
-                    }
-                    nameElement.blur();
-                }
-            });
-        }
-    };
-    
-    // Load module names on app initialization
-    loadModuleNames();
+    // --- MODULE EDITING FUNCTIONALITY REMOVED ---
+    // All edit module names functionality has been removed for cleaner design
 
     // --- ENHANCED CONTENT FLOW SYSTEM ---
     
