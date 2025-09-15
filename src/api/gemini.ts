@@ -22,9 +22,10 @@ const CLOUD_CACHE_BASE_URL = 'https://kvdb.io/akki-boy-dashboard-cache';
 
 // Helper function to determine workout type based on day of week
 function getWorkoutType(dayOfWeek: number): string {
-    // 4-day schedule: Push, Pull, Legs, Rest
-    // Monday: Push, Tuesday: Pull, Wednesday: Legs, Thursday: Rest, Friday: Push, Saturday: Pull, Sunday: Legs
-    const schedule = ['Legs', 'Push', 'Pull', 'Legs', 'Rest', 'Push', 'Pull'];
+    // 4-day schedule: Monday, Wednesday, Friday, Saturday
+    // Monday: Push, Wednesday: Pull, Friday: Legs, Saturday: Upper Body
+    // Tuesday, Thursday, Sunday: Rest days
+    const schedule = ['rest', 'push', 'rest', 'pull', 'rest', 'legs', 'upper'];
     return schedule[dayOfWeek];
 }
 
@@ -175,7 +176,7 @@ export async function generateDynamicContent(contentType: 'analytics' | 'transpo
         const dayOfWeek = new Date(dateKey).getDay();
         const workoutType = getWorkoutType(dayOfWeek);
         
-        prompt = `Generate a comprehensive ${workoutType} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.`;
+        prompt = `Generate a comprehensive ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs/Upper rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.`;
         
         responseSchema = {
             type: Type.OBJECT,
@@ -532,6 +533,47 @@ function getFallbackContent(contentType: 'analytics' | 'transportation-physics' 
                 ],
                 notes: "Focus on proper form and full range of motion"
             },
+            upper: {
+                exercises: [
+                    {
+                        name: "Incline Bench Press",
+                        muscleGroup: "Upper Chest, Shoulders",
+                        sets: "4",
+                        reps: "8-10",
+                        rest: "90s",
+                        instructions: "Set bench to 30-45 degree incline, press weight to upper chest",
+                        tips: "Focus on upper chest activation"
+                    },
+                    {
+                        name: "Pull-ups",
+                        muscleGroup: "Lats, Biceps",
+                        sets: "4",
+                        reps: "6-10",
+                        rest: "90s",
+                        instructions: "Hang from bar, pull body up until chin over bar",
+                        tips: "Use full range of motion"
+                    },
+                    {
+                        name: "Dumbbell Shoulder Press",
+                        muscleGroup: "Shoulders, Triceps",
+                        sets: "3",
+                        reps: "8-12",
+                        rest: "60s",
+                        instructions: "Press dumbbells overhead, lower to shoulder level",
+                        tips: "Keep core tight"
+                    },
+                    {
+                        name: "Barbell Rows",
+                        muscleGroup: "Lats, Rhomboids, Biceps",
+                        sets: "3",
+                        reps: "8-12",
+                        rest: "60s",
+                        instructions: "Hinge at hips, row bar to lower chest",
+                        tips: "Squeeze shoulder blades together"
+                    }
+                ],
+                notes: "Full upper body workout combining push and pull movements"
+            },
             rest: {
                 activities: [
                     "Light stretching or yoga",
@@ -561,4 +603,425 @@ Lunch: Grilled chicken with mixed greens and olive oil dressing
 Dinner: Lean beef stir-fry with vegetables
 Snack: Berries with Greek yogurt`;
     }
+}
+
+// Weekly exercise content generation
+export async function generateWeeklyExerciseContent(startDate: Date): Promise<any> {
+    const localKey = `weekly-exercise-${startDate.toISOString().split('T')[0]}`;
+    const cloudKey = `weekly-exercise-${startDate.toISOString().split('T')[0]}`;
+
+    // 1. Check local cache first for speed
+    try {
+        const storedContent = localStorage.getItem(localKey);
+        if (storedContent) {
+            return JSON.parse(storedContent);
+        }
+    } catch (e) {
+        console.error("Error reading weekly exercise from localStorage", e);
+        localStorage.removeItem(localKey);
+    }
+
+    // 2. Check cloud cache
+    try {
+        const response = await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`);
+        if (response.ok) {
+            const responseText = await response.text();
+            if (responseText) {
+                try {
+                    const cloudContent = JSON.parse(responseText);
+                    if (cloudContent) {
+                        localStorage.setItem(localKey, JSON.stringify(cloudContent));
+                        return cloudContent;
+                    }
+                } catch (jsonError) {
+                    console.warn(`Failed to parse cloud weekly content. Not valid JSON.`, jsonError);
+                }
+            }
+        }
+    } catch(e) {
+        console.warn("Could not fetch weekly content from cloud cache. Will try to generate.", e);
+    }
+
+    // 3. Generate new weekly content
+    console.log(`Generating new weekly exercise content starting from ${startDate.toISOString().split('T')[0]}`);
+    const generatedContent = await generateWeeklyContent(startDate);
+
+    if (generatedContent) {
+        // 4. Save to both caches
+        localStorage.setItem(localKey, JSON.stringify(generatedContent));
+        try {
+            await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(generatedContent),
+            });
+        } catch (e) {
+            console.error("Error saving weekly content to cloud cache", e);
+        }
+    }
+    return generatedContent;
+}
+
+async function generateWeeklyContent(startDate: Date): Promise<any> {
+    // If no API key, return fallback weekly content
+    if (!ai) {
+        return getFallbackWeeklyContent(startDate);
+    }
+
+    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    const workoutTypes = ['rest', 'push', 'rest', 'pull', 'rest', 'legs', 'upper'];
+    
+    const prompt = `Generate a comprehensive 7-day workout plan starting from ${startDate.toISOString().split('T')[0]}. 
+    
+    The schedule should be:
+    - Sunday: Rest day
+    - Monday: Push day (chest, shoulders, triceps)
+    - Tuesday: Rest day  
+    - Wednesday: Pull day (back, biceps, rear delts)
+    - Thursday: Rest day
+    - Friday: Legs day (quads, hamstrings, glutes, calves)
+    - Saturday: Upper body day (combination of push and pull)
+
+    For each workout day, provide 3-4 exercises with:
+    - Exercise name
+    - Target muscle groups
+    - Sets and reps
+    - Rest periods
+    - Brief form instructions
+    - Pro tips
+
+    For rest days, suggest active recovery activities.
+
+    Focus on compound movements, progressive overload, and proper form. Make each day unique and challenging.`;
+
+    const responseSchema = {
+        type: Type.OBJECT,
+        properties: {
+            sunday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    activities: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "activities", "notes"]
+            },
+            monday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    exercises: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING },
+                                muscleGroups: { type: Type.STRING },
+                                sets: { type: Type.STRING },
+                                reps: { type: Type.STRING },
+                                rest: { type: Type.STRING },
+                                instructions: { type: Type.STRING },
+                                tips: { type: Type.STRING }
+                            },
+                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
+                        }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "exercises", "notes"]
+            },
+            tuesday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    activities: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "activities", "notes"]
+            },
+            wednesday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    exercises: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING },
+                                muscleGroups: { type: Type.STRING },
+                                sets: { type: Type.STRING },
+                                reps: { type: Type.STRING },
+                                rest: { type: Type.STRING },
+                                instructions: { type: Type.STRING },
+                                tips: { type: Type.STRING }
+                            },
+                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
+                        }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "exercises", "notes"]
+            },
+            thursday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    activities: {
+                        type: Type.ARRAY,
+                        items: { type: Type.STRING }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "activities", "notes"]
+            },
+            friday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    exercises: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING },
+                                muscleGroups: { type: Type.STRING },
+                                sets: { type: Type.STRING },
+                                reps: { type: Type.STRING },
+                                rest: { type: Type.STRING },
+                                instructions: { type: Type.STRING },
+                                tips: { type: Type.STRING }
+                            },
+                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
+                        }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "exercises", "notes"]
+            },
+            saturday: {
+                type: Type.OBJECT,
+                properties: {
+                    type: { type: Type.STRING },
+                    exercises: {
+                        type: Type.ARRAY,
+                        items: {
+                            type: Type.OBJECT,
+                            properties: {
+                                name: { type: Type.STRING },
+                                muscleGroups: { type: Type.STRING },
+                                sets: { type: Type.STRING },
+                                reps: { type: Type.STRING },
+                                rest: { type: Type.STRING },
+                                instructions: { type: Type.STRING },
+                                tips: { type: Type.STRING }
+                            },
+                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
+                        }
+                    },
+                    notes: { type: Type.STRING }
+                },
+                required: ["type", "exercises", "notes"]
+            }
+        },
+        required: ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+    };
+
+    try {
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: prompt,
+            config: {
+                responseMimeType: 'application/json',
+                responseSchema: responseSchema,
+            },
+        });
+        return JSON.parse(response.text);
+    } catch (error) {
+        const appError = ErrorHandler.handleApiError(error, 'Weekly exercise content generation');
+        ErrorHandler.logError(appError);
+        return getFallbackWeeklyContent(startDate);
+    }
+}
+
+function getFallbackWeeklyContent(startDate: Date): any {
+    return {
+        sunday: {
+            type: "rest",
+            activities: [
+                "Light stretching or yoga",
+                "Walking or light cardio",
+                "Foam rolling",
+                "Meditation or relaxation"
+            ],
+            notes: "Active recovery helps with muscle repair and reduces soreness"
+        },
+        monday: {
+            type: "push",
+            exercises: [
+                {
+                    name: "Bench Press",
+                    muscleGroups: "Chest, Shoulders, Triceps",
+                    sets: "4",
+                    reps: "8-10",
+                    rest: "90s",
+                    instructions: "Lie on bench, grip bar slightly wider than shoulders, lower to chest, press up explosively",
+                    tips: "Keep core tight, maintain neutral spine"
+                },
+                {
+                    name: "Overhead Press",
+                    muscleGroups: "Shoulders, Triceps",
+                    sets: "3",
+                    reps: "8-12",
+                    rest: "60s",
+                    instructions: "Stand with feet hip-width, press weight overhead, lower to shoulders",
+                    tips: "Engage core, avoid arching back"
+                },
+                {
+                    name: "Dips",
+                    muscleGroups: "Chest, Triceps",
+                    sets: "3",
+                    reps: "8-15",
+                    rest: "60s",
+                    instructions: "Support body on bars, lower until shoulders below elbows, press up",
+                    tips: "Lean slightly forward for chest emphasis"
+                }
+            ],
+            notes: "Focus on compound movements for maximum muscle activation"
+        },
+        tuesday: {
+            type: "rest",
+            activities: [
+                "Light stretching or yoga",
+                "Walking or light cardio",
+                "Foam rolling",
+                "Meditation or relaxation"
+            ],
+            notes: "Active recovery helps with muscle repair and reduces soreness"
+        },
+        wednesday: {
+            type: "pull",
+            exercises: [
+                {
+                    name: "Pull-ups",
+                    muscleGroups: "Lats, Biceps, Rear Delts",
+                    sets: "4",
+                    reps: "5-10",
+                    rest: "90s",
+                    instructions: "Hang from bar, pull body up until chin over bar, lower with control",
+                    tips: "Use full range of motion, engage lats"
+                },
+                {
+                    name: "Bent-over Rows",
+                    muscleGroups: "Lats, Rhomboids, Biceps",
+                    sets: "3",
+                    reps: "8-12",
+                    rest: "60s",
+                    instructions: "Hinge at hips, row weight to lower chest, squeeze shoulder blades",
+                    tips: "Keep back straight, core engaged"
+                },
+                {
+                    name: "Face Pulls",
+                    muscleGroups: "Rear Delts, Rhomboids",
+                    sets: "3",
+                    reps: "12-15",
+                    rest: "45s",
+                    instructions: "Pull cable to face, separate hands at face level",
+                    tips: "Focus on external rotation"
+                }
+            ],
+            notes: "Emphasize pulling movements to balance pushing exercises"
+        },
+        thursday: {
+            type: "rest",
+            activities: [
+                "Light stretching or yoga",
+                "Walking or light cardio",
+                "Foam rolling",
+                "Meditation or relaxation"
+            ],
+            notes: "Active recovery helps with muscle repair and reduces soreness"
+        },
+        friday: {
+            type: "legs",
+            exercises: [
+                {
+                    name: "Squats",
+                    muscleGroups: "Quads, Glutes, Hamstrings",
+                    sets: "4",
+                    reps: "8-12",
+                    rest: "90s",
+                    instructions: "Stand with feet shoulder-width, lower until thighs parallel, drive up through heels",
+                    tips: "Keep chest up, knees tracking over toes"
+                },
+                {
+                    name: "Romanian Deadlifts",
+                    muscleGroups: "Hamstrings, Glutes",
+                    sets: "3",
+                    reps: "8-10",
+                    rest: "90s",
+                    instructions: "Hinge at hips, lower weight along legs, feel stretch in hamstrings",
+                    tips: "Keep back straight, slight knee bend"
+                },
+                {
+                    name: "Walking Lunges",
+                    muscleGroups: "Quads, Glutes, Hamstrings",
+                    sets: "3",
+                    reps: "10 each leg",
+                    rest: "60s",
+                    instructions: "Step forward into lunge, push back to standing, alternate legs",
+                    tips: "Keep torso upright, control the movement"
+                }
+            ],
+            notes: "Focus on proper form and full range of motion"
+        },
+        saturday: {
+            type: "upper",
+            exercises: [
+                {
+                    name: "Incline Bench Press",
+                    muscleGroups: "Upper Chest, Shoulders",
+                    sets: "4",
+                    reps: "8-10",
+                    rest: "90s",
+                    instructions: "Set bench to 30-45 degree incline, press weight to upper chest",
+                    tips: "Focus on upper chest activation"
+                },
+                {
+                    name: "Pull-ups",
+                    muscleGroups: "Lats, Biceps",
+                    sets: "4",
+                    reps: "6-10",
+                    rest: "90s",
+                    instructions: "Hang from bar, pull body up until chin over bar",
+                    tips: "Use full range of motion"
+                },
+                {
+                    name: "Dumbbell Shoulder Press",
+                    muscleGroups: "Shoulders, Triceps",
+                    sets: "3",
+                    reps: "8-12",
+                    rest: "60s",
+                    instructions: "Press dumbbells overhead, lower to shoulder level",
+                    tips: "Keep core tight"
+                },
+                {
+                    name: "Barbell Rows",
+                    muscleGroups: "Lats, Rhomboids, Biceps",
+                    sets: "3",
+                    reps: "8-12",
+                    rest: "60s",
+                    instructions: "Hinge at hips, row bar to lower chest",
+                    tips: "Squeeze shoulder blades together"
+                }
+            ],
+            notes: "Full upper body workout combining push and pull movements"
+        }
+    };
 }

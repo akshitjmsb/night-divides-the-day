@@ -1,14 +1,8 @@
-import { getOrGenerateDynamicContent } from "../../api/gemini";
+import { getOrGenerateDynamicContent, generateWeeklyExerciseContent } from "../../api/gemini";
 import { isContentReadyForPreview } from "../../core/time";
 import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
 import { createSafeHtml } from "../../utils/escapeHtml";
 
-// Global type declaration for Swiper
-declare global {
-  interface Window {
-    Swiper: any;
-  }
-}
 
 // Exercise modal with 4-day workout schedule and swipable cards
 // Deployed to Vercel from base-app-development branch
@@ -42,18 +36,20 @@ export async function showExerciseModal(
         return;
     }
 
-    titleEl.textContent = mode === 'today' ? "Today's Workout" : mode === 'tomorrow' ? "Tomorrow's Workout" : "Previous Workout";
-    contentEl.innerHTML = '<p>Loading exercise plan...</p>';
+    titleEl.textContent = "Weekly Exercise Plan";
+    contentEl.innerHTML = '<p>Loading weekly exercise plan...</p>';
 
     try {
-        const exerciseData = await getOrGenerateDynamicContent('exercise-plan', date);
-        if (!exerciseData) {
-            contentEl.innerHTML = '<p>Exercise plan not available. Please try again later.</p>';
+        // Get the start of the week (Sunday) for the given date
+        const startOfWeek = getStartOfWeek(date);
+        const weeklyData = await generateWeeklyExerciseContent(startOfWeek);
+        
+        if (!weeklyData) {
+            contentEl.innerHTML = '<p>Weekly exercise plan not available. Please try again later.</p>';
             return;
         }
 
-        renderExerciseContent(contentEl, exerciseData, date);
-        setupExerciseEventListeners();
+        renderWeeklyExerciseContent(contentEl, weeklyData, date);
 
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Exercise modal (${mode})`);
@@ -63,142 +59,206 @@ export async function showExerciseModal(
     }
 }
 
-function setupExerciseEventListeners() {
-    // Initialize Swiper for exercise cards
-    const swiperContainer = document.querySelector('.swiper-container');
-    if (swiperContainer) {
-        // Add Swiper CSS and JS dynamically
-        if (!document.querySelector('link[href*="swiper"]')) {
-            const swiperCSS = document.createElement('link');
-            swiperCSS.rel = 'stylesheet';
-            swiperCSS.href = 'https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.css';
-            document.head.appendChild(swiperCSS);
-        }
-        
-        if (!window.Swiper) {
-            const swiperJS = document.createElement('script');
-            swiperJS.src = 'https://cdn.jsdelivr.net/npm/swiper@8/swiper-bundle.min.js';
-            swiperJS.onload = () => {
-                initializeSwiper();
-            };
-            document.head.appendChild(swiperJS);
-        } else {
-            initializeSwiper();
-        }
+
+function getStartOfWeek(date: Date): Date {
+    const startOfWeek = new Date(date);
+    const day = startOfWeek.getDay();
+    const diff = startOfWeek.getDate() - day; // Sunday = 0
+    startOfWeek.setDate(diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+    return startOfWeek;
+}
+
+function renderWeeklyExerciseContent(container: HTMLElement, weeklyData: any, currentDate: Date) {
+    const dayOfWeek = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const weekDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const currentDay = weekDays[dayOfWeek];
+    const currentDayData = weeklyData[currentDay];
+
+    container.innerHTML = `
+        <div class="exercise-container">
+            <div class="exercise-header">
+                <div class="current-day-badge ${currentDayData.type}-badge">
+                    ${currentDayData.type.charAt(0).toUpperCase() + currentDayData.type.slice(1)}
+                </div>
+            </div>
+
+            <div class="day-selector">
+                ${weekDays.map((day, index) => {
+                    const dayData = weeklyData[day];
+                    const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
+                    const isActive = day === currentDay;
+                    return `
+                        <button class="day-button ${isActive ? 'active' : ''}" data-day="${day}">
+                            <span class="day-name">${dayName}</span>
+                            <span class="workout-type">${getWorkoutTypeAbbreviation(dayData.type)}</span>
+                        </button>
+                    `;
+                }).join('')}
+            </div>
+
+            <div class="exercise-content">
+                ${renderDayContent(currentDayData, currentDay)}
+            </div>
+        </div>
+    `;
+
+    // Initialize day navigation
+    initializeDayNavigation(weeklyData);
+}
+
+function getWorkoutTypeAbbreviation(workoutType: string): string {
+    const abbreviations: { [key: string]: string } = {
+        'push': 'Push',
+        'pull': 'Pull', 
+        'legs': 'Legs',
+        'upper': 'Upper',
+        'rest': 'Rest'
+    };
+    return abbreviations[workoutType] || workoutType;
+}
+
+function renderDayContent(dayData: any, dayName: string): string {
+    if (dayData.type === 'rest') {
+        return renderRestDayContent(dayData);
+    } else {
+        return renderWorkoutCards(dayData);
     }
 }
 
-function initializeSwiper() {
-    new window.Swiper('.swiper-container', {
-        slidesPerView: 1,
-        spaceBetween: 0,
-        centeredSlides: true,
-        loop: true,
-        effect: 'cards',
-        cardsEffect: {
-            perSlideOffset: 8,
-            perSlideRotate: 2,
-            rotate: true,
-            slideShadows: true,
-        },
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-prev',
-        },
-    });
+function renderRestDayContent(dayData: any): string {
+    return `
+        <div class="rest-day-content">
+            <div class="rest-title">Rest Day</div>
+            <div class="rest-message">Take it easy and focus on recovery</div>
+            <div class="rest-suggestions">
+                <h4>Suggested Activities:</h4>
+                <ul>
+                    ${dayData.activities.map((activity: string) => `<li>${createSafeHtml(activity)}</li>`).join('')}
+                </ul>
+            </div>
+            ${dayData.notes ? `<p class="rest-notes">${createSafeHtml(dayData.notes)}</p>` : ''}
+        </div>
+    `;
 }
 
 function renderExerciseContent(container: HTMLElement, data: any, date: Date) {
     const dayOfWeek = date.getDay(); // 0 = Sunday, 1 = Monday, etc.
     const weekDay = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][dayOfWeek];
-    
+
     // Determine workout type based on day of week
     const workoutType = getWorkoutType(dayOfWeek);
-    const workoutData = data[workoutType.toLowerCase()] || data;
+    const workoutData = data[workoutType] || data;
 
     container.innerHTML = `
         <div class="exercise-container">
             <div class="exercise-header">
-                <h3 class="text-lg font-bold mb-2">${weekDay} - ${workoutType} Day</h3>
-                <div class="workout-type-badge ${workoutType.toLowerCase()}-badge">
-                    ${workoutType}
+                <h3 class="text-lg font-bold mb-2">${weekDay} - ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} Day</h3>
+                <div class="workout-type-badge ${workoutType}-badge">
+                    ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)}
                 </div>
             </div>
-            
+
             <div class="exercise-content">
-                ${renderWorkoutSection(workoutData)}
-                ${renderWeeklySchedule(data)}
+                ${renderWorkoutCards(workoutData)}
+                ${renderMinimalSchedule()}
             </div>
         </div>
     `;
+
+    // Initialize card navigation
+    initializeCardNavigation(workoutData);
 }
 
 function getWorkoutType(dayOfWeek: number): string {
     // 4-day schedule: Monday, Wednesday, Friday, Saturday
     // Monday: Push, Wednesday: Pull, Friday: Legs, Saturday: Upper Body
     // Tuesday, Thursday, Sunday: Rest days
-    const schedule = ['Rest', 'Push', 'Rest', 'Pull', 'Rest', 'Legs', 'Upper'];
+    const schedule = ['rest', 'push', 'rest', 'pull', 'rest', 'legs', 'upper'];
     return schedule[dayOfWeek];
 }
 
-function renderWorkoutSection(workoutData: any): string {
+function renderWorkoutCards(workoutData: any): string {
     if (!workoutData) {
         return '<p>No workout data available for today.</p>';
     }
 
+    const hasExercises = workoutData.exercises && workoutData.exercises.length > 0;
+
+    if (!hasExercises) {
+        return '<p>No exercises planned for today.</p>';
+    }
+
     return `
-        <div class="workout-section">
-            <h4 class="font-semibold mb-3 text-gray-800">Today's Exercises</h4>
-            <div class="exercise-list swiper-container">
-                <div class="swiper-wrapper">
-                    ${workoutData.exercises ? workoutData.exercises.map((exercise: any, index: number) => 
-                        `<div class="swiper-slide">${renderExercise(exercise, index + 1)}</div>`
-                    ).join('') : '<p>No exercises planned for today.</p>'}
-                </div>
-                <div class="swiper-button-prev"></div>
-                <div class="swiper-button-next"></div>
-                <div class="swiper-pagination"></div>
+        <div class="workout-cards-container">
+            <div class="exercise-counter">Exercise 1 of ${workoutData.exercises.length}</div>
+            <div class="cards-wrapper">
+                ${workoutData.exercises.map((exercise: any, index: number) =>
+                    renderExerciseCard(exercise, index + 1, workoutData.exercises.length)
+                ).join('')}
+            </div>
+            <div class="card-indicators">
+                ${workoutData.exercises.map((_: any, index: number) =>
+                    `<span class="indicator ${index === 0 ? 'active' : ''}"></span>`
+                ).join('')}
             </div>
         </div>
     `;
 }
 
-function renderExercise(exercise: any, number: number): string {
+function initializeDayNavigation(weeklyData: any) {
+    const dayButtons = document.querySelectorAll('.day-button');
+    const exerciseContent = document.querySelector('.exercise-content');
+    const currentDayBadge = document.querySelector('.current-day-badge');
+
+    if (!dayButtons.length || !exerciseContent || !currentDayBadge) {
+        return;
+    }
+
+    dayButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+            const selectedDay = button.getAttribute('data-day');
+            if (!selectedDay || !weeklyData[selectedDay]) return;
+
+            // Update active button
+            dayButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+
+            // Update current day badge
+            const dayData = weeklyData[selectedDay];
+            currentDayBadge.className = `current-day-badge ${dayData.type}-badge`;
+            currentDayBadge.textContent = `${dayData.type.charAt(0).toUpperCase() + dayData.type.slice(1)}`;
+
+            // Update content
+            const newContent = renderDayContent(dayData, selectedDay);
+            exerciseContent.innerHTML = newContent;
+
+            // Initialize card navigation if it's a workout day
+            if (dayData.type !== 'rest' && dayData.exercises) {
+                initializeCardNavigation(dayData);
+            }
+        });
+    });
+}
+
+function renderExerciseCard(exercise: any, number: number, total: number): string {
     const exerciseName = exercise.name || 'Exercise';
+    const muscleGroups = exercise.muscleGroups || exercise.target || 'Full Body';
+    const sets = exercise.sets || '3-4';
+    const reps = exercise.reps || '8-12';
+    const rest = exercise.rest || '90s';
     const muscleWikiUrl = getMuscleWikiUrl(exerciseName);
-    
+
     return `
-        <div class="exercise-card">
-            <div class="exercise-header">
-                <h5 class="exercise-title">${number}. ${createSafeHtml(exerciseName)}</h5>
-                <span class="muscle-group">${exercise.muscleGroup || 'Full Body'}</span>
-            </div>
-            
-            <div class="exercise-details">
-                <div class="detail-item">
-                    <span class="detail-label">Sets</span>
-                    <span class="detail-value">${exercise.sets || '3-4'}</span>
+        <div class="exercise-card" data-exercise="${number}">
+            <div class="card-content">
+                <h4 class="exercise-title">${createSafeHtml(exerciseName)}</h4>
+                <p class="muscle-groups">${createSafeHtml(muscleGroups)}</p>
+                <div class="exercise-details">
+                    <span class="sets-reps">${sets} sets × ${reps} reps</span>
+                    <span class="rest-time">${rest} rest</span>
                 </div>
-                <div class="detail-item">
-                    <span class="detail-label">Reps</span>
-                    <span class="detail-value">${exercise.reps || '8-12'}</span>
-                </div>
-                <div class="detail-item">
-                    <span class="detail-label">Rest</span>
-                    <span class="detail-value">${exercise.rest || '60-90s'}</span>
-                </div>
-            </div>
-            
-            <div class="exercise-actions">
-                <a href="${muscleWikiUrl}" target="_blank" rel="noopener noreferrer" 
-                   class="musclewiki-link">
-                    <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
-                    </svg>
+                <a href="${muscleWikiUrl}" target="_blank" class="musclewiki-link">
                     MuscleWiki
                 </a>
             </div>
@@ -238,44 +298,142 @@ function getMuscleWikiUrl(exerciseName: string): string {
     return `https://musclewiki.com/exercises/${muscleWikiSlug}`;
 }
 
-function renderWeeklySchedule(data: any): string {
+function renderMinimalSchedule(): string {
     return `
-        <div class="weekly-schedule mt-6">
-            <h4 class="font-semibold mb-3 text-gray-800">4-Day Workout Schedule</h4>
-            <div class="schedule-grid grid grid-cols-2 md:grid-cols-4 gap-2">
-                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
-                    <div class="font-medium text-sm">Monday</div>
-                    <div class="text-xs font-semibold">Push</div>
-                    <div class="text-xs text-gray-600 mt-1">Chest, Shoulders, Triceps</div>
-                </div>
-                <div class="schedule-day rest-day p-3 rounded text-center border border-gray-300">
-                    <div class="font-medium text-sm">Tuesday</div>
-                    <div class="text-xs text-gray-500">Rest</div>
-                </div>
-                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
-                    <div class="font-medium text-sm">Wednesday</div>
-                    <div class="text-xs font-semibold">Pull</div>
-                    <div class="text-xs text-gray-600 mt-1">Back, Biceps</div>
-                </div>
-                <div class="schedule-day rest-day p-3 rounded text-center border border-gray-300">
-                    <div class="font-medium text-sm">Thursday</div>
-                    <div class="text-xs text-gray-500">Rest</div>
-                </div>
-                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
-                    <div class="font-medium text-sm">Friday</div>
-                    <div class="text-xs font-semibold">Legs</div>
-                    <div class="text-xs text-gray-600 mt-1">Quads, Hamstrings, Glutes</div>
-                </div>
-                <div class="schedule-day workout-day p-3 rounded text-center border-2 border-black">
-                    <div class="font-medium text-sm">Saturday</div>
-                    <div class="text-xs font-semibold">Upper</div>
-                    <div class="text-xs text-gray-600 mt-1">Full Upper Body</div>
-                </div>
-                <div class="schedule-day rest-day p-3 rounded text-center border border-gray-300">
-                    <div class="font-medium text-sm">Sunday</div>
-                    <div class="text-xs text-gray-500">Rest</div>
-                </div>
+        <div class="minimal-schedule">
+            <div class="schedule-workouts">
+                <span class="workout-type">Push</span>
+                <span class="workout-type">Rest</span>
+                <span class="workout-type">Pull</span>
+                <span class="workout-type">Rest</span>
+                <span class="workout-type">Legs</span>
+                <span class="workout-type">Upper</span>
+                <span class="workout-type">Rest</span>
+            </div>
+            <div class="schedule-days">
+                <span class="day-letter">(M)</span>
+                <span class="day-letter">(T)</span>
+                <span class="day-letter">(W)</span>
+                <span class="day-letter">(T)</span>
+                <span class="day-letter">(F)</span>
+                <span class="day-letter">(S)</span>
+                <span class="day-letter">(S)</span>
             </div>
         </div>
     `;
+}
+
+function initializeCardNavigation(workoutData: any) {
+    if (!workoutData || !workoutData.exercises || workoutData.exercises.length <= 1) {
+        return;
+    }
+
+    const cards = document.querySelectorAll('.exercise-card');
+    const indicators = document.querySelectorAll('.indicator');
+    const counter = document.querySelector('.exercise-counter');
+    
+    if (cards.length === 0 || indicators.length === 0 || !counter) {
+        return;
+    }
+
+    let currentIndex = 0;
+    const totalExercises = workoutData.exercises.length;
+
+    // Show first card
+    cards[0].classList.add('active');
+    indicators[0].classList.add('active');
+
+    // Add touch/swipe support
+    let startX = 0;
+    let startY = 0;
+    let isDragging = false;
+
+    const cardsWrapper = document.querySelector('.cards-wrapper');
+    if (!cardsWrapper) return;
+
+    cardsWrapper.addEventListener('touchstart', (e: TouchEvent) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isDragging = true;
+    });
+
+    cardsWrapper.addEventListener('touchmove', (e: TouchEvent) => {
+        if (!isDragging) return;
+        e.preventDefault();
+    });
+
+    cardsWrapper.addEventListener('touchend', (e: TouchEvent) => {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const endX = e.changedTouches[0].clientX;
+        const endY = e.changedTouches[0].clientY;
+        const diffX = startX - endX;
+        const diffY = startY - endY;
+
+        // Only trigger if horizontal swipe is more significant than vertical
+        if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+            if (diffX > 0) {
+                // Swipe left - next card
+                nextCard();
+            } else {
+                // Swipe right - previous card
+                prevCard();
+            }
+        }
+    });
+
+    // Add click support for indicators
+    indicators.forEach((indicator, index) => {
+        indicator.addEventListener('click', () => {
+            goToCard(index);
+        });
+    });
+
+    function nextCard() {
+        if (currentIndex < totalExercises - 1) {
+            goToCard(currentIndex + 1);
+        }
+    }
+
+    function prevCard() {
+        if (currentIndex > 0) {
+            goToCard(currentIndex - 1);
+        }
+    }
+
+    function goToCard(index: number) {
+        if (index < 0 || index >= totalExercises) return;
+
+        // Update current card
+        cards[currentIndex].classList.remove('active');
+        cards[currentIndex].classList.add('prev');
+        
+        // Update new card
+        cards[index].classList.remove('prev');
+        cards[index].classList.add('active');
+
+        // Update indicators
+        indicators[currentIndex].classList.remove('active');
+        indicators[index].classList.add('active');
+
+        // Update counter
+        counter.textContent = `Exercise ${index + 1} of ${totalExercises}`;
+
+        currentIndex = index;
+
+        // Clean up prev classes after animation
+        setTimeout(() => {
+            cards.forEach(card => card.classList.remove('prev'));
+        }, 300);
+    }
+
+    // Add keyboard support
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'ArrowLeft') {
+            prevCard();
+        } else if (e.key === 'ArrowRight') {
+            nextCard();
+        }
+    });
 }
