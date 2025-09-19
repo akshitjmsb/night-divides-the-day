@@ -16,6 +16,8 @@ export const iconSvgs = {
             <path d="M8 18c2-2 4-2 6 0" />
             <path d="M6 8c2 2 2 4 0 6" />
             <path d="M18 8c-2 2-2 4 0 6" />
+            <path d="M12 2v20" />
+            <path d="M2 12h20" />
         </svg>
     `,
     coffee: `
@@ -30,14 +32,11 @@ export const iconSvgs = {
     `,
     guitar: `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <ellipse cx="12" cy="16" rx="6" ry="4" />
-            <rect x="10" y="4" width="4" height="12" />
-            <rect x="9" y="2" width="6" height="2" />
-            <path d="M11 6v10" />
-            <path d="M12 6v10" />
-            <path d="M13 6v10" />
-            <path d="M14 6v10" />
-            <circle cx="12" cy="16" r="2" />
+            <path d="M6 3h12l-1 18H7L6 3z" />
+            <path d="M6 3l6 6" />
+            <path d="M12 9v12" />
+            <path d="M8 15h8" />
+            <circle cx="12" cy="18" r="2" />
         </svg>
     `,
     history: `
@@ -58,23 +57,29 @@ export const iconSvgs = {
     `,
     french: `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="2" y="4" width="20" height="16" />
-            <rect x="2" y="4" width="6.67" height="16" fill="currentColor" />
-            <rect x="8.67" y="4" width="6.67" height="16" fill="currentColor" />
-            <rect x="15.33" y="4" width="6.67" height="16" fill="currentColor" />
+            <path d="M4 6h16v12H4z" />
+            <path d="M8 6v12" />
+            <path d="M16 6v12" />
+            <path d="M12 8h4" />
+            <path d="M12 12h4" />
+            <path d="M12 16h4" />
+            <path d="M8 8h4" />
+            <path d="M8 12h4" />
+            <path d="M8 16h4" />
         </svg>
     `,
     food: `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="8" />
-            <path d="M8 6l1 1 1-1" />
-            <path d="M8 8v6" />
+            <path d="M8 4l1 1 1-1" />
+            <path d="M8 6v8" />
+            <path d="M7 6h2" />
             <path d="M7 8h2" />
-            <path d="M7 10h2" />
-            <path d="M16 6l-1 1-1-1" />
-            <path d="M16 8v6" />
+            <path d="M16 4l-1 1-1-1" />
+            <path d="M16 6v8" />
+            <path d="M15 6h2" />
             <path d="M15 8h2" />
-            <path d="M15 10h2" />
+            <circle cx="12" cy="12" r="3" />
         </svg>
     `,
     analytics: `
@@ -96,10 +101,11 @@ export const iconSvgs = {
     `,
     exercise: `
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6.5 6.5h11v11h-11z" />
-            <circle cx="4" cy="12" r="2" />
-            <circle cx="20" cy="12" r="2" />
-            <path d="M6 12h12" />
+            <circle cx="6" cy="12" r="3" />
+            <circle cx="18" cy="12" r="3" />
+            <path d="M9 12h6" />
+            <path d="M6 9v6" />
+            <path d="M18 9v6" />
         </svg>
     `
 };
