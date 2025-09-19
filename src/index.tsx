@@ -171,9 +171,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // Update dynamic icon based on time
         updateDynamicIcon(hour);
         
-        // Render module icons
-        renderModuleIcons();
-        
         // Always render day content for now
         await renderDayModule();
     }
@@ -208,6 +205,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initializeApp() {
         try {
+            // Render icons immediately for better UX
+            renderModuleIcons();
+            
             await updateDateDerivedData(); // Ensure date-derived data is available
             initializeQuantumTimer();
 
