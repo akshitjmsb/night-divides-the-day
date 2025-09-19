@@ -114,25 +114,25 @@
 /* Mobile-optimized preview cards for 3-column layout */
 @media (max-width: 640px) {
     .preview-card {
-        padding: 0.375rem;
-        border-radius: 0.5rem;
-        min-height: 44px;
+        padding: 0.25rem;
+        border-radius: 0.375rem;
+        min-height: 36px;
     }
     
     .module-card {
-        gap: 0.375rem;
-        padding: 0.375rem;
-        min-height: 44px;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        min-height: 36px;
     }
     
     .module-card h3 {
-        font-size: 0.7rem;
-        line-height: 1.1;
+        font-size: 0.65rem;
+        line-height: 1.0;
     }
     
     .module-icon {
-        width: 18px;
-        height: 18px;
+        width: 16px;
+        height: 16px;
     }
 }
 
