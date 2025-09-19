@@ -14,11 +14,35 @@
 
 .module-card {
      display: flex;
-     flex-direction: column;
+     flex-direction: row;
+     align-items: center;
+     justify-content: flex-start;
+     gap: 0.5rem;
+     min-height: 44px;
+     padding: 0.5rem;
+}
+
+.module-icon {
+     width: 20px;
+     height: 20px;
+     flex-shrink: 0;
+     display: flex;
      align-items: center;
      justify-content: center;
-     gap: 0.25rem;
-     min-height: 44px;
+}
+
+.module-icon svg {
+     width: 100%;
+     height: 100%;
+     color: #374151;
+}
+
+/* Responsive icon sizing */
+@media (min-width: 640px) {
+     .module-icon {
+         width: 24px;
+         height: 24px;
+     }
 }
 
 /* Edit functionality removed - cleaner design */

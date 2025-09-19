@@ -9,6 +9,7 @@ import { initializeQuantumTimer } from "./components/quantumTimer";
 import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
 import { initializeModalManager } from "./components/modals/modalManager";
+import { renderModuleIcons } from "./utils/iconRenderer";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- DATA ---
@@ -152,6 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // renderChatHistory function removed for simplicity
     
+    
     async function mainRender() {
         // Recalculate time-sensitive variables each time render is called
         updateDateDerivedData(); 
@@ -166,6 +168,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update dynamic icon based on time
         updateDynamicIcon(hour);
+        
+        // Render module icons
+        renderModuleIcons();
         
         // Always render day content for now
         await renderDayModule();
