@@ -111,12 +111,28 @@
     transform: translateY(0);
 }
 
-/* Mobile-optimized preview cards */
+/* Mobile-optimized preview cards for 3-column layout */
 @media (max-width: 640px) {
     .preview-card {
         padding: 0.5rem;
         border-radius: 0.75rem;
         min-height: 48px;
+    }
+    
+    .module-card {
+        gap: 0.5rem;
+        padding: 0.5rem;
+        min-height: 48px;
+    }
+    
+    .module-card h3 {
+        font-size: 0.75rem;
+        line-height: 1.2;
+    }
+    
+    .module-icon {
+        width: 20px;
+        height: 20px;
     }
 }
 

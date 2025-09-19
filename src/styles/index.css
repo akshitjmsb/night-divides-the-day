@@ -68,17 +68,39 @@
     }
 }
 
-/* Category grid responsive design - Mobile First */
+/* Category grid responsive design - 3 columns on mobile */
 .category-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem; /* Increased gap for better mobile spacing */
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem; /* Reduced gap for 3 columns on mobile */
 }
 
-/* Small mobile devices */
+/* Small mobile devices - 3 columns with compact sizing */
 @media (max-width: 375px) {
     .category-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 0.5rem;
+    }
+    
+    .preview-card {
+        padding: 0.375rem !important;
+        min-height: 48px;
+    }
+    
+    .module-card h3 {
+        font-size: 0.7rem !important;
+    }
+    
+    .module-icon {
+        width: 18px !important;
+        height: 18px !important;
+    }
+}
+
+/* Medium mobile devices - 3 columns with slightly larger sizing */
+@media (min-width: 376px) and (max-width: 480px) {
+    .category-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
     }
     
     .preview-card {
@@ -89,17 +111,14 @@
     .module-card h3 {
         font-size: 0.75rem !important;
     }
-}
-
-/* Medium mobile devices */
-@media (min-width: 376px) and (max-width: 480px) {
-    .category-grid {
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
+    
+    .module-icon {
+        width: 20px !important;
+        height: 20px !important;
     }
 }
 
-/* Large mobile devices */
+/* Large mobile devices - 3 columns with standard sizing */
 @media (min-width: 481px) and (max-width: 640px) {
     .category-grid {
         grid-template-columns: repeat(3, 1fr);
