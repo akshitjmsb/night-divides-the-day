@@ -5,13 +5,27 @@ import { escapeHtml, sanitizeTaskInput, createSafeHtml } from "../utils/escapeHt
 export function renderTasks(tasks: Task[], listId: string) {
     const listEl = document.getElementById(listId);
     if(!listEl) return;
+    
+    if (tasks.length === 0) {
+        listEl.innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">📝</div>
+                <p class="empty-text">No tasks yet. Add one above!</p>
+            </div>
+        `;
+        return;
+    }
+    
     listEl.innerHTML = tasks.map((task, index) => `
         <div class="task-item">
             <input type="checkbox" data-index="${index}" ${task.completed ? 'checked' : ''}>
             <label class="${task.completed ? 'completed' : ''}">${createSafeHtml(task.text, { maxLength: 200 })}</label>
-            <button class="delete-btn" data-index="${index}">&times;</button>
+            <button class="delete-btn" data-index="${index}" title="Delete task">&times;</button>
         </div>
     `).join('');
+    
+    // Attach event listeners to the newly rendered elements
+    attachTaskEventListeners(listId);
 }
 
 function handleTaskSubmit(e: Event, tasks: Task[], mainRender: () => void) {
@@ -53,6 +67,43 @@ export function handleTaskToggle(target: HTMLInputElement, tasks: Task[], mainRe
         saveTasks(tasks);
         mainRender();
     }
+}
+
+function attachTaskEventListeners(listId: string) {
+    const listEl = document.getElementById(listId);
+    if (!listEl) return;
+
+    // Add click listener for delete buttons
+    listEl.addEventListener('click', (e) => {
+        const target = e.target as HTMLElement;
+        if (target.classList.contains('delete-btn')) {
+            const index = parseInt(target.dataset.index || '-1');
+            if (index > -1) {
+                // Get tasks from the global state (we'll need to pass this)
+                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                tasks.splice(index, 1);
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                // Re-render the tasks
+                renderTasks(tasks, listId);
+            }
+        }
+    });
+
+    // Add change listener for checkboxes
+    listEl.addEventListener('change', (e) => {
+        const target = e.target as HTMLInputElement;
+        if (target.type === 'checkbox') {
+            const index = parseInt(target.dataset.index || '-1');
+            if (index > -1) {
+                // Get tasks from the global state
+                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                tasks[index].completed = target.checked;
+                localStorage.setItem('tasks', JSON.stringify(tasks));
+                // Re-render the tasks
+                renderTasks(tasks, listId);
+            }
+        }
+    });
 }
 
 export function initializeTaskForms(tasks: Task[], mainRender: () => void) {
