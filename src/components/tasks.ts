@@ -7,12 +7,7 @@ export function renderTasks(tasks: Task[], listId: string) {
     if(!listEl) return;
     
     if (tasks.length === 0) {
-        listEl.innerHTML = `
-            <div class="empty-state">
-                <div class="empty-icon">📝</div>
-                <p class="empty-text">No tasks yet. Add one above!</p>
-            </div>
-        `;
+        listEl.innerHTML = '';
         return;
     }
     
