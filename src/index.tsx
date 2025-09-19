@@ -10,22 +10,18 @@ import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, r
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons } from "./utils/iconRenderer";
+import { getPhilosophicalQuote, getReflectionPrompt } from "./components/reflection";
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DATA ---
-    const lifePointers = [
-        "Just be there like a tree", "30 minute work quantums", "Director or Actor ?", "Try first", "Don't take your mind seriously", "It's not about me!", "Never steal the thunder", "Night divides the day", "Only person that can help you is YOU", "All IN", "It is happening now", "Enjoy imperfections", "Be a role model not a teacher", "Listen to your body", "Transform your company (Take actions 5 years ahead)", "Wait and Absorb - Everything is human mind made!", "No substitute to hardwork", "Sleep over it", "Dance in the Dance of Strangers", "Beyond thoughts - You are more than your thoughts", "Respond to change vs Following a plan", "Energy optimization instead of Time optimization", "Break - fast, Break it well!", "Slowly is the only fastest way to success", "Only Dare required is Dare to try", "SPEAK UP - ASK!", "Be courageous to listen to the voice in your head", "Rather than love, than money, than faith, than fame, than fairness, give me truth!!"
-    ];
-    
     // --- STATE & DERIVED DATA ---
     let todayKey: string, tomorrowKey: string, tomorrowDay: number;
     let activeContentDate: Date, previewContentDate: Date;
-    let todaysLifePointer: any;
+    let todaysQuote: { quote: string; author: string } | null = null;
     let isAutoGenerating = false;
     let lastApiCall = 0;
     const API_RATE_LIMIT = 1000; // 1 second between calls
 
-    function updateDateDerivedData() {
+    async function updateDateDerivedData() {
         const { now, hour } = getCanonicalTime();
 
         // Determine the active content date based on the time.
@@ -41,15 +37,21 @@ document.addEventListener('DOMContentLoaded', () => {
         previewContentDate = new Date(activeContentDate);
         previewContentDate.setDate(activeContentDate.getDate() + 1);
 
-        // Archive functionality removed for simplicity
-
         // Derive keys and other data from these canonical dates.
         todayKey = activeContentDate.toISOString().split('T')[0];
         tomorrowKey = previewContentDate.toISOString().split('T')[0];
         tomorrowDay = previewContentDate.getDay();
         
-        const dayOfYear = getDayOfYear(activeContentDate);
-        todaysLifePointer = lifePointers[(dayOfYear - 1) % lifePointers.length];
+        // Load philosophical quote for today
+        try {
+            todaysQuote = await getPhilosophicalQuote(activeContentDate);
+        } catch (error) {
+            console.error("Error loading philosophical quote:", error);
+            todaysQuote = {
+                quote: "The unexamined life is not worth living.",
+                author: "Socrates"
+            };
+        }
     }
     
     let tasks: { text: string; completed: boolean }[] = [];
@@ -156,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     async function mainRender() {
         // Recalculate time-sensitive variables each time render is called
-        updateDateDerivedData(); 
+        await updateDateDerivedData(); 
         const { hour } = getCanonicalTime(); // Use canonical hour
 
         await loadCoreData();
@@ -206,7 +208,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function initializeApp() {
         try {
-            updateDateDerivedData(); // Ensure date-derived data is available
+            await updateDateDerivedData(); // Ensure date-derived data is available
             initializeQuantumTimer();
 
             const appContainer = document.getElementById('app-container');
@@ -468,8 +470,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ENHANCED MODULE RENDERING FUNCTIONS ---
     
     async function renderDayModule() {
+        // Display philosophical quote
         const lifePointerEl = document.getElementById('life-pointer-display-day');
-        if (lifePointerEl) lifePointerEl.textContent = todaysLifePointer;
+        if (lifePointerEl && todaysQuote) {
+            lifePointerEl.innerHTML = `
+                <div class="quote-text">"${todaysQuote.quote}"</div>
+                <div class="quote-author">— ${todaysQuote.author}</div>
+            `;
+        }
         
         const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
         if (reflectionPromptEl) reflectionPromptEl.textContent = '';

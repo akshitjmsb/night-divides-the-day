@@ -153,6 +153,35 @@
     border-radius: 4px;
 }
 
+/* Philosophical quote styling */
+.quote-text {
+    font-size: 1.1rem;
+    line-height: 1.4;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+    color: #374151;
+}
+
+.quote-author {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #6b7280;
+    text-align: right;
+    margin-top: 0.5rem;
+}
+
+/* Mobile responsive quote styling */
+@media (max-width: 768px) {
+    .quote-text {
+        font-size: 1rem;
+        line-height: 1.3;
+    }
+    
+    .quote-author {
+        font-size: 0.8rem;
+    }
+}
+
 .preview-card, .life-pointer { 
     background-color: #f8f9fa; 
     border: 1px solid #e5e7eb; 
