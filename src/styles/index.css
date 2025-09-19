@@ -68,44 +68,69 @@
     }
 }
 
-/* Category grid responsive design */
-@media (max-width: 768px) {
+/* Category grid responsive design - Mobile First */
+.category-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+}
+
+/* Small mobile devices */
+@media (max-width: 375px) {
     .category-grid {
-        grid-template-columns: repeat(3, 1fr) !important;
-        gap: 0.5rem !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.5rem;
     }
     
     .preview-card {
-        padding: 1rem !important;
-        min-height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
+        padding: 0.5rem !important;
+        min-height: 52px;
     }
     
-    .preview-card h3 {
-        font-size: 0.875rem !important;
-        line-height: 1.2;
+    .module-card h3 {
+        font-size: 0.75rem !important;
     }
 }
 
-/* Extra small devices */
-@media (max-width: 375px) {
+/* Medium mobile devices */
+@media (min-width: 376px) and (max-width: 480px) {
     .category-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 0.5rem !important;
-    }
-    
-    .preview-card {
-        padding: 0.875rem !important;
-        min-height: 55px;
-    }
-    
-    .preview-card h3 {
-        font-size: 0.8rem !important;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
     }
 }
+
+/* Large mobile devices */
+@media (min-width: 481px) and (max-width: 640px) {
+    .category-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.75rem;
+    }
+}
+
+/* Tablet */
+@media (min-width: 641px) and (max-width: 768px) {
+    .category-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+    }
+}
+
+/* Small desktop */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .category-grid {
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+}
+
+/* Large desktop */
+@media (min-width: 1025px) {
+    .category-grid {
+        grid-template-columns: repeat(6, 1fr);
+        gap: 0.5rem;
+    }
+}
+
 
 /* Form improvements for mobile */
 @media (max-width: 768px) {

@@ -130,7 +130,9 @@ export function renderModuleIcons() {
     Object.entries(iconMap).forEach(([iconId, svgString]) => {
         const iconContainer = document.getElementById(iconId);
         if (iconContainer) {
-            iconContainer.innerHTML = svgString;
+            // Use responsive sizing - start with mobile size (24px)
+            const responsiveSvg = svgString.replace(/width="20"/g, 'width="24"').replace(/height="20"/g, 'height="24"');
+            iconContainer.innerHTML = responsiveSvg;
         }
     });
 }
