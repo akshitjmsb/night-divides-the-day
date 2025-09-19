@@ -6,7 +6,7 @@ import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } fr
 import { Task, PoetrySelection } from "./types";
 import { loadTasks, saveTasks, loadPoetryRecents, savePoetryRecents, recordPoetrySelection } from "./core/persistence";
 import { initializeQuantumTimer } from "./components/quantumTimer";
-import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle } from "./components/tasks";
+import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons } from "./utils/iconRenderer";
@@ -245,6 +245,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     handleGlobalError(error as Error, 'periodic update');
                 }
             }, 60000 * 5); // every 5 minutes
+            
+            // More frequent task syncing for better cross-device experience
+            setInterval(async () => {
+                try {
+                    await refreshTasksFromCloud('tasks-list-day');
+                } catch (error) {
+                    console.warn('Failed to sync tasks:', error);
+                }
+            }, 30000); // every 30 seconds
         } catch (error) {
             handleGlobalError(error as Error, 'app initialization');
         }

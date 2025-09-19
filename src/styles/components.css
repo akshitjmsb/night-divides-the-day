@@ -335,6 +335,73 @@
     font-style: italic;
 }
 
+.sync-info {
+    font-size: 0.8rem;
+    margin: 0.5rem 0 0 0;
+    color: #9ca3af;
+    font-weight: 500;
+}
+
+/* Tasks Header */
+.tasks-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+}
+
+.tasks-count {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.sync-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.refresh-btn {
+    background: none;
+    border: none;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.refresh-btn:hover {
+    opacity: 1;
+    background-color: #f3f4f6;
+}
+
+.refresh-btn:active {
+    transform: scale(0.95);
+}
+
+.sync-indicator {
+    font-size: 0.8rem;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.sync-indicator.syncing {
+    animation: spin 1s linear infinite;
+    opacity: 1;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
 @media (max-width: 640px) {
     .empty-state {
         padding: 3rem 1rem;

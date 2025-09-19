@@ -1,5 +1,5 @@
 import { Task } from "../types";
-import { saveTasks } from "../core/persistence";
+import { saveTasks, loadTasks } from "../core/persistence";
 import { escapeHtml, sanitizeTaskInput, createSafeHtml } from "../utils/escapeHtml";
 
 export function renderTasks(tasks: Task[], listId: string) {
@@ -11,21 +11,37 @@ export function renderTasks(tasks: Task[], listId: string) {
             <div class="empty-state">
                 <div class="empty-icon">📝</div>
                 <p class="empty-text">No tasks yet. Add one above!</p>
+                <p class="sync-info">✨ Synced across all your devices</p>
             </div>
         `;
         return;
     }
     
-    listEl.innerHTML = tasks.map((task, index) => `
-        <div class="task-item">
-            <input type="checkbox" data-index="${index}" ${task.completed ? 'checked' : ''}>
-            <label class="${task.completed ? 'completed' : ''}">${createSafeHtml(task.text, { maxLength: 200 })}</label>
-            <button class="delete-btn" data-index="${index}" title="Delete task">&times;</button>
+    listEl.innerHTML = `
+        <div class="tasks-header">
+            <span class="tasks-count">${tasks.length} task${tasks.length !== 1 ? 's' : ''}</span>
+            <div class="sync-controls">
+                <button class="refresh-btn" id="refresh-btn-${listId}" title="Refresh from cloud">🔄</button>
+                <span class="sync-indicator" id="sync-indicator-${listId}">🔄</span>
+            </div>
         </div>
-    `).join('');
+        ${tasks.map((task, index) => `
+            <div class="task-item">
+                <input type="checkbox" data-index="${index}" ${task.completed ? 'checked' : ''}>
+                <label class="${task.completed ? 'completed' : ''}">${createSafeHtml(task.text, { maxLength: 200 })}</label>
+                <button class="delete-btn" data-index="${index}" title="Delete task">&times;</button>
+            </div>
+        `).join('')}
+    `;
     
     // Attach event listeners to the newly rendered elements
     attachTaskEventListeners(listId);
+    
+    // Add refresh button listener
+    const refreshBtn = document.getElementById(`refresh-btn-${listId}`);
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => refreshTasksFromCloud(listId));
+    }
 }
 
 function handleTaskSubmit(e: Event, tasks: Task[], mainRender: () => void) {
@@ -74,15 +90,15 @@ function attachTaskEventListeners(listId: string) {
     if (!listEl) return;
 
     // Add click listener for delete buttons
-    listEl.addEventListener('click', (e) => {
+    listEl.addEventListener('click', async (e) => {
         const target = e.target as HTMLElement;
         if (target.classList.contains('delete-btn')) {
             const index = parseInt(target.dataset.index || '-1');
             if (index > -1) {
-                // Get tasks from the global state (we'll need to pass this)
-                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                // Get tasks from centralized storage
+                const tasks = await loadTasks();
                 tasks.splice(index, 1);
-                localStorage.setItem('tasks', JSON.stringify(tasks));
+                await saveTasks(tasks);
                 // Re-render the tasks
                 renderTasks(tasks, listId);
             }
@@ -90,15 +106,15 @@ function attachTaskEventListeners(listId: string) {
     });
 
     // Add change listener for checkboxes
-    listEl.addEventListener('change', (e) => {
+    listEl.addEventListener('change', async (e) => {
         const target = e.target as HTMLInputElement;
         if (target.type === 'checkbox') {
             const index = parseInt(target.dataset.index || '-1');
             if (index > -1) {
-                // Get tasks from the global state
-                const tasks = JSON.parse(localStorage.getItem('tasks') || '[]');
+                // Get tasks from centralized storage
+                const tasks = await loadTasks();
                 tasks[index].completed = target.checked;
-                localStorage.setItem('tasks', JSON.stringify(tasks));
+                await saveTasks(tasks);
                 // Re-render the tasks
                 renderTasks(tasks, listId);
             }
@@ -109,4 +125,35 @@ function attachTaskEventListeners(listId: string) {
 export function initializeTaskForms(tasks: Task[], mainRender: () => void) {
     document.getElementById('add-task-form-day')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, mainRender));
     document.getElementById('add-task-form-night')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, mainRender));
+}
+
+// Function to show sync status
+export function showSyncStatus(listId: string, isSyncing: boolean = true) {
+    const indicator = document.getElementById(`sync-indicator-${listId}`);
+    if (indicator) {
+        if (isSyncing) {
+            indicator.textContent = '🔄';
+            indicator.classList.add('syncing');
+        } else {
+            indicator.textContent = '✅';
+            indicator.classList.remove('syncing');
+            // Reset to default after 2 seconds
+            setTimeout(() => {
+                indicator.textContent = '🔄';
+            }, 2000);
+        }
+    }
+}
+
+// Function to refresh tasks from cloud storage
+export async function refreshTasksFromCloud(listId: string) {
+    try {
+        showSyncStatus(listId, true);
+        const tasks = await loadTasks();
+        renderTasks(tasks, listId);
+        showSyncStatus(listId, false);
+    } catch (error) {
+        console.error('Failed to refresh tasks from cloud:', error);
+        showSyncStatus(listId, false);
+    }
 }
