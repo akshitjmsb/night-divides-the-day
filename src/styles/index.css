@@ -71,11 +71,57 @@
 /* Category grid responsive design - 3 columns on mobile */
 .category-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 0.375rem; /* Ultra-compact gap for mobile screens */
+    gap: 0.25rem; /* Micro-compact gap for mobile screens */
 }
 
-/* Small mobile devices - 3 columns with ultra-compact sizing */
+/* Small mobile devices - 3 columns with micro-compact sizing */
 @media (max-width: 375px) {
+    .category-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.125rem;
+    }
+    
+    .preview-card {
+        padding: 0.0625rem !important;
+        min-height: 28px;
+    }
+    
+    .module-card h3 {
+        font-size: 0.55rem !important;
+        line-height: 0.9;
+    }
+    
+    .module-icon {
+        width: 12px !important;
+        height: 12px !important;
+    }
+}
+
+/* iPhone 13 Pro and similar devices - micro-compact sizing */
+@media (min-width: 376px) and (max-width: 430px) {
+    .category-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.125rem;
+    }
+    
+    .preview-card {
+        padding: 0.0625rem !important;
+        min-height: 30px;
+    }
+    
+    .module-card h3 {
+        font-size: 0.55rem !important;
+        line-height: 0.9;
+    }
+    
+    .module-icon {
+        width: 12px !important;
+        height: 12px !important;
+    }
+}
+
+/* Medium mobile devices - 3 columns with ultra-compact sizing */
+@media (min-width: 431px) and (max-width: 480px) {
     .category-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 0.25rem;
@@ -97,31 +143,8 @@
     }
 }
 
-/* iPhone 13 Pro and similar devices - optimized sizing */
-@media (min-width: 376px) and (max-width: 430px) {
-    .category-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.25rem;
-    }
-    
-    .preview-card {
-        padding: 0.125rem !important;
-        min-height: 34px;
-    }
-    
-    .module-card h3 {
-        font-size: 0.6rem !important;
-        line-height: 1.0;
-    }
-    
-    .module-icon {
-        width: 14px !important;
-        height: 14px !important;
-    }
-}
-
-/* Medium mobile devices - 3 columns with compact sizing */
-@media (min-width: 431px) and (max-width: 480px) {
+/* Large mobile devices - 3 columns with compact sizing */
+@media (min-width: 481px) and (max-width: 640px) {
     .category-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 0.375rem;
@@ -134,35 +157,12 @@
     
     .module-card h3 {
         font-size: 0.65rem !important;
-        line-height: 1.1;
+        line-height: 1.0;
     }
     
     .module-icon {
         width: 16px !important;
         height: 16px !important;
-    }
-}
-
-/* Large mobile devices - 3 columns with optimized sizing */
-@media (min-width: 481px) and (max-width: 640px) {
-    .category-grid {
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.5rem;
-    }
-    
-    .preview-card {
-        padding: 0.375rem !important;
-        min-height: 40px;
-    }
-    
-    .module-card h3 {
-        font-size: 0.7rem !important;
-        line-height: 1.1;
-    }
-    
-    .module-icon {
-        width: 18px !important;
-        height: 18px !important;
     }
 }
 
