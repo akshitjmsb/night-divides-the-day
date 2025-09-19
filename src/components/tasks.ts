@@ -11,7 +11,6 @@ export function renderTasks(tasks: Task[], listId: string) {
             <div class="empty-state">
                 <div class="empty-icon">📝</div>
                 <p class="empty-text">No tasks yet. Add one above!</p>
-                <p class="sync-info">✨ Synced across all your devices</p>
             </div>
         `;
         return;

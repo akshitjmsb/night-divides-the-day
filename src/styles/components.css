@@ -335,12 +335,6 @@
     font-style: italic;
 }
 
-.sync-info {
-    font-size: 0.8rem;
-    margin: 0.5rem 0 0 0;
-    color: #9ca3af;
-    font-weight: 500;
-}
 
 /* Tasks Header */
 .tasks-header {
