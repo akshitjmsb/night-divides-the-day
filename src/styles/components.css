@@ -471,3 +471,37 @@
     justify-content: center;
 }
 
+/* Icon-based Add Button */
+.add-btn-icon {
+    background-color: #374151;
+    color: white;
+    border: none;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0 0.375rem 0.375rem 0;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-btn-icon:hover {
+    background-color: #1f2937;
+    transform: scale(1.05);
+}
+
+.add-btn-icon:active {
+    transform: scale(0.95);
+}
+
+/* Mobile responsive icon button */
+@media (max-width: 640px) {
+    .add-btn-icon {
+        padding: 0.75rem;
+        font-size: 1.1rem;
+        min-width: 48px;
+    }
+}
+
