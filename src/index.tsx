@@ -10,7 +10,7 @@ import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, r
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons } from "./utils/iconRenderer";
-import { getPhilosophicalQuote, getReflectionPrompt } from "./components/reflection";
+import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, getReflectionPrompt, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
 
 document.addEventListener('DOMContentLoaded', () => {
     // --- STATE & DERIVED DATA ---
@@ -42,15 +42,35 @@ document.addEventListener('DOMContentLoaded', () => {
         tomorrowKey = previewContentDate.toISOString().split('T')[0];
         tomorrowDay = previewContentDate.getDay();
         
-        // Load philosophical quote for today
-        try {
-            todaysQuote = await getPhilosophicalQuote(activeContentDate);
-        } catch (error) {
-            console.error("Error loading philosophical quote:", error);
-            todaysQuote = {
-                quote: "The unexamined life is not worth living.",
-                author: "Socrates"
-            };
+        // Load philosophical quote instantly (no API call blocking)
+        todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
+        
+        // Optionally generate AI quote in background for future use
+        if (ai) {
+            // Show loading indicator
+            showQuoteLoadingIndicator();
+            
+            generateAIPhilosophicalQuote(activeContentDate).then(aiQuote => {
+                // Hide loading indicator
+                hideQuoteLoadingIndicator();
+                
+                // Update the quote if AI generation was successful
+                if (aiQuote && aiQuote.quote !== todaysQuote?.quote) {
+                    todaysQuote = aiQuote;
+                    // Re-render the quote display
+                    const lifePointerEl = document.getElementById('life-pointer-display-day');
+                    if (lifePointerEl) {
+                        lifePointerEl.innerHTML = `
+                            <div class="quote-text">"${aiQuote.quote}"</div>
+                            <div class="quote-author">— ${aiQuote.author}</div>
+                        `;
+                    }
+                }
+            }).catch(error => {
+                // Hide loading indicator on error
+                hideQuoteLoadingIndicator();
+                console.log("Background AI quote generation failed, using curated quote:", error);
+            });
         }
     }
     
