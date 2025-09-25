@@ -117,6 +117,40 @@ function attachTaskEventListeners(listId: string) {
 }
 
 export function initializeTaskForms(tasks: Task[], mainRender: () => void) {
+    // Initialize the todo toggle button
+    const todoToggleBtn = document.getElementById('todo-toggle-btn');
+    const todoContent = document.getElementById('todo-content');
+    
+    if (todoToggleBtn && todoContent) {
+        todoToggleBtn.addEventListener('click', () => {
+            const isHidden = todoContent.classList.contains('hidden');
+            
+            // Toggle the content visibility
+            todoContent.classList.toggle('hidden');
+            
+            // Update ARIA attributes for accessibility
+            todoToggleBtn.setAttribute('aria-expanded', (!isHidden).toString());
+            todoContent.setAttribute('aria-hidden', isHidden.toString());
+            
+            // If we're showing the content and there are no tasks, focus the input
+            if (!isHidden && tasks.length === 0) {
+                const input = document.querySelector('#add-task-form-day input[type="text"]') as HTMLInputElement;
+                if (input) {
+                    setTimeout(() => input.focus(), 100);
+                }
+            }
+        });
+        
+        // Add keyboard support for accessibility
+        todoToggleBtn.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                todoToggleBtn.click();
+            }
+        });
+    }
+    
+    // Initialize form submission handlers
     document.getElementById('add-task-form-day')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, mainRender));
     document.getElementById('add-task-form-night')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, mainRender));
 }

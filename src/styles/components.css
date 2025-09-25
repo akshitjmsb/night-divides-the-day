@@ -293,6 +293,57 @@
     word-wrap: break-word;
 }
 
+/* Todo Toggle Button */
+.todo-toggle-button {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    transition: opacity 0.2s ease;
+}
+
+.todo-toggle-button:hover {
+    opacity: 0.7;
+}
+
+.todo-toggle-button:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.todo-toggle-button h2 {
+    margin: 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 1.25rem;
+    color: inherit;
+}
+
+.todo-content {
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.todo-content.hidden {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.todo-content:not(.hidden) {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 1rem;
+}
+
+@media (min-width: 640px) {
+    .todo-toggle-button h2 {
+        font-size: 1.5rem;
+    }
+}
+
 /* Todo Form Improvements */
 .add-task-form {
     display: flex;
