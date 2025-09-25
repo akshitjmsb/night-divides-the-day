@@ -329,13 +329,18 @@
 .grid .todo-toggle-button {
     width: 100%;
     min-width: auto;
-    padding: 0.5rem 0.75rem;
+    padding: 0.5rem 0.5rem;
     font-size: 0.8rem;
+    max-width: 120px;
+    margin: 0 auto;
 }
 
 .grid .todo-toggle-button h2 {
     font-size: 0.8rem;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* AC2.1: Hover state with darker gradient and lift effect */
@@ -425,14 +430,18 @@
     
     /* Mobile grid adjustments */
     .grid .todo-toggle-button {
-        padding: 0.5rem 0.5rem;
+        padding: 0.5rem 0.375rem;
         font-size: 0.75rem;
         min-height: 40px;
+        max-width: 100px;
     }
     
     .grid .todo-toggle-button h2 {
         font-size: 0.75rem;
         line-height: 1.1;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 }
 
