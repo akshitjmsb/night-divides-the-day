@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meditate - Night Divides the Day</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="app-container" class="app-container">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <div class="logo-container flex justify-center">
+                <svg class="logo-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+                    <title>Night Divides the Day Logo</title>
+                    <path d="M70,35 C 72,50 68,65 65,68" />
+                    <path d="M60,25 C 62,45 58,68 55,70" />
+                    <path d="M50,23 C 52,43 48,70 45,72" />
+                    <path d="M40,28 C 42,48 38,68 35,70" />
+                </svg>
+            </div>
+            <div class="flex justify-center items-center">
+                <h1>Meditation</h1>
+                <span class="theme-icon">🧘</span>
+            </div>
+            <p class="text-xs mt-2">Mindfulness and inner peace</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="text-center mb-6">
+            <a href="index.html" class="todo-toggle-button">
+                <h2>← Back to Dashboard</h2>
+            </a>
+        </nav>
+
+        <!-- Meditation Timer Section -->
+        <section class="mobile-section">
+            <div class="text-center">
+                <div id="meditation-timer-display" class="text-4xl font-mono font-bold text-gray-700 mb-4">10:00</div>
+                <button id="meditation-timer-btn" class="todo-toggle-button mb-4">
+                    <h2>Start Meditation</h2>
+                </button>
+                <div class="text-sm text-gray-600">
+                    <p>Find your center</p>
+                    <p>Breathe deeply and relax</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Meditation Types -->
+        <section class="mobile-section">
+            <h2 class="text-center mb-4">Meditation Types</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <button class="todo-toggle-button meditation-type" data-duration="5">
+                    <h2>Quick Focus (5 min)</h2>
+                </button>
+                <button class="todo-toggle-button meditation-type" data-duration="10">
+                    <h2>Mindful Breathing (10 min)</h2>
+                </button>
+                <button class="todo-toggle-button meditation-type" data-duration="20">
+                    <h2>Deep Meditation (20 min)</h2>
+                </button>
+            </div>
+        </section>
+
+        <!-- Session History -->
+        <section class="mobile-section">
+            <h2 class="text-center mb-4">Recent Sessions</h2>
+            <div id="meditation-history" class="space-y-2">
+                <div class="text-center text-gray-500 text-sm">
+                    No meditation sessions yet. Start your journey!
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="src/index.tsx"></script>
+    <script>
+        // Meditation page specific functionality
+        document.addEventListener('DOMContentLoaded', () => {
+            let isMeditationActive = false;
+            let meditationInterval;
+            let timeRemaining = 10 * 60; // 10 minutes in seconds
+
+            const displayEl = document.getElementById('meditation-timer-display');
+            const buttonEl = document.getElementById('meditation-timer-btn');
+            const historyEl = document.getElementById('meditation-history');
+            const typeButtons = document.querySelectorAll('.meditation-type');
+
+            function formatTime(seconds) {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            }
+
+            function updateDisplay() {
+                displayEl.textContent = formatTime(timeRemaining);
+            }
+
+            function startMeditation() {
+                isMeditationActive = true;
+                buttonEl.querySelector('h2').textContent = 'Stop Meditation';
+                buttonEl.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                
+                meditationInterval = setInterval(() => {
+                    timeRemaining--;
+                    updateDisplay();
+                    
+                    if (timeRemaining <= 0) {
+                        stopMeditation();
+                        addSessionToHistory();
+                        alert('🧘 Meditation session completed! You feel more centered.');
+                    }
+                }, 1000);
+            }
+
+            function stopMeditation() {
+                isMeditationActive = false;
+                buttonEl.querySelector('h2').textContent = 'Start Meditation';
+                buttonEl.style.background = '';
+                clearInterval(meditationInterval);
+            }
+
+            function setDuration(minutes) {
+                timeRemaining = minutes * 60;
+                updateDisplay();
+            }
+
+            function addSessionToHistory() {
+                const sessionDiv = document.createElement('div');
+                sessionDiv.className = 'bg-gray-100 p-3 rounded-lg text-sm';
+                sessionDiv.innerHTML = `
+                    <div class="font-semibold">Meditation Session</div>
+                    <div class="text-gray-600">${new Date().toLocaleString()}</div>
+                    <div class="text-green-600">✅ Completed</div>
+                `;
+                
+                if (historyEl.querySelector('.text-gray-500')) {
+                    historyEl.innerHTML = '';
+                }
+                historyEl.insertBefore(sessionDiv, historyEl.firstChild);
+            }
+
+            buttonEl.addEventListener('click', () => {
+                if (isMeditationActive) {
+                    stopMeditation();
+                } else {
+                    startMeditation();
+                }
+            });
+
+            typeButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const duration = parseInt(button.dataset.duration);
+                    setDuration(duration);
+                    button.style.background = 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)';
+                    setTimeout(() => {
+                        button.style.background = '';
+                    }, 200);
+                });
+            });
+
+            updateDisplay();
+        });
+    </script>
+</body>
+</html>
