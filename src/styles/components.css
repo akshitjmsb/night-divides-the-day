@@ -295,27 +295,26 @@
 
 /* Todo Toggle Button */
 .todo-toggle-button {
-    width: 100%;
+    width: auto;
     background: #ffffff;
-    border: 1px solid #d1d5db;
-    border-radius: 20px;
-    padding: 16px 20px;
+    border: 1px solid #e2e8f0;
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
     cursor: pointer;
-    text-align: left;
-    transition: all 0.3s ease;
+    text-align: center;
+    transition: background-color 0.2s;
     box-shadow: none;
     position: relative;
+    font-size: 0.9rem;
+    color: #4a5568;
 }
 
 .todo-toggle-button:hover {
-    background: #f9fafb;
-    border-color: #9ca3af;
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    background-color: #f0f4f9;
 }
 
 .todo-toggle-button:active {
-    transform: translateY(0);
+    transform: none;
     box-shadow: none;
 }
 
@@ -327,14 +326,14 @@
 .todo-toggle-button h2 {
     margin: 0;
     font-family: 'Special Elite', monospace;
-    font-size: 1.25rem;
-    color: #374151;
-    transition: color 0.3s ease;
+    font-size: 0.9rem;
+    color: #4a5568;
+    transition: color 0.2s ease;
     position: relative;
 }
 
 .todo-toggle-button:hover h2 {
-    color: #1f2937;
+    color: #4a5568;
 }
 
 .todo-content {
@@ -354,14 +353,15 @@
     margin-top: 1rem;
 }
 
-@media (min-width: 640px) {
+@media (max-width: 640px) {
     .todo-toggle-button {
-        padding: 20px 24px;
-        border-radius: 24px;
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+        min-height: 32px;
     }
     
     .todo-toggle-button h2 {
-        font-size: 1.5rem;
+        font-size: 0.75rem !important;
     }
 }
 
