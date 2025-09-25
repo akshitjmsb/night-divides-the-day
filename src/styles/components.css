@@ -325,7 +325,7 @@
     font-weight: 600;
 }
 
-/* Grid layout adjustments for navigation buttons - match module card dimensions */
+/* Grid layout adjustments for navigation buttons - match module card dimensions exactly */
 .grid .todo-toggle-button {
     width: 100%;
     min-width: auto;
@@ -333,6 +333,13 @@
     font-size: 0.9rem;
     min-height: 60px;
     border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background-color: #f8f9fa;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .grid .todo-toggle-button h2 {
@@ -429,12 +436,17 @@
         letter-spacing: 0.025em;
     }
     
-    /* Mobile grid adjustments - match module card mobile styling */
+    /* Mobile grid adjustments - match module card mobile styling exactly */
     .grid .todo-toggle-button {
         padding: 0.5rem;
         font-size: 0.75rem;
         min-height: 60px;
         border-radius: 0.5rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
     }
     
     .grid .todo-toggle-button h2 {
