@@ -295,6 +295,7 @@
 
 /* Todo Toggle Button */
 .todo-toggle-button {
+    display: inline-block;
     width: auto;
     background: #ffffff;
     border: 1px solid #e2e8f0;
@@ -307,6 +308,7 @@
     position: relative;
     font-size: 0.9rem;
     color: #4a5568;
+    text-decoration: none;
 }
 
 .todo-toggle-button:hover {
@@ -363,6 +365,30 @@
     .todo-toggle-button h2 {
         font-size: 0.75rem !important;
     }
+}
+
+/* Todo Page Styles */
+.todo-page-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.todo-stats-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.todo-stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.todo-quick-action {
+    transition: all 0.2s ease;
+}
+
+.todo-quick-action:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* Todo Form Improvements */
