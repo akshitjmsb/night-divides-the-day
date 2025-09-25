@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Travel - Night Divides the Day</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Special+Elite&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="src/styles/index.css">
+    
+    <script type="importmap">
+    {
+      "imports": {
+        "@google/genai": "https://esm.sh/@google/genai"
+      }
+    }
+    </script>
+</head>
+<body>
+    <div id="app-container" class="app-container">
+        <!-- Header -->
+        <header class="text-center mb-6">
+            <div class="logo-container flex justify-center">
+                <svg class="logo-svg" viewBox="0 0 100 80" xmlns="http://www.w3.org/2000/svg">
+                    <title>Night Divides the Day Logo</title>
+                    <path d="M70,35 C 72,50 68,65 65,68" />
+                    <path d="M60,25 C 62,45 58,68 55,70" />
+                    <path d="M50,23 C 52,43 48,70 45,72" />
+                    <path d="M40,28 C 42,48 38,68 35,70" />
+                </svg>
+            </div>
+            <div class="flex justify-center items-center">
+                <h1>Travel Planner</h1>
+                <span class="theme-icon">✈️</span>
+            </div>
+            <p class="text-xs mt-2">Adventure planning and travel memories</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="text-center mb-6">
+            <a href="index.html" class="todo-toggle-button">
+                <h2>← Back to Dashboard</h2>
+            </a>
+        </nav>
+
+        <!-- Coming Soon Section -->
+        <section class="mobile-section">
+            <div class="text-center">
+                <div class="text-6xl mb-4">✈️</div>
+                <h2 class="text-2xl font-bold mb-4">Travel Planner</h2>
+                <p class="text-gray-600 mb-6">
+                    Plan your adventures, track your travels, and create lasting memories from your journeys.
+                </p>
+                <div class="bg-green-100 p-4 rounded-lg">
+                    <h3 class="font-semibold text-green-800 mb-2">Coming Soon</h3>
+                    <p class="text-green-700 text-sm">
+                        This feature is under development. Get ready for amazing travel planning tools!
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Planned Features -->
+        <section class="mobile-section">
+            <h2 class="text-center mb-4">Planned Features</h2>
+            <div class="grid grid-cols-1 gap-3">
+                <div class="bg-gray-100 p-3 rounded-lg text-sm">
+                    <div class="font-semibold">🗺️ Trip Planning</div>
+                    <div class="text-gray-600">Plan your itinerary and track your travel goals</div>
+                </div>
+                <div class="bg-gray-100 p-3 rounded-lg text-sm">
+                    <div class="font-semibold">📸 Travel Journal</div>
+                    <div class="text-gray-600">Document your adventures with photos and notes</div>
+                </div>
+                <div class="bg-gray-100 p-3 rounded-lg text-sm">
+                    <div class="font-semibold">💰 Travel Budget</div>
+                    <div class="text-gray-600">Track expenses and manage your travel budget</div>
+                </div>
+                <div class="bg-gray-100 p-3 rounded-lg text-sm">
+                    <div class="font-semibold">🌍 Bucket List</div>
+                    <div class="text-gray-600">Create and manage your travel bucket list</div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="module" src="src/index.tsx"></script>
+</body>
+</html>
