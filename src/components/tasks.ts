@@ -122,7 +122,10 @@ export function initializeTaskForms(tasks: Task[], mainRender: () => void) {
     const todoContent = document.getElementById('todo-content');
     
     if (todoToggleBtn && todoContent) {
-        todoToggleBtn.addEventListener('click', () => {
+        todoToggleBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             const isHidden = todoContent.classList.contains('hidden');
             
             // Toggle the content visibility
