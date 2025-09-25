@@ -296,31 +296,31 @@
 /* Todo Toggle Button */
 .todo-toggle-button {
     width: 100%;
-    background: #000000;
-    border: 2px solid #000000;
-    border-radius: 8px;
+    background: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
     padding: 16px 20px;
     cursor: pointer;
     text-align: left;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
     position: relative;
 }
 
 .todo-toggle-button:hover {
-    background: #ffffff;
-    border-color: #000000;
+    background: #f9fafb;
+    border-color: #9ca3af;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .todo-toggle-button:active {
     transform: translateY(0);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: none;
 }
 
 .todo-toggle-button:focus {
-    outline: 2px solid #000000;
+    outline: 2px solid #6b7280;
     outline-offset: 2px;
 }
 
@@ -328,13 +328,13 @@
     margin: 0;
     font-family: 'Special Elite', monospace;
     font-size: 1.25rem;
-    color: #ffffff;
+    color: #374151;
     transition: color 0.3s ease;
     position: relative;
 }
 
 .todo-toggle-button:hover h2 {
-    color: #000000;
+    color: #1f2937;
 }
 
 .todo-content {
@@ -357,7 +357,7 @@
 @media (min-width: 640px) {
     .todo-toggle-button {
         padding: 20px 24px;
-        border-radius: 10px;
+        border-radius: 24px;
     }
     
     .todo-toggle-button h2 {
