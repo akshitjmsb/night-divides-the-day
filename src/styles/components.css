@@ -305,7 +305,7 @@
     border: 1px solid #d1d5db;
     /* AC1.2: 12px border radius matching brand guidelines */
     border-radius: 12px;
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1rem;
     cursor: pointer;
     text-align: center;
     /* AC6.3: Hardware-accelerated transitions for performance */
@@ -392,7 +392,7 @@
 @media (max-width: 640px) {
     .todo-toggle-button {
         /* AC3.3: Proper padding for mobile */
-        padding: 0.75rem 1.25rem;
+        padding: 0.5rem 0.875rem;
         /* AC3.1: Maintain 44px minimum height for touch targets */
         min-height: 44px;
         /* AC3.2: Minimum 100px width on mobile */
