@@ -325,6 +325,19 @@
     font-weight: 600;
 }
 
+/* Grid layout adjustments for navigation buttons */
+.grid .todo-toggle-button {
+    width: 100%;
+    min-width: auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.8rem;
+}
+
+.grid .todo-toggle-button h2 {
+    font-size: 0.8rem;
+    line-height: 1.2;
+}
+
 /* AC2.1: Hover state with darker gradient and lift effect */
 .todo-toggle-button:hover {
     background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
@@ -408,6 +421,18 @@
         font-size: 0.8rem;
         /* AC1.4: Maintain letter spacing */
         letter-spacing: 0.025em;
+    }
+    
+    /* Mobile grid adjustments */
+    .grid .todo-toggle-button {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.75rem;
+        min-height: 40px;
+    }
+    
+    .grid .todo-toggle-button h2 {
+        font-size: 0.75rem;
+        line-height: 1.1;
     }
 }
 
