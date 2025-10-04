@@ -110,6 +110,49 @@ export const iconSvgs = {
     `
 };
 
+// Navigation button icons - Black and white SVG icons for main navigation
+export const navigationIconSvgs = {
+    todo: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12l2 2 4-4" />
+            <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z" />
+        </svg>
+    `,
+    quantum: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 1v6m0 6v6" />
+            <path d="M17 7l-5 5 5 5" />
+            <path d="M7 7l5 5-5 5" />
+            <path d="M1 12h6m6 0h6" />
+        </svg>
+    `,
+    meditate: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <path d="M8 12h8" />
+            <path d="M12 8v8" />
+            <circle cx="12" cy="12" r="3" />
+        </svg>
+    `,
+    money: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1v22" />
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+        </svg>
+    `,
+    health: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+        </svg>
+    `,
+    travel: `
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+        </svg>
+    `
+};
+
 export function renderModuleIcons() {
     const iconMap = {
         'world-order-icon': iconSvgs.worldOrder,
@@ -131,6 +174,25 @@ export function renderModuleIcons() {
             // Use responsive sizing - start with mobile size (24px)
             const responsiveSvg = svgString.replace(/width="20"/g, 'width="24"').replace(/height="20"/g, 'height="24"');
             iconContainer.innerHTML = responsiveSvg;
+        }
+    });
+}
+
+export function renderNavigationIcons() {
+    const navigationIconMap = {
+        'todo-icon': navigationIconSvgs.todo,
+        'quantum-icon': navigationIconSvgs.quantum,
+        'meditate-icon': navigationIconSvgs.meditate,
+        'money-icon': navigationIconSvgs.money,
+        'health-icon': navigationIconSvgs.health,
+        'travel-icon': navigationIconSvgs.travel,
+    };
+
+    Object.entries(navigationIconMap).forEach(([iconId, svgString]) => {
+        const iconContainer = document.getElementById(iconId);
+        if (iconContainer) {
+            // Icons are already sized at 24px for navigation buttons
+            iconContainer.innerHTML = svgString;
         }
     });
 }
