@@ -391,14 +391,40 @@
     color: #1f2937;
 }
 
+/* Compact Navigation Item Styles */
+.nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    text-decoration: none;
+    color: #374151;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    min-height: 60px;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background-color: #f3f4f6;
+    color: #1f2937;
+    transform: translateY(-1px);
+}
+
+.nav-item:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+}
+
 /* Navigation Icon Styles */
 .nav-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 24px;
-    height: 24px;
-    margin-bottom: 8px;
+    width: 20px;
+    height: 20px;
+    margin-bottom: 4px;
     flex-shrink: 0;
 }
 
@@ -409,32 +435,75 @@
     transition: color 0.2s ease;
 }
 
-.todo-toggle-button:hover .nav-icon svg {
+.nav-item:hover .nav-icon svg {
     color: #1f2937;
 }
 
-/* Responsive navigation icon sizing */
+/* Navigation text styling */
+.nav-item h2 {
+    margin: 0;
+    font-family: 'Special Elite', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    transition: color 0.2s ease;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.nav-item:hover h2 {
+    color: #1f2937;
+}
+
+/* Responsive navigation sizing */
 @media (max-width: 640px) {
+    .nav-item {
+        padding: 0.25rem;
+        min-height: 50px;
+    }
+    
     .nav-icon {
-        width: 20px;
-        height: 20px;
-        margin-bottom: 6px;
+        width: 16px;
+        height: 16px;
+        margin-bottom: 3px;
+    }
+    
+    .nav-item h2 {
+        font-size: 0.65rem;
     }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {
+    .nav-item {
+        padding: 0.375rem;
+        min-height: 55px;
+    }
+    
     .nav-icon {
-        width: 22px;
-        height: 22px;
-        margin-bottom: 7px;
+        width: 18px;
+        height: 18px;
+        margin-bottom: 3px;
+    }
+    
+    .nav-item h2 {
+        font-size: 0.7rem;
     }
 }
 
 @media (min-width: 1025px) {
+    .nav-item {
+        padding: 0.5rem;
+        min-height: 60px;
+    }
+    
     .nav-icon {
-        width: 24px;
-        height: 24px;
-        margin-bottom: 8px;
+        width: 20px;
+        height: 20px;
+        margin-bottom: 4px;
+    }
+    
+    .nav-item h2 {
+        font-size: 0.75rem;
     }
 }
 
