@@ -9,7 +9,7 @@ import { initializeQuantumTimer } from "./components/quantumTimer";
 import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
 import { initializeModalManager } from "./components/modals/modalManager";
-import { renderModuleIcons } from "./utils/iconRenderer";
+import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
 import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, getReflectionPrompt, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -190,6 +190,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Update dynamic icon based on time
         updateDynamicIcon(hour);
+        
+        // Render navigation icons
+        renderNavigationIcons();
         
         // Always render day content for now
         await renderDayModule();
