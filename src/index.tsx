@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 frenchContent: await getOrGenerateDynamicContent('french-sound', activeContentDate),
                 analyticsContent: await getOrGenerateDynamicContent('analytics', activeContentDate),
                 transportationContent: await getOrGenerateDynamicContent('transportation-physics', activeContentDate),
-                lifePointer: todaysLifePointer
+                lifePointer: todaysQuote
             };
             
             // Save to archive
