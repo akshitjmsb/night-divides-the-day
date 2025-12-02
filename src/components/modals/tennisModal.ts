@@ -1,4 +1,4 @@
-import { ai } from "../../api/gemini";
+import { ai } from "../../api/perplexity";
 
 export async function fetchAndShowTennisMatches() {
     const modal = document.getElementById('tennis-modal');
@@ -65,7 +65,7 @@ Format the response as proper HTML tables with the following structure:
 Use actual current tournament data and highlight Canadian players with <strong> tags, finals with <em> tags, and upsets with <span style="color: #dc2626;"> tags. For completed matches, display the winner's name in green color using <span style="color: #16a34a;"> tags.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
             config: {
                 tools: [{googleSearch: {}}],
@@ -80,12 +80,13 @@ Use actual current tournament data and highlight Canadian players with <strong> 
             html += `<p>Could not retrieve any tennis data at this time.</p>`;
         }
 
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        if (groundingChunks && groundingChunks.length > 0) {
+        // Note: Perplexity API doesn't provide grounding metadata in the same format as Gemini
+        // Sources are typically included in the response text itself
+        const uniqueSources: any[] = [];
+        if (uniqueSources.length > 0) {
             html += '<hr class="my-4 border-gray-300">';
             html += '<h4 class="text-md font-bold mb-2">Sources:</h4>';
             html += '<ul class="list-disc pl-5 text-sm space-y-1">';
-            const uniqueSources = Array.from(new Map(groundingChunks.map(chunk => [chunk.web?.uri, chunk])).values());
 
             uniqueSources.forEach(chunk => {
                 if (chunk && typeof chunk === 'object' && 'web' in chunk && chunk.web && typeof chunk.web === 'object' && 'uri' in chunk.web) {

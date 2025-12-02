@@ -1,19 +1,15 @@
 import { escapeHtml } from "../../utils/escapeHtml";
+import { getCachedContent } from "../../core/supabase-content-cache";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
-function getArchivedContent(dateKey: string): any {
-    const archiveKey = `archived-${dateKey}`;
-    const archivedData = localStorage.getItem(archiveKey);
-
-    if (archivedData) {
-        try {
-            return JSON.parse(archivedData);
-        } catch (error) {
-            console.error('Error parsing archived content:', error);
-            return null;
-        }
+async function getArchivedContent(dateKey: string): Promise<any> {
+    try {
+        const archivedData = await getCachedContent(DEFAULT_USER_ID, 'archive', dateKey);
+        return archivedData;
+    } catch (error) {
+        console.error('Error loading archived content:', error);
+        return null;
     }
-
-    return null;
 }
 
 function showArchivedFrenchModal(archivedContent: any) {
@@ -94,12 +90,12 @@ function showArchivedHoodModal(archivedContent: any) {
     }
 }
 
-export function renderArchive(archiveKey: string) {
+export async function renderArchive(archiveKey: string) {
     const archiveList = document.getElementById('archive-list');
     if (!archiveList) return;
     const archiveModal = document.getElementById('archive-modal');
 
-    const archivedContent = getArchivedContent(archiveKey);
+    const archivedContent = await getArchivedContent(archiveKey);
 
     if (!archivedContent) {
         archiveList.innerHTML = '<p class="text-gray-500 p-4">No archived content available for this date.</p>';

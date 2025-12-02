@@ -1,4 +1,4 @@
-import { ai } from "../../api/gemini";
+import { ai } from "../../api/perplexity";
 import { escapeHtml } from "../../utils/escapeHtml";
 
 export async function fetchAndShowWorldOrder() {
@@ -20,7 +20,7 @@ export async function fetchAndShowWorldOrder() {
         const prompt = "Be extremely brief. First, what is the single most important, recent headline about Donald Trump? State it in 10 words or less. Then, list the 5 most critical world order headlines (US/Canada focused) as ultra-short, scannable bullet points. Finally, list the 5 latest major headlines from India in the same brief format. Do not use asterisks or any markdown formatting.";
 
         const response = await ai.models.generateContent({
-           model: "gemini-2.5-flash",
+           model: "sonar-pro",
            contents: prompt,
            config: {
              tools: [{googleSearch: {}}],
@@ -39,12 +39,13 @@ export async function fetchAndShowWorldOrder() {
              html += `<p>Could not retrieve any news data at this time.</p>`;
         }
 
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        if (groundingChunks && groundingChunks.length > 0) {
+        // Note: Perplexity API doesn't provide grounding metadata in the same format as Gemini
+        // Sources are typically included in the response text itself
+        const uniqueSources: any[] = [];
+        if (uniqueSources.length > 0) {
             html += '<hr class="my-4 border-gray-300">';
             html += '<h4 class="text-md font-bold mb-2">Sources:</h4>';
             html += '<ul class="list-disc pl-5 text-sm space-y-1">';
-            const uniqueSources = Array.from(new Map(groundingChunks.map(chunk => [chunk.web?.uri, chunk])).values());
 
             uniqueSources.forEach(chunk => {
                 if (chunk && typeof chunk === 'object' && 'web' in chunk && chunk.web && typeof chunk.web === 'object' && 'uri' in chunk.web) {

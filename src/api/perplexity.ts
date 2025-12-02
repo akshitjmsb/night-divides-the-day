@@ -1,24 +1,108 @@
-import { GoogleGenAI, Type } from "@google/genai";
-import { ErrorHandler, ErrorType, withErrorHandling } from "../utils/errorHandling";
+import { ErrorHandler } from "../utils/errorHandling";
+import { getCachedContent, saveCachedContent, getCachedFoodPlan, saveFoodPlan } from "../core/supabase-content-cache";
 
-const apiKey = (import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.VITE_API_KEY) as string;
-let ai: any = null;
+const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
+const apiKey = (import.meta.env.VITE_PERPLEXITY_API_KEY || import.meta.env.VITE_API_KEY) as string;
+
+let hasApiKey = false;
 
 if (apiKey && apiKey !== 'test_key_for_development') {
-    try {
-        ai = new GoogleGenAI({apiKey: apiKey});
-    } catch (error) {
-        console.warn("Failed to initialize Gemini API:", error);
-        ai = null;
-    }
+    hasApiKey = true;
 } else {
-    console.warn("Using development mode without Gemini API key");
-    ai = null;
+    console.warn("Using development mode without Perplexity API key");
+    hasApiKey = false;
 }
 
-export { ai };
+/**
+ * Call Perplexity API with a prompt
+ */
+async function callPerplexityAPI(
+    prompt: string,
+    options: {
+        model?: string;
+        responseFormat?: 'json_object' | 'text';
+        temperature?: number;
+    } = {}
+): Promise<string> {
+    if (!hasApiKey) {
+        throw new Error('Perplexity API key not configured');
+    }
 
-const CLOUD_CACHE_BASE_URL = 'https://kvdb.io/akki-boy-dashboard-cache';
+    const {
+        model = 'sonar-pro',
+        responseFormat = 'text',
+        temperature = 0.7
+    } = options;
+
+    try {
+        const requestBody: any = {
+            model,
+            messages: [
+                {
+                    role: 'user',
+                    content: prompt
+                }
+            ],
+            temperature
+        };
+
+        // Perplexity API doesn't support response_format like OpenAI
+        // JSON responses are handled via prompt instructions and parsing
+        // No need to set response_format
+
+        const response = await fetch(PERPLEXITY_API_URL, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestBody)
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`Perplexity API error: ${response.status} ${errorText}`);
+        }
+
+        const data = await response.json();
+        return data.choices[0]?.message?.content || '';
+    } catch (error) {
+        console.error('Perplexity API call failed:', error);
+        throw error;
+    }
+}
+
+// Export a simple AI object for compatibility with existing code
+export const ai = {
+    models: {
+        generateContent: async (params: { model?: string; contents: string; config?: any }) => {
+            const prompt = params.contents;
+            // Perplexity doesn't support response_format, so we always get text
+            // If JSON is requested, we parse it from the text response
+            const expectsJson = params.config?.responseMimeType === 'application/json';
+            
+            const response = await callPerplexityAPI(prompt, {
+                model: params.model || 'sonar-pro',
+                responseFormat: 'text' // Always use text, parse JSON if needed
+            });
+
+            // If JSON was expected, try to extract JSON from the response
+            let text = response;
+            if (expectsJson) {
+                // Try to find JSON in the response (might be wrapped in markdown code blocks)
+                const jsonMatch = response.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || 
+                                 response.match(/(\{[\s\S]*\})/);
+                if (jsonMatch) {
+                    text = jsonMatch[1];
+                }
+            }
+
+            return {
+                text: text
+            };
+        }
+    }
+};
 
 // Helper function to determine workout type based on day of week
 function getWorkoutType(dayOfWeek: number): string {
@@ -29,58 +113,29 @@ function getWorkoutType(dayOfWeek: number): string {
     return schedule[dayOfWeek];
 }
 
-export async function getOrGenerateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', date: Date): Promise<any> {
+export async function getOrGenerateDynamicContent(
+    userId: string,
+    contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', 
+    date: Date
+): Promise<any> {
     const dateKey = date.toISOString().split('T')[0];
-    const localKey = `dynamic-content-${contentType}-${dateKey}`;
-    const cloudKey = `${contentType}-${dateKey}`;
 
-    // 1. Check local cache first for speed
-    try {
-        const storedContent = localStorage.getItem(localKey);
-        if (storedContent) {
-            return JSON.parse(storedContent);
-        }
-    } catch (e) {
-        console.error("Error reading from localStorage", e);
-        localStorage.removeItem(localKey);
+    // 1. Check Supabase cache
+    const cachedContent = await getCachedContent(userId, contentType, dateKey);
+    if (cachedContent) {
+        return cachedContent;
     }
 
-    // 2. If not in local cache, check the shared cloud cache
-    try {
-        const response = await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`);
-        if (response.ok) {
-            const responseText = await response.text();
-            if (responseText) {
-                try {
-                    const cloudContent = JSON.parse(responseText);
-                    if (cloudContent) {
-                        localStorage.setItem(localKey, JSON.stringify(cloudContent));
-                        return cloudContent;
-                    }
-                } catch (jsonError) {
-                    console.warn(`Failed to parse cloud content for ${contentType}. Not valid JSON.`, jsonError);
-                }
-            }
-        }
-    } catch(e) {
-        console.warn("Could not fetch from cloud cache. Will try to generate.", e);
-    }
-
-    // 3. If not in any cache, generate new content
-    console.log(`Generating new content for ${contentType} on ${dateKey} as it was not found in any cache.`);
+    // 2. If not in cache, generate new content
+    console.log(`Generating new content for ${contentType} on ${dateKey} as it was not found in cache.`);
     const generatedContent = await generateDynamicContent(contentType, dateKey);
 
     if (generatedContent) {
-        // 4. Save to both caches for future requests
-        localStorage.setItem(localKey, JSON.stringify(generatedContent));
+        // 3. Save to Supabase cache
         try {
-            await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(generatedContent),
-            });
+            await saveCachedContent(userId, contentType, dateKey, generatedContent);
         } catch (e) {
-            console.error("Error saving content to caches", e);
+            console.error("Error saving content to Supabase cache", e);
         }
     }
     return generatedContent;
@@ -88,196 +143,115 @@ export async function getOrGenerateDynamicContent(contentType: 'analytics' | 'tr
 
 export async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', dateKey: string): Promise<any> {
     // If no API key, return fallback content
-    if (!ai) {
+    if (!hasApiKey) {
         return getFallbackContent(contentType, dateKey);
     }
     
     let prompt = '';
-    let responseSchema: any = {};
+    let needsJson = false;
 
     if (contentType === 'analytics') {
-        prompt = `Generate a unique, new set of daily technical topics for an analytics engineer for the date ${dateKey}. Provide one SQL question, one DAX question, one Snowflake question, one dbt question, one explanation of a DMBOK data management concept, and one topic on data quality. For the Data Quality topic, focus on a common column data type (e.g., String, Numeric, Datetime), list 3-4 potential data quality issues found in such columns, and describe common data transformations to correct them in a big data context. Each question must include a title, a prompt/problem description, and a concise solution. The DMBOK and Data Quality explanations must have a title and a detailed explanation. Ensure the content is different from other days.`;
-        responseSchema = {
-            type: Type.OBJECT,
-            properties: {
-                sql: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, prompt: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["title", "prompt", "solution"] },
-                dax: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, prompt: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["title", "prompt", "solution"] },
-                snowflake: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, prompt: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["title", "prompt", "solution"] },
-                dbt: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, prompt: { type: Type.STRING }, solution: { type: Type.STRING } }, required: ["title", "prompt", "solution"] },
-                dataManagement: { type: Type.OBJECT, properties: { title: { type: Type.STRING }, explanation: { type: Type.STRING } }, required: ["title", "explanation"] },
-                dataQuality: {
-                    type: Type.OBJECT,
-                    properties: {
-                        title: { type: Type.STRING, description: "Title of the data quality topic, e.g., 'Handling String Data Quality Issues'." },
-                        dataType: { type: Type.STRING, description: "The data type being discussed, e.g., 'String (VARCHAR)'." },
-                        issues: {
-                            type: Type.ARRAY,
-                            description: "A list of potential data quality issues.",
-                            items: { type: Type.STRING }
-                        },
-                        transformations: {
-                            type: Type.ARRAY,
-                            description: "A list of data transformations to correct the issues.",
-                            items: { type: Type.STRING }
-                        }
-                    },
-                    required: ["title", "dataType", "issues", "transformations"]
-                }
-            },
-            required: ["sql", "dax", "snowflake", "dbt", "dataManagement", "dataQuality"]
-        };
+        prompt = `Generate a unique, new set of daily technical topics for an analytics engineer for the date ${dateKey}. Provide one SQL question, one DAX question, one Snowflake question, one dbt question, one explanation of a DMBOK data management concept, and one topic on data quality. For the Data Quality topic, focus on a common column data type (e.g., String, Numeric, Datetime), list 3-4 potential data quality issues found in such columns, and describe common data transformations to correct them in a big data context. Each question must include a title, a prompt/problem description, and a concise solution. The DMBOK and Data Quality explanations must have a title and a detailed explanation. Ensure the content is different from other days.
+
+Return the response as a JSON object with this exact structure:
+{
+  "sql": {"title": "...", "prompt": "...", "solution": "..."},
+  "dax": {"title": "...", "prompt": "...", "solution": "..."},
+  "snowflake": {"title": "...", "prompt": "...", "solution": "..."},
+  "dbt": {"title": "...", "prompt": "...", "solution": "..."},
+  "dataManagement": {"title": "...", "explanation": "..."},
+  "dataQuality": {
+    "title": "...",
+    "dataType": "...",
+    "issues": ["...", "..."],
+    "transformations": ["...", "..."]
+  }
+}`;
+        needsJson = true;
     } else if (contentType === 'transportation-physics') {
-        prompt = `For the date ${dateKey}, explain a single, fundamental physics principle behind a common mode of transportation (like a car, bike, or plane). The goal is to explain the working principle to a layman at a very conceptual level. Use simple analogies and avoid technical jargon or formulas. The topic must be unique and different from other days. For example, you could explain how airplane wings generate lift conceptually, why tires need tread, or the basic idea behind regenerative braking. Provide a title and an explanation that is extremely easy to understand for someone with no physics background.`;
-        responseSchema = {
-            type: Type.OBJECT,
-            properties: {
-                title: { type: Type.STRING },
-                explanation: { type: Type.STRING }
-            },
-            required: ["title", "explanation"]
-        };
+        prompt = `For the date ${dateKey}, explain a single, fundamental physics principle behind a common mode of transportation (like a car, bike, or plane). The goal is to explain the working principle to a layman at a very conceptual level. Use simple analogies and avoid technical jargon or formulas. The topic must be unique and different from other days. For example, you could explain how airplane wings generate lift conceptually, why tires need tread, or the basic idea behind regenerative braking. Provide a title and an explanation that is extremely easy to understand for someone with no physics background.
+
+Return as JSON:
+{
+  "title": "...",
+  "explanation": "..."
+}`;
+        needsJson = true;
     } else if (contentType === 'french-sound') {
-        prompt = `Act as a French phonetics teacher planning a long-term course. For the date ${dateKey}, create a self-contained lesson for a single, unique French phoneme. The series of lessons over many days should eventually cover all phonemes of the French language in a logical progression. The content for this single day must be unique. Provide: 1. The target sound (e.g., 'an', 'in', 'ou' or an IPA symbol). 2. A list of exactly 10 example words that use this sound. For each word, provide the French word, a simple phonetic cue for an English speaker, and its English meaning. Do not use markdown.`;
-        responseSchema = {
-            type: Type.OBJECT,
-            properties: {
-                sound: { type: Type.STRING, description: "The French sound being taught, e.g., 'on', 'u'." },
-                words: {
-                    type: Type.ARRAY,
-                    description: "A list of 10 example words.",
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            word: { type: Type.STRING, description: "The French word." },
-                            cue: { type: Type.STRING, description: "A simple phonetic cue for English speakers." },
-                            meaning: { type: Type.STRING, description: "The English meaning of the word." }
-                        },
-                        required: ["word", "cue", "meaning"]
-                    }
-                }
-            },
-            required: ["sound", "words"]
-        };
+        prompt = `Act as a French phonetics teacher planning a long-term course. For the date ${dateKey}, create a self-contained lesson for a single, unique French phoneme. The series of lessons over many days should eventually cover all phonemes of the French language in a logical progression. The content for this single day must be unique. Provide: 1. The target sound (e.g., 'an', 'in', 'ou' or an IPA symbol). 2. A list of exactly 10 example words that use this sound. For each word, provide the French word, a simple phonetic cue for an English speaker, and its English meaning. Do not use markdown.
+
+Return as JSON:
+{
+  "sound": "...",
+  "words": [
+    {"word": "...", "cue": "...", "meaning": "..."},
+    ...
+  ]
+}`;
+        needsJson = true;
     } else if (contentType === 'classic-rock-500') {
-        // Request a 500 entry pool of classic rock songs
-        prompt = `Generate a JSON array of exactly 500 items. Each item must have two string fields: title and artist. The list should be classic rock (and closely related rock) songs that are well-known/popular for guitar learners. Keep it diverse across decades and artists; avoid duplicates. Return JSON only.`;
-        responseSchema = {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    title: { type: Type.STRING },
-                    artist: { type: Type.STRING }
-                },
-                required: ['title', 'artist']
-            }
-        };
+        prompt = `Generate a JSON array of exactly 500 items. Each item must have two string fields: title and artist. The list should be classic rock (and closely related rock) songs that are well-known/popular for guitar learners. Keep it diverse across decades and artists; avoid duplicates. Return JSON only.
+
+Format:
+[
+  {"title": "...", "artist": "..."},
+  ...
+]`;
+        needsJson = true;
     } else if (contentType === 'exercise-plan') {
         const dayOfWeek = new Date(dateKey).getDay();
         const workoutType = getWorkoutType(dayOfWeek);
         
-        prompt = `Generate a comprehensive ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs/Upper rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.`;
-        
-        responseSchema = {
-            type: Type.OBJECT,
-            properties: {
-                push: {
-                    type: Type.OBJECT,
-                    properties: {
-                        exercises: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    name: { type: Type.STRING },
-                                    muscleGroup: { type: Type.STRING },
-                                    sets: { type: Type.STRING },
-                                    reps: { type: Type.STRING },
-                                    rest: { type: Type.STRING },
-                                    instructions: { type: Type.STRING },
-                                    tips: { type: Type.STRING }
-                                },
-                                required: ["name", "muscleGroup", "sets", "reps", "rest", "instructions"]
-                            }
-                        },
-                        notes: { type: Type.STRING }
-                    },
-                    required: ["exercises"]
-                },
-                pull: {
-                    type: Type.OBJECT,
-                    properties: {
-                        exercises: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    name: { type: Type.STRING },
-                                    muscleGroup: { type: Type.STRING },
-                                    sets: { type: Type.STRING },
-                                    reps: { type: Type.STRING },
-                                    rest: { type: Type.STRING },
-                                    instructions: { type: Type.STRING },
-                                    tips: { type: Type.STRING }
-                                },
-                                required: ["name", "muscleGroup", "sets", "reps", "rest", "instructions"]
-                            }
-                        },
-                        notes: { type: Type.STRING }
-                    },
-                    required: ["exercises"]
-                },
-                legs: {
-                    type: Type.OBJECT,
-                    properties: {
-                        exercises: {
-                            type: Type.ARRAY,
-                            items: {
-                                type: Type.OBJECT,
-                                properties: {
-                                    name: { type: Type.STRING },
-                                    muscleGroup: { type: Type.STRING },
-                                    sets: { type: Type.STRING },
-                                    reps: { type: Type.STRING },
-                                    rest: { type: Type.STRING },
-                                    instructions: { type: Type.STRING },
-                                    tips: { type: Type.STRING }
-                                },
-                                required: ["name", "muscleGroup", "sets", "reps", "rest", "instructions"]
-                            }
-                        },
-                        notes: { type: Type.STRING }
-                    },
-                    required: ["exercises"]
-                },
-                rest: {
-                    type: Type.OBJECT,
-                    properties: {
-                        activities: {
-                            type: Type.ARRAY,
-                            items: { type: Type.STRING }
-                        },
-                        notes: { type: Type.STRING }
-                    },
-                    required: ["activities"]
-                }
-            },
-            required: ["push", "pull", "legs", "rest"]
-        };
+        prompt = `Generate a comprehensive ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs/Upper rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.
+
+Return as JSON:
+{
+  "push": {
+    "exercises": [
+      {"name": "...", "muscleGroup": "...", "sets": "...", "reps": "...", "rest": "...", "instructions": "...", "tips": "..."}
+    ],
+    "notes": "..."
+  },
+  "pull": {...},
+  "legs": {...},
+  "rest": {
+    "activities": ["..."],
+    "notes": "..."
+  }
+}`;
+        needsJson = true;
     } else {
         return null;
     }
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema: responseSchema,
-            },
+        const responseText = await callPerplexityAPI(prompt, {
+            model: 'sonar-pro',
+            responseFormat: needsJson ? 'json_object' : 'text'
         });
-        return JSON.parse(response.text);
+
+        if (needsJson) {
+            // Try to extract JSON from response if it's wrapped in markdown or text
+            let jsonText = responseText.trim();
+            
+            // Remove markdown code blocks if present
+            jsonText = jsonText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+            
+            try {
+                return JSON.parse(jsonText);
+            } catch (parseError) {
+                console.error('Failed to parse JSON response:', parseError);
+                console.error('Response text:', responseText);
+                // Try to extract JSON object from text
+                const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    return JSON.parse(jsonMatch[0]);
+                }
+                throw parseError;
+            }
+        }
+        
+        return responseText;
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Content generation for ${contentType}`);
         ErrorHandler.logError(appError);
@@ -298,28 +272,21 @@ async function fetchServerContent(dateKey: string): Promise<any | null> {
     }
 }
 
-export async function getOrGeneratePlanForDate(date: Date, dateKey: string): Promise<string> {
-    const localKey = `food-plan-${dateKey}`;
-    const cloudKey = `food-plan-${dateKey}`;
-
-    // 1. Check local cache
-    try {
-        const localPlan = localStorage.getItem(localKey);
-        if (localPlan) {
-            return localPlan;
-        }
-    } catch (e) {
-        console.error("Error reading food plan from localStorage", e);
-        localStorage.removeItem(localKey);
+export async function getOrGeneratePlanForDate(userId: string, date: Date, dateKey: string): Promise<string> {
+    // 1. Check Supabase cache
+    const cachedPlan = await getCachedFoodPlan(userId, dateKey);
+    if (cachedPlan) {
+        return cachedPlan;
     }
 
-    // 2. Check server KV via API
+    // 2. Check server KV via API (legacy fallback)
     try {
         const server = await fetchServerContent(dateKey);
         if (server && typeof server === 'object' && 'summary' in server) {
             const summary = (server as any).summary as string;
             if (summary && typeof summary === 'string') {
-                localStorage.setItem(localKey, summary);
+                // Save to Supabase cache
+                await saveFoodPlan(userId, dateKey, summary);
                 return summary;
             }
         }
@@ -332,16 +299,11 @@ export async function getOrGeneratePlanForDate(date: Date, dateKey: string): Pro
     const newPlan = await generateFoodPlanForDate(date);
 
     if (newPlan && !newPlan.startsWith("Could not generate")) {
-        // 4. Save to both caches
-        localStorage.setItem(localKey, newPlan);
+        // 4. Save to Supabase cache
         try {
-            await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan: newPlan }),
-            });
+            await saveFoodPlan(userId, dateKey, newPlan);
         } catch (e) {
-            console.error("Error saving food plan to cloud cache", e);
+            console.error("Error saving food plan to Supabase cache", e);
         }
     }
 
@@ -350,7 +312,7 @@ export async function getOrGeneratePlanForDate(date: Date, dateKey: string): Pro
 
 export async function generateFoodPlanForDate(date: Date): Promise<string> {
     // If no API key, return fallback food plan
-    if (!ai) {
+    if (!hasApiKey) {
         return getFallbackFoodPlan(date);
     }
     
@@ -363,11 +325,11 @@ export async function generateFoodPlanForDate(date: Date): Promise<string> {
     }
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
+        const responseText = await callPerplexityAPI(prompt, {
+            model: 'sonar-pro',
+            responseFormat: 'text'
         });
-        const text = response.text.replace(/\*/g, '');
+        const text = responseText.replace(/\*/g, '');
         return text || "Could not generate a food plan. The response was empty.";
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, 'Food plan generation');
@@ -606,57 +568,25 @@ Snack: Berries with Greek yogurt`;
 }
 
 // Weekly exercise content generation
-export async function generateWeeklyExerciseContent(startDate: Date): Promise<any> {
-    const localKey = `weekly-exercise-${startDate.toISOString().split('T')[0]}`;
-    const cloudKey = `weekly-exercise-${startDate.toISOString().split('T')[0]}`;
+export async function generateWeeklyExerciseContent(userId: string, startDate: Date): Promise<any> {
+    const dateKey = startDate.toISOString().split('T')[0];
 
-    // 1. Check local cache first for speed
-    try {
-        const storedContent = localStorage.getItem(localKey);
-        if (storedContent) {
-            return JSON.parse(storedContent);
-        }
-    } catch (e) {
-        console.error("Error reading weekly exercise from localStorage", e);
-        localStorage.removeItem(localKey);
+    // 1. Check Supabase cache
+    const cachedContent = await getCachedContent(userId, 'weekly-exercise', dateKey);
+    if (cachedContent) {
+        return cachedContent;
     }
 
-    // 2. Check cloud cache
-    try {
-        const response = await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`);
-        if (response.ok) {
-            const responseText = await response.text();
-            if (responseText) {
-                try {
-                    const cloudContent = JSON.parse(responseText);
-                    if (cloudContent) {
-                        localStorage.setItem(localKey, JSON.stringify(cloudContent));
-                        return cloudContent;
-                    }
-                } catch (jsonError) {
-                    console.warn(`Failed to parse cloud weekly content. Not valid JSON.`, jsonError);
-                }
-            }
-        }
-    } catch(e) {
-        console.warn("Could not fetch weekly content from cloud cache. Will try to generate.", e);
-    }
-
-    // 3. Generate new weekly content
-    console.log(`Generating new weekly exercise content starting from ${startDate.toISOString().split('T')[0]}`);
+    // 2. Generate new weekly content
+    console.log(`Generating new weekly exercise content starting from ${dateKey}`);
     const generatedContent = await generateWeeklyContent(startDate);
 
     if (generatedContent) {
-        // 4. Save to both caches
-        localStorage.setItem(localKey, JSON.stringify(generatedContent));
+        // 3. Save to Supabase cache
         try {
-            await fetch(`${CLOUD_CACHE_BASE_URL}/${cloudKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(generatedContent),
-            });
+            await saveCachedContent(userId, 'weekly-exercise', dateKey, generatedContent);
         } catch (e) {
-            console.error("Error saving weekly content to cloud cache", e);
+            console.error("Error saving weekly content to Supabase cache", e);
         }
     }
     return generatedContent;
@@ -664,13 +594,10 @@ export async function generateWeeklyExerciseContent(startDate: Date): Promise<an
 
 async function generateWeeklyContent(startDate: Date): Promise<any> {
     // If no API key, return fallback weekly content
-    if (!ai) {
+    if (!hasApiKey) {
         return getFallbackWeeklyContent(startDate);
     }
 
-    const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    const workoutTypes = ['rest', 'push', 'rest', 'pull', 'rest', 'legs', 'upper'];
-    
     const prompt = `Generate a comprehensive 7-day workout plan starting from ${startDate.toISOString().split('T')[0]}. 
     
     The schedule should be:
@@ -692,157 +619,34 @@ async function generateWeeklyContent(startDate: Date): Promise<any> {
 
     For rest days, suggest active recovery activities.
 
-    Focus on compound movements, progressive overload, and proper form. Make each day unique and challenging.`;
+    Focus on compound movements, progressive overload, and proper form. Make each day unique and challenging.
 
-    const responseSchema = {
-        type: Type.OBJECT,
-        properties: {
-            sunday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    activities: {
-                        type: Type.ARRAY,
-                        items: { type: Type.STRING }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "activities", "notes"]
-            },
-            monday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    exercises: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                muscleGroups: { type: Type.STRING },
-                                sets: { type: Type.STRING },
-                                reps: { type: Type.STRING },
-                                rest: { type: Type.STRING },
-                                instructions: { type: Type.STRING },
-                                tips: { type: Type.STRING }
-                            },
-                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
-                        }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "exercises", "notes"]
-            },
-            tuesday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    activities: {
-                        type: Type.ARRAY,
-                        items: { type: Type.STRING }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "activities", "notes"]
-            },
-            wednesday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    exercises: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                muscleGroups: { type: Type.STRING },
-                                sets: { type: Type.STRING },
-                                reps: { type: Type.STRING },
-                                rest: { type: Type.STRING },
-                                instructions: { type: Type.STRING },
-                                tips: { type: Type.STRING }
-                            },
-                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
-                        }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "exercises", "notes"]
-            },
-            thursday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    activities: {
-                        type: Type.ARRAY,
-                        items: { type: Type.STRING }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "activities", "notes"]
-            },
-            friday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    exercises: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                muscleGroups: { type: Type.STRING },
-                                sets: { type: Type.STRING },
-                                reps: { type: Type.STRING },
-                                rest: { type: Type.STRING },
-                                instructions: { type: Type.STRING },
-                                tips: { type: Type.STRING }
-                            },
-                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
-                        }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "exercises", "notes"]
-            },
-            saturday: {
-                type: Type.OBJECT,
-                properties: {
-                    type: { type: Type.STRING },
-                    exercises: {
-                        type: Type.ARRAY,
-                        items: {
-                            type: Type.OBJECT,
-                            properties: {
-                                name: { type: Type.STRING },
-                                muscleGroups: { type: Type.STRING },
-                                sets: { type: Type.STRING },
-                                reps: { type: Type.STRING },
-                                rest: { type: Type.STRING },
-                                instructions: { type: Type.STRING },
-                                tips: { type: Type.STRING }
-                            },
-                            required: ["name", "muscleGroups", "sets", "reps", "rest", "instructions", "tips"]
-                        }
-                    },
-                    notes: { type: Type.STRING }
-                },
-                required: ["type", "exercises", "notes"]
-            }
-        },
-        required: ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
-    };
+    Return as JSON with this structure:
+    {
+      "sunday": {"type": "rest", "activities": ["..."], "notes": "..."},
+      "monday": {"type": "push", "exercises": [{"name": "...", "muscleGroups": "...", "sets": "...", "reps": "...", "rest": "...", "instructions": "...", "tips": "..."}], "notes": "..."},
+      ...
+    }`;
 
     try {
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: prompt,
-            config: {
-                responseMimeType: 'application/json',
-                responseSchema: responseSchema,
-            },
+        const responseText = await callPerplexityAPI(prompt, {
+            model: 'sonar-pro',
+            responseFormat: 'json_object'
         });
-        return JSON.parse(response.text);
+
+        // Try to parse JSON
+        let jsonText = responseText.trim();
+        jsonText = jsonText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+        
+        try {
+            return JSON.parse(jsonText);
+        } catch (parseError) {
+            const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            throw parseError;
+        }
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, 'Weekly exercise content generation');
         ErrorHandler.logError(appError);
@@ -1025,3 +829,4 @@ function getFallbackWeeklyContent(startDate: Date): any {
         }
     };
 }
+

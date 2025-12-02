@@ -1,6 +1,7 @@
-import { getOrGenerateDynamicContent } from "../../api/gemini";
+import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
 import { escapeHtml } from "../../utils/escapeHtml";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
 export async function showHoodModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -35,7 +36,7 @@ export async function showHoodModal(
     contentEl.innerHTML = '<p>Loading topic...</p>';
 
     try {
-        const data = await getOrGenerateDynamicContent('transportation-physics', date);
+        const data = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'transportation-physics', date);
         if (!data || !data.title || !data.explanation) {
             titleEl.textContent = 'Error';
             contentEl.innerHTML = '<p>Content is not available. Please try again later.</p>';

@@ -1,6 +1,7 @@
-import { getOrGenerateDynamicContent, generateWeeklyExerciseContent } from "../../api/gemini";
+import { getOrGenerateDynamicContent, generateWeeklyExerciseContent } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
 import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 import { createSafeHtml } from "../../utils/escapeHtml";
 
 
@@ -42,7 +43,7 @@ export async function showExerciseModal(
     try {
         // Get the start of the week (Sunday) for the given date
         const startOfWeek = getStartOfWeek(date);
-        const weeklyData = await generateWeeklyExerciseContent(startOfWeek);
+        const weeklyData = await generateWeeklyExerciseContent(DEFAULT_USER_ID, startOfWeek);
         
         if (!weeklyData) {
             contentEl.innerHTML = '<p>Weekly exercise plan not available. Please try again later.</p>';

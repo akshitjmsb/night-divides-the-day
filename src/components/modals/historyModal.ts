@@ -1,4 +1,4 @@
-import { ai } from "../../api/gemini";
+import { ai } from "../../api/perplexity";
 
 export async function fetchAndShowHistory() {
     const modal = document.getElementById('history-modal');
@@ -13,7 +13,7 @@ export async function fetchAndShowHistory() {
         const prompt = `Using Google Search, find one highly-rated and popular history documentary or explainer video on YouTube about World War I or World War II from a reputable source like a well-known documentary channel, museum, or educational institution. Prioritize content that is likely to be permanently available. Respond with only the video title and the direct YouTube URL in this exact format:\nTitle: [video title]\nURL: [video URL]`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
             config: {
                 tools: [{googleSearch: {}}],
@@ -40,12 +40,13 @@ export async function fetchAndShowHistory() {
             html += `<p>Could not find a history video at this time.</p>`;
         }
 
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-        if (groundingChunks && groundingChunks.length > 0) {
+        // Note: Perplexity API doesn't provide grounding metadata in the same format as Gemini
+        // Sources are typically included in the response text itself
+        const uniqueSources: any[] = [];
+        if (uniqueSources.length > 0) {
             html += '<hr class="my-4 border-gray-300">';
             html += '<h4 class="text-md font-bold mb-2">Sources:</h4>';
             html += '<ul class="list-disc pl-5 text-sm space-y-1">';
-            const uniqueSources = Array.from(new Map(groundingChunks.map(chunk => [chunk.web?.uri, chunk])).values());
 
             uniqueSources.forEach(chunk => {
                 if (chunk && typeof chunk === 'object' && 'web' in chunk && chunk.web && typeof chunk.web === 'object' && 'uri' in chunk.web) {

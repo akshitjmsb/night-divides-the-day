@@ -1,4 +1,4 @@
-import { ai } from "../api/gemini";
+import { ai } from "../api/perplexity";
 
 // Cache for philosophical quotes to avoid repeated API calls
 const quoteCache = new Map<string, { quote: string; author: string; timestamp: number }>();
@@ -85,7 +85,7 @@ export async function generateAIPhilosophicalQuote(date: Date): Promise<{ quote:
 Make it different from common quotes and choose something that would make someone pause and think deeply about life, wisdom, or human nature.`;
         
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
         });
         
@@ -157,7 +157,7 @@ export async function getReflectionPrompt(quote: string, author: string) {
     try {
         const prompt = `Based on this philosophical quote: "${quote}" by ${author}, generate a short, insightful, and personal reflection question to help me think deeper about it. Frame it as a question I can ask myself. Do not use asterisks.`;
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
         });
         reflectionPromptDisplay.textContent = response.text.replace(/\*/g, '');

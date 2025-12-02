@@ -1,4 +1,4 @@
-import { ai } from "../../api/gemini";
+import { ai } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/persistence";
@@ -41,7 +41,7 @@ Rules:
 - Respond ONLY as strict JSON matching the provided schema.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',

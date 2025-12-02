@@ -1,4 +1,4 @@
-import { ai } from "../../api/gemini";
+import { ai } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 
@@ -22,7 +22,7 @@ export async function fetchAndShowCoffeeTip(activeContentDate: Date) {
         const prompt = `For day ${dayOfYear} of the year, generate a unique, self-contained mini-lesson for someone aspiring to open their own coffee cafe. The lesson should cover a practical aspect of the coffee industry, market, or business operations. Provide a clear title, a detailed but accessible explanation, and a single key takeaway for a future cafe owner. Do not use asterisks or markdown.`;
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',
@@ -50,7 +50,7 @@ export async function fetchAndShowCoffeeTip(activeContentDate: Date) {
         try {
             coffeeData = JSON.parse(response.text);
         } catch (jsonError) {
-             console.error("Failed to parse JSON from Gemini response for coffee lesson:", jsonError);
+             console.error("Failed to parse JSON from Perplexity response for coffee lesson:", jsonError);
              contentEl.innerHTML = `<p>Could not parse the lesson. Please try again later.</p>`;
              return;
         }

@@ -1,12 +1,9 @@
-import { ai } from "../../api/gemini";
-import { Chat, GenerateContentResponse } from "@google/genai";
+import { ai } from "../../api/perplexity";
 import { saveChatHistory } from "../../core/persistence";
 import { ChatMessage } from "../../types";
 
 let chatHistory: ChatMessage[] = [];
 let mainChatHistory: ChatMessage[] = [];
-let chat: Chat;
-let mainChat: Chat;
 let lastApiCall = 0;
 const API_RATE_LIMIT = 1000;
 
@@ -19,7 +16,7 @@ function renderChatHistory() {
     chatHistoryDisplay.scrollTop = chatHistoryDisplay.scrollHeight;
 }
 
-export async function askGemini(prompt: string) {
+export async function askPerplexity(prompt: string) {
     const chatHistoryDisplay = document.getElementById('chat-history');
     if (!chatHistoryDisplay) return;
 
@@ -41,23 +38,31 @@ export async function askGemini(prompt: string) {
     chatHistoryDisplay.scrollTop = chatHistoryDisplay.scrollHeight;
 
     try {
-        const response: GenerateContentResponse = await chat.sendMessage({ message: prompt });
+        // Build context from chat history
+        const messages = chatHistory.slice(-10).map(msg => ({
+            role: msg.role === 'user' ? 'user' : 'assistant',
+            content: msg.text
+        }));
+        messages.push({ role: 'user', content: prompt });
+
+        const response = await ai.models.generateContent({
+            model: 'sonar-pro',
+            contents: messages.map(m => m.content).join('\n\n'),
+        });
         thinkingEl.remove();
 
-        const geminiResponse = response.text.replace(/\*/g, '');
-        if (geminiResponse) {
-            chatHistory.push({ role: "model", text: geminiResponse });
+        const perplexityResponse = response.text.replace(/\*/g, '');
+        if (perplexityResponse) {
+            chatHistory.push({ role: "model", text: perplexityResponse });
         } else {
              chatHistory.push({ role: "model", text: "I'm sorry, I couldn't process that." });
         }
 
-        if (chat === mainChat) {
-            mainChatHistory = [...chatHistory];
-            await saveChatHistory(mainChatHistory);
-        }
+        mainChatHistory = [...chatHistory];
+        await saveChatHistory(mainChatHistory);
 
     } catch (error) {
-         console.error("Gemini API Error:", error);
+         console.error("Perplexity API Error:", error);
          thinkingEl.remove();
 
          let errorMessage = "There was an error. Please try again.";
@@ -77,22 +82,17 @@ export async function askGemini(prompt: string) {
 }
 
 export function initializeChat(
-    loadedMainChatHistory: ChatMessage[],
-    dependencies: {
-        mainChat: Chat;
-        chat: Chat;
-    }
+    loadedMainChatHistory: ChatMessage[]
 ) {
     mainChatHistory = loadedMainChatHistory;
-    mainChat = dependencies.mainChat;
-    chat = dependencies.chat;
+    chatHistory = [...loadedMainChatHistory];
 
     document.getElementById('chat-form')?.addEventListener('submit', (e) => {
         e.preventDefault();
         const chatInput = document.getElementById('chat-input') as HTMLInputElement;
         const prompt = chatInput.value.trim();
         if (prompt) {
-            askGemini(prompt);
+            askPerplexity(prompt);
             chatInput.value = '';
         }
     });
@@ -102,7 +102,6 @@ export function initializeChat(
     document.getElementById('chat-open-btn')?.addEventListener('click', () => {
         const chatModal = document.getElementById('chat-modal');
         if (chatModal) {
-            chat = mainChat;
             chatHistory = [...mainChatHistory];
             renderChatHistory();
             chatModal.classList.remove('hidden');

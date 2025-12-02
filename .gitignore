@@ -30,3 +30,10 @@ dist-ssr
 .env.production
 .env.*.local
 .vercel
+
+# Supabase
+.branches
+.temp
+supabase/.branches
+supabase/.temp
+.env*.local

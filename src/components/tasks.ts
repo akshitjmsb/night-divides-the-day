@@ -1,6 +1,7 @@
 import { Task } from "../types";
-import { saveTasks, loadTasks } from "../core/persistence";
+import { saveTasks as saveTasksToSupabase, loadTasks as loadTasksFromSupabase } from "../core/supabase-persistence";
 import { escapeHtml, sanitizeTaskInput, createSafeHtml } from "../utils/escapeHtml";
+import { DEFAULT_USER_ID } from "../core/default-user";
 
 export function renderTasks(tasks: Task[], listId: string) {
     const listEl = document.getElementById(listId);
@@ -28,17 +29,10 @@ export function renderTasks(tasks: Task[], listId: string) {
         `).join('')}
     `;
     
-    // Attach event listeners to the newly rendered elements
-    attachTaskEventListeners(listId);
-    
-    // Add refresh button listener
-    const refreshBtn = document.getElementById(`refresh-btn-${listId}`);
-    if (refreshBtn) {
-        refreshBtn.addEventListener('click', () => refreshTasksFromCloud(listId));
-    }
+    // Note: Event listeners are attached separately with userId
 }
 
-function handleTaskSubmit(e: Event, tasks: Task[], mainRender: () => void) {
+function handleTaskSubmit(e: Event, tasks: Task[], userId: string, mainRender: () => void) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const input = form.querySelector('input[type="text"]') as HTMLInputElement;
@@ -52,8 +46,11 @@ function handleTaskSubmit(e: Event, tasks: Task[], mainRender: () => void) {
     if (sanitizedText) {
         tasks.push({ text: sanitizedText, completed: false });
         input.value = '';
-        saveTasks(tasks);
-        mainRender();
+        saveTasksToSupabase(userId, tasks).then(() => {
+            mainRender();
+        }).catch(error => {
+            console.error('Error saving task:', error);
+        });
     } else {
         // Show user feedback for invalid input
         console.warn('Task input was rejected due to security concerns');
@@ -61,25 +58,31 @@ function handleTaskSubmit(e: Event, tasks: Task[], mainRender: () => void) {
     }
 }
 
-export function handleTaskDelete(target: HTMLElement, tasks: Task[], mainRender: () => void) {
+export function handleTaskDelete(target: HTMLElement, tasks: Task[], userId: string, mainRender: () => void) {
     const index = parseInt(target.dataset.index || '-1');
     if (index > -1) {
         tasks.splice(index, 1);
-        saveTasks(tasks);
-        mainRender();
+        saveTasksToSupabase(userId, tasks).then(() => {
+            mainRender();
+        }).catch(error => {
+            console.error('Error deleting task:', error);
+        });
     }
 }
 
-export function handleTaskToggle(target: HTMLInputElement, tasks: Task[], mainRender: () => void) {
+export function handleTaskToggle(target: HTMLInputElement, tasks: Task[], userId: string, mainRender: () => void) {
     const index = parseInt(target.dataset.index || '-1');
     if (index > -1) {
         tasks[index].completed = !tasks[index].completed;
-        saveTasks(tasks);
-        mainRender();
+        saveTasksToSupabase(userId, tasks).then(() => {
+            mainRender();
+        }).catch(error => {
+            console.error('Error toggling task:', error);
+        });
     }
 }
 
-function attachTaskEventListeners(listId: string) {
+function attachTaskEventListeners(listId: string, userId: string) {
     const listEl = document.getElementById(listId);
     if (!listEl) return;
 
@@ -90,9 +93,9 @@ function attachTaskEventListeners(listId: string) {
             const index = parseInt(target.dataset.index || '-1');
             if (index > -1) {
                 // Get tasks from centralized storage
-                const tasks = await loadTasks();
+                const tasks = await loadTasksFromSupabase(userId);
                 tasks.splice(index, 1);
-                await saveTasks(tasks);
+                await saveTasksToSupabase(userId, tasks);
                 // Re-render the tasks
                 renderTasks(tasks, listId);
             }
@@ -106,9 +109,9 @@ function attachTaskEventListeners(listId: string) {
             const index = parseInt(target.dataset.index || '-1');
             if (index > -1) {
                 // Get tasks from centralized storage
-                const tasks = await loadTasks();
+                const tasks = await loadTasksFromSupabase(userId);
                 tasks[index].completed = target.checked;
-                await saveTasks(tasks);
+                await saveTasksToSupabase(userId, tasks);
                 // Re-render the tasks
                 renderTasks(tasks, listId);
             }
@@ -116,10 +119,20 @@ function attachTaskEventListeners(listId: string) {
     });
 }
 
-export function initializeTaskForms(tasks: Task[], mainRender: () => void) {
+export function initializeTaskForms(tasks: Task[], userId: string, mainRender: () => void) {
     // Initialize form submission handlers
-    document.getElementById('add-task-form-day')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, mainRender));
-    document.getElementById('add-task-form-night')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, mainRender));
+    document.getElementById('add-task-form-day')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, userId, mainRender));
+    document.getElementById('add-task-form-night')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, userId, mainRender));
+}
+
+export function attachTaskListeners(listId: string, userId: string) {
+    attachTaskEventListeners(listId, userId);
+    
+    // Add refresh button listener
+    const refreshBtn = document.getElementById(`refresh-btn-${listId}`);
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => refreshTasksFromCloud(listId, userId));
+    }
 }
 
 // Function to show sync status
@@ -141,11 +154,12 @@ export function showSyncStatus(listId: string, isSyncing: boolean = true) {
 }
 
 // Function to refresh tasks from cloud storage
-export async function refreshTasksFromCloud(listId: string) {
+export async function refreshTasksFromCloud(listId: string, userId: string) {
     try {
         showSyncStatus(listId, true);
-        const tasks = await loadTasks();
+        const tasks = await loadTasksFromSupabase(userId);
         renderTasks(tasks, listId);
+        attachTaskListeners(listId, userId);
         showSyncStatus(listId, false);
     } catch (error) {
         console.error('Failed to refresh tasks from cloud:', error);

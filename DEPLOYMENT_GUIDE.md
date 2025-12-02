@@ -6,9 +6,78 @@ This guide will help you deploy your "Night Divides the Day" application to Verc
 
 1. **Vercel Account**: Sign up at [vercel.com](https://vercel.com)
 2. **GitHub Repository**: Your code should be in a GitHub repository
-3. **Gemini API Key**: Get one from [Google AI Studio](https://makersuite.google.com/app/apikey)
+3. **Supabase Account**: Sign up at [supabase.com](https://supabase.com) (free tier available)
+4. **Gemini API Key**: Get one from [Google AI Studio](https://makersuite.google.com/app/apikey)
 
-## 🔧 Step 1: Environment Variables Setup
+## 🔧 Step 1: Supabase Setup
+
+### Install Supabase CLI
+
+```bash
+# macOS
+brew install supabase/tap/supabase
+
+# Windows (Scoop)
+scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+scoop install supabase
+
+# Linux
+brew install supabase/tap/supabase
+# Or download from: https://github.com/supabase/cli/releases
+```
+
+Verify installation:
+```bash
+supabase --version
+```
+
+### Login to Supabase
+
+```bash
+supabase login
+```
+
+This will open your browser to authenticate.
+
+### Create and Link Project
+
+**Option A: Create via CLI**
+```bash
+supabase projects create night-divides-the-day --org-id your-org-id --region us-east-1 --db-password your-secure-password
+supabase link --project-ref your-project-ref
+```
+
+**Option B: Create via Dashboard**
+1. Go to [supabase.com/dashboard](https://supabase.com/dashboard)
+2. Create a new project
+3. Get your project reference ID from project settings
+4. Link it:
+```bash
+supabase link --project-ref your-project-ref
+```
+
+### Run Database Migrations
+
+The database schema is in `supabase/migrations/`. Apply it:
+
+```bash
+supabase db push
+```
+
+This creates all tables, indexes, RLS policies, and triggers automatically.
+
+### Get Supabase Credentials
+
+1. In Supabase dashboard, go to **Settings** → **API**
+2. Copy:
+   - **Project URL** (e.g., `https://xxxxx.supabase.co`)
+   - **anon/public key** (starts with `eyJ...`)
+
+**⚠️ Important**: Use the **anon/public key** for client-side code, NOT the service_role key.
+
+For detailed setup instructions, see `SUPABASE_SETUP.md`.
+
+## 🔧 Step 2: Environment Variables Setup
 
 ### In Vercel Dashboard:
 
@@ -17,26 +86,30 @@ This guide will help you deploy your "Night Divides the Day" application to Verc
 3. Add the following variables:
 
 ```
-GEMINI_API_KEY=your_actual_gemini_api_key_here
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GEMINI_API_KEY=your_actual_gemini_api_key_here
 ```
 
 **Important Notes:**
+- Replace `your_supabase_project_url` with your Supabase Project URL (from Step 1)
+- Replace `your_supabase_anon_key` with your Supabase anon/public key (from Step 1)
 - Replace `your_actual_gemini_api_key_here` with your real Gemini API key
-- Make sure to add this to **Production**, **Preview**, and **Development** environments
-- The API key should start with something like `AIza...`
+- Make sure to add these to **Production**, **Preview**, and **Development** environments
+- The Supabase anon key should start with `eyJ...`
+- The Gemini API key should start with something like `AIza...`
 
-## 🗄️ Step 2: Vercel KV Database Setup
+### Local Development
 
-1. In your Vercel project dashboard, go to **Storage** tab
-2. Click **Create Database** → **KV**
-3. Choose a name (e.g., `night-divides-the-day-kv`)
-4. Select a region close to your users
-5. Click **Create**
+Create a `.env` file in the project root:
 
-The KV environment variables will be automatically added to your project:
-- `KV_REST_API_URL`
-- `KV_REST_API_TOKEN`
-- `KV_REST_API_READ_ONLY_TOKEN`
+```bash
+VITE_SUPABASE_URL=your_supabase_project_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+VITE_GEMINI_API_KEY=your_gemini_api_key
+```
+
+**⚠️ Security Note**: Never commit `.env` files to git. The `.env.example` file is provided as a template.
 
 ## 🚀 Step 3: Deploy to Vercel
 
@@ -75,10 +148,12 @@ After deployment, test these endpoints:
 ## 🔍 Step 5: Test the Application
 
 1. **Open your deployed app** in a browser
-2. **Check the console** for any errors
-3. **Test the chat functionality** (requires Gemini API key)
-4. **Test content generation** by clicking on different modules
-5. **Verify the cron job** is working (runs daily at 10 PM EST)
+2. **Sign up/Sign in**: You should see a login screen - create an account
+3. **Check the console** for any errors
+4. **Test data persistence**: Create tasks, they should sync across devices
+5. **Test content generation** by clicking on different modules
+6. **Verify Supabase connection**: Check Supabase dashboard → Table Editor to see data
+7. **Verify the cron job** is working (runs daily at 10 PM EST)
 
 ## 🐛 Troubleshooting
 
@@ -89,10 +164,12 @@ After deployment, test these endpoints:
 - **Verify**: The variable name is exactly `GEMINI_API_KEY`
 - **Check**: It's enabled for all environments (Production, Preview, Development)
 
-#### 2. KV Database Connection Issues
-- **Solution**: Ensure Vercel KV is properly connected to your project
-- **Check**: Go to Storage tab in Vercel dashboard
-- **Verify**: The database is created and active
+#### 2. Supabase Connection Issues
+- **Solution**: Verify your Supabase credentials are correct
+- **Check**: Go to Supabase dashboard → Settings → API
+- **Verify**: You're using the **anon/public key**, not the service_role key
+- **Test**: Check browser console for Supabase connection errors
+- **Verify Tables**: Ensure all tables are created (run `supabase-schema.sql` if not)
 
 #### 3. Build Failures
 - **Solution**: Check the build logs in Vercel dashboard
@@ -121,7 +198,8 @@ curl https://your-app.vercel.app/api/content
 
 1. **Vercel Analytics**: Enable in your project settings
 2. **Function Logs**: Monitor API endpoint performance
-3. **KV Usage**: Check storage usage in Vercel dashboard
+3. **Supabase Dashboard**: Monitor database usage, active connections, and storage
+4. **Supabase Logs**: Check authentication and database query logs
 
 ## 🔄 Cron Job Configuration
 
@@ -134,11 +212,13 @@ The app has a cron job configured to run daily at 10 PM EST:
 
 Your deployment is successful when:
 - ✅ App loads without errors
-- ✅ Chat functionality works
+- ✅ Authentication works (sign up/sign in)
+- ✅ Tasks persist across page refreshes
 - ✅ Content generation works
 - ✅ API endpoints respond correctly
 - ✅ Cron job runs automatically
-- ✅ KV storage is working
+- ✅ Supabase database is storing data (check Table Editor)
+- ✅ Data syncs across devices when logged in with same account
 
 ## 📞 Support
 

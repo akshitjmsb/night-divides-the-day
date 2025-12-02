@@ -1,6 +1,8 @@
-import { ai, getOrGenerateDynamicContent } from "../../api/gemini";
+import { ai, getOrGenerateDynamicContent } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
+import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../core/supabase-persistence";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
 export async function fetchAndShowGuitarTab(activeContentDate: Date) {
     const modal = document.getElementById('guitar-modal');
@@ -27,9 +29,12 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
     try {
         const dayOfYear = getDayOfYear(activeContentDate);
 
+        // Load recent picks from Supabase
+        const recent = await loadGuitarRecentPicks(DEFAULT_USER_ID);
+        
         let songPool: Array<{ title: string; artist: string }> = [];
         try {
-            const pool = await getOrGenerateDynamicContent('classic-rock-500', activeContentDate);
+            const pool = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'classic-rock-500', activeContentDate);
             if (Array.isArray(pool) && pool.length > 0) {
                 songPool = pool
                     .filter(item => item && typeof item.title === 'string' && typeof item.artist === 'string')
@@ -39,13 +44,6 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
             console.warn('Could not load classic-rock-500 pool. Falling back to AI-random.', e);
         }
 
-        const RECENT_KEY = 'guitarRecentPicks';
-        const loadRecent = (): string[] => {
-            try { const raw = localStorage.getItem(RECENT_KEY); return raw ? JSON.parse(raw) : []; } catch { return []; }
-        };
-        const saveRecent = (arr: string[]) => { try { localStorage.setItem(RECENT_KEY, JSON.stringify(arr.slice(0, 30))); } catch {} };
-        const recent = loadRecent();
-
         let pickedTitle = '';
         let pickedArtist = '';
         if (songPool.length > 0) {
@@ -54,14 +52,14 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
             const idx = Math.floor(Math.random() * selectionPool.length);
             const picked = selectionPool[idx];
             pickedTitle = picked.title; pickedArtist = picked.artist;
-            saveRecent([`${picked.title} — ${picked.artist}`, ...recent.filter(x => x !== `${picked.title} — ${picked.artist}`)]);
+            await saveGuitarRecentPick(DEFAULT_USER_ID, picked.title, picked.artist);
         }
 
         const prompt = pickedTitle && pickedArtist
             ? `Create a concise guitar lesson for the specific classic rock song below. Return JSON ONLY with these exact fields. Do not add extra text.\n\nSong: "${pickedTitle}" by "${pickedArtist}"\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`
             : `Give me a Random Classic Rock song that I can learn to play on Guitar for day ${dayOfYear} of the year. Return JSON ONLY with these exact fields:\n\n{\n  "title": "Song title only",\n  "artist": "Artist name",\n  "key": "Musical key (e.g., A minor, E major)",\n  "tuning": "Guitar tuning (e.g., Standard E A D G B E, Drop D, Eb Standard)",\n  "lyricsWithChords": "Multi-line text with chords inline or above lyrics. Keep it short (intro/verse/chorus). Use plain ASCII.",\n  "chordChanges": "Concise chord progression overview (e.g., Verse: G-D-Em-C | Chorus: C-G-Am-F)",\n  "inspiration": "Song facts about what inspired the song. Make me fall in love with it.",\n  "youtubeLessonTitle": "Best YouTube video title for a guitar lesson on this song",\n  "youtubeLessonUrl": "Direct YouTube URL starting with https:// (must be a watch URL, not Shorts or playlist)",\n  "spotifyUrl": "Direct Spotify track URL starting with https://open.spotify.com/"\n}\n\nRules:\n- Keep lyrics snippet short and fair-use; do not include full lyrics.\n- Ensure URLs are valid-looking and direct. No markdown, no extra commentary.`;
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',

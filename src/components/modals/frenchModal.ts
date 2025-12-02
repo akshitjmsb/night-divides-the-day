@@ -1,5 +1,6 @@
-import { getOrGenerateDynamicContent } from "../../api/gemini";
+import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
 export async function showFrenchModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -36,7 +37,7 @@ export async function showFrenchModal(
     tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">Loading French lesson...</td></tr>`;
 
     try {
-        const soundData = await getOrGenerateDynamicContent('french-sound', date);
+        const soundData = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'french-sound', date);
 
         if (!soundData || !soundData.sound || !soundData.words) {
              titleEl.textContent = `French: Error`;

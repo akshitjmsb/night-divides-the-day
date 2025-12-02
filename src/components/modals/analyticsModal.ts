@@ -1,7 +1,8 @@
-import { getOrGenerateDynamicContent } from "../../api/gemini";
+import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
 import { getSolutionExplanation } from "./solutionExplanation";
 import { escapeHtml } from "../../utils/escapeHtml";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
 // Global state for card navigation
 let currentCardIndex = 0;
@@ -55,7 +56,7 @@ export async function showAnalyticsModal(
     cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Loading analytics topics...</p></div>';
 
     try {
-        analyticsData = await getOrGenerateDynamicContent('analytics', date);
+        analyticsData = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'analytics', date);
         if (!analyticsData) {
             cardsWrapper.innerHTML = '<div class="analytics-card flex items-center justify-center"><p>Content is not available. Please try again later.</p></div>';
             return;

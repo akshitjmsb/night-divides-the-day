@@ -1,6 +1,7 @@
-import { getOrGeneratePlanForDate } from "../../api/gemini";
+import { getOrGeneratePlanForDate } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
 import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
 export async function showFoodModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -49,7 +50,7 @@ export async function showFoodModal(
     contentEl.innerHTML = '<p>Loading food plan...</p>';
 
     try {
-        const plan = await getOrGeneratePlanForDate(date, key);
+        const plan = await getOrGeneratePlanForDate(DEFAULT_USER_ID, date, key);
         contentEl.innerHTML = plan.replace(/\n/g, '<br>');
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Food modal (${mode})`);

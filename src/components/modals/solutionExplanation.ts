@@ -1,4 +1,4 @@
-import { ai } from "../../api/gemini";
+import { ai } from "../../api/perplexity";
 import { escapeHtml } from "../../utils/escapeHtml";
 
 export async function getSolutionExplanation(questionPrompt: string, questionSolution: string): Promise<string> {
@@ -45,7 +45,7 @@ Your task is to explain this to the junior engineer. Provide a response in JSON 
         };
 
         const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'sonar-pro',
             contents: prompt,
             config: {
                 responseMimeType: 'application/json',

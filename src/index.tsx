@@ -1,18 +1,23 @@
-import { GenerateContentResponse, Type } from "@google/genai";
+// Removed @google/genai import - now using Perplexity API
 
 import { escapeHtml } from "./utils/escapeHtml";
 import { getDayOfYear } from "./utils/date";
 import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } from "./core/time";
 import { Task, PoetrySelection } from "./types";
-import { loadTasks, saveTasks, loadPoetryRecents, savePoetryRecents, recordPoetrySelection } from "./core/persistence";
+import { loadTasks as loadTasksFromSupabase, saveTasks as saveTasksToSupabase, loadPoetryRecents as loadPoetryRecentsFromSupabase, savePoetryRecents as savePoetryRecentsToSupabase, recordPoetrySelection } from "./core/supabase-persistence";
 import { initializeQuantumTimer } from "./components/quantumTimer";
-import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud } from "./components/tasks";
-import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/gemini";
+import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud, attachTaskListeners } from "./components/tasks";
+import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/perplexity";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
 import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, getReflectionPrompt, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
+import { hasGenerationFlag, setGenerationFlag, getCachedContent } from "./core/supabase-content-cache";
+import { DEFAULT_USER_ID } from "./core/default-user";
 
 document.addEventListener('DOMContentLoaded', () => {
+    // --- DEFAULT USER ID (No authentication required) ---
+    const currentUserId: string = DEFAULT_USER_ID;
+
     // --- STATE & DERIVED DATA ---
     let todayKey: string, tomorrowKey: string, tomorrowDay: number;
     let activeContentDate: Date, previewContentDate: Date;
@@ -125,8 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // This key prevents re-triggering the generation process every 5 minutes during Night mode.
-        const generationAttemptedKey = `auto-generation-attempted-${dateKeyForGeneration}`;
-        if (localStorage.getItem(generationAttemptedKey)) {
+        // Using default user ID - no check needed
+        
+        const hasFlag = await hasGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
+        if (hasFlag) {
             return; // We've already run auto-generation for this date.
         }
 
@@ -138,10 +145,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // We "warm the cache" by calling the generation functions.
             // They will check existing caches first and only generate/fetch if the content is missing.
             const promises = [
-                getOrGeneratePlanForDate(dateForGeneration, tomorrowKey),
-                getOrGenerateDynamicContent('french-sound', dateForGeneration),
-                getOrGenerateDynamicContent('analytics', dateForGeneration),
-                getOrGenerateDynamicContent('transportation-physics', dateForGeneration)
+                getOrGeneratePlanForDate(currentUserId, dateForGeneration, tomorrowKey),
+                getOrGenerateDynamicContent(currentUserId, 'french-sound', dateForGeneration),
+                getOrGenerateDynamicContent(currentUserId, 'analytics', dateForGeneration),
+                getOrGenerateDynamicContent(currentUserId, 'transportation-physics', dateForGeneration)
             ];
 
             await Promise.all(promises);
@@ -149,7 +156,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log(`Background content generation for ${dateKeyForGeneration} complete.`);
             
             // Mark that we've successfully attempted generation for this date.
-            localStorage.setItem(generationAttemptedKey, new Date().toISOString());
+            await setGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
             showSyncStatus('✅ Sync complete. Tomorrow\'s preview is ready.', true);
 
         } catch (error) {
@@ -177,12 +184,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
     
     async function mainRender() {
+        // Using default user ID - no check needed
+        
         // Recalculate time-sensitive variables each time render is called
         await updateDateDerivedData(); 
         const { hour } = getCanonicalTime(); // Use canonical hour
 
         await loadCoreData();
-        tasks = await loadTasks(); // Load the latest tasks from storage to sync on each 5min interval.
+        tasks = await loadTasksFromSupabase(currentUserId); // Load the latest tasks from storage to sync on each 5min interval.
 
         // Always show day module (now our single dynamic module)
         const dayModule = document.getElementById('day-module') as HTMLElement;
@@ -226,8 +235,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Authentication removed - using default anonymous user
+
     async function initializeApp() {
         try {
+            // No authentication required - using default user ID
             // Render icons immediately for better UX
             renderModuleIcons();
             
@@ -247,7 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                 };
                 initializeModalManager(appContainer, modalDependencies);
-                initializeTaskForms(tasks, mainRender);
+                initializeTaskForms(tasks, currentUserId, mainRender);
+                attachTaskListeners('tasks-list-day', currentUserId);
             }
 
             function updateTime() {
@@ -274,7 +287,8 @@ document.addEventListener('DOMContentLoaded', () => {
             // More frequent task syncing for better cross-device experience
             setInterval(async () => {
                 try {
-                    await refreshTasksFromCloud('tasks-list-day');
+                    const tasks = await loadTasksFromSupabase(currentUserId);
+                    renderTasks(tasks, 'tasks-list-day');
                 } catch (error) {
                     console.warn('Failed to sync tasks:', error);
                 }
@@ -303,11 +317,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // Using default user ID - no check needed
+        
         const todayKey = new Date().toISOString().split('T')[0];
-        const generationKey = `night-generation-${todayKey}`;
         
         // Check if we've already generated content for tomorrow today
-        if (localStorage.getItem(generationKey)) {
+        const hasFlag = await hasGenerationFlag(currentUserId, 'night-generation', todayKey);
+        if (hasFlag) {
             console.log('🔄 Night: Content already generated for tomorrow');
             return;
         }
@@ -323,16 +339,16 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             // Generate all content types for tomorrow
             const promises = [
-                getOrGeneratePlanForDate(previewContentDate, tomorrowKey),
-                getOrGenerateDynamicContent('french-sound', previewContentDate),
-                getOrGenerateDynamicContent('analytics', previewContentDate),
-                getOrGenerateDynamicContent('transportation-physics', previewContentDate)
+                getOrGeneratePlanForDate(currentUserId, previewContentDate, tomorrowKey),
+                getOrGenerateDynamicContent(currentUserId, 'french-sound', previewContentDate),
+                getOrGenerateDynamicContent(currentUserId, 'analytics', previewContentDate),
+                getOrGenerateDynamicContent(currentUserId, 'transportation-physics', previewContentDate)
             ];
             
             await Promise.all(promises);
             
             // Mark that we've generated content for tomorrow
-            localStorage.setItem(generationKey, new Date().toISOString());
+            await setGenerationFlag(currentUserId, 'night-generation', todayKey);
             console.log('✅ Night: Content generation completed for tomorrow');
             showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
             
@@ -354,11 +370,13 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
+        // Using default user ID - no check needed
+        
         const todayKey = new Date().toISOString().split('T')[0];
-        const archiveKey = `archived-${todayKey}`;
         
         // Check if we've already archived today's content
-        if (localStorage.getItem(archiveKey)) {
+        const hasFlag = await hasGenerationFlag(currentUserId, 'archived', todayKey);
+        if (hasFlag) {
             console.log('🔄 Day: Content already archived for today');
             return;
         }
@@ -375,15 +393,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const archiveData = {
                 date: todayKey,
                 archivedAt: new Date().toISOString(),
-                foodPlan: await getOrGeneratePlanForDate(activeContentDate, todayKey),
-                frenchContent: await getOrGenerateDynamicContent('french-sound', activeContentDate),
-                analyticsContent: await getOrGenerateDynamicContent('analytics', activeContentDate),
-                transportationContent: await getOrGenerateDynamicContent('transportation-physics', activeContentDate),
+                foodPlan: await getOrGeneratePlanForDate(currentUserId, activeContentDate, todayKey),
+                frenchContent: await getOrGenerateDynamicContent(currentUserId, 'french-sound', activeContentDate),
+                analyticsContent: await getOrGenerateDynamicContent(currentUserId, 'analytics', activeContentDate),
+                transportationContent: await getOrGenerateDynamicContent(currentUserId, 'transportation-physics', activeContentDate),
                 lifePointer: todaysQuote
             };
             
-            // Save to archive
-            localStorage.setItem(archiveKey, JSON.stringify(archiveData));
+            // Save to archive in Supabase
+            const { saveCachedContent } = await import('./core/supabase-content-cache');
+            await saveCachedContent(currentUserId, 'archive', todayKey, archiveData);
+            await setGenerationFlag(currentUserId, 'archived', todayKey);
             console.log('✅ Day: Content archived successfully for today');
             
         } catch (error) {
@@ -394,20 +414,16 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Loads archived content for display
      */
-    function getArchivedContent(dateKey: string): any {
-        const archiveKey = `archived-${dateKey}`;
-        const archivedData = localStorage.getItem(archiveKey);
+    async function getArchivedContent(dateKey: string): Promise<any> {
+        // Using default user ID - no check needed
         
-        if (archivedData) {
-            try {
-                return JSON.parse(archivedData);
-            } catch (error) {
-                console.error('Error parsing archived content:', error);
-                return null;
-            }
+        try {
+            const archivedData = await getCachedContent(currentUserId, 'archive', dateKey);
+            return archivedData;
+        } catch (error) {
+            console.error('Error loading archived content:', error);
+            return null;
         }
-        
-        return null;
     }
     
     // --- ARCHIVED CONTENT MODAL FUNCTIONS ---
