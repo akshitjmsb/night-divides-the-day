@@ -1,16 +1,14 @@
 // Removed @google/genai import - now using Perplexity API
 
 import { escapeHtml } from "./utils/escapeHtml";
-import { getDayOfYear } from "./utils/date";
-import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } from "./core/time";
-import { Task, PoetrySelection } from "./types";
-import { loadTasks as loadTasksFromSupabase, saveTasks as saveTasksToSupabase, loadPoetryRecents as loadPoetryRecentsFromSupabase, savePoetryRecents as savePoetryRecentsToSupabase, recordPoetrySelection } from "./core/supabase-persistence";
+import { getCanonicalTime, isDayMode, isNightMode } from "./core/time";
+import { loadTasks as loadTasksFromSupabase } from "./core/supabase-persistence";
 import { initializeQuantumTimer } from "./components/quantumTimer";
-import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud, attachTaskListeners } from "./components/tasks";
+import { initializeTaskForms, renderTasks, attachTaskListeners } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/perplexity";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
-import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, getReflectionPrompt, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
+import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
 import { hasGenerationFlag, setGenerationFlag, getCachedContent } from "./core/supabase-content-cache";
 import { DEFAULT_USER_ID } from "./core/default-user";
 

@@ -1,7 +1,8 @@
 import { ai } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
-import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/persistence";
+import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/supabase-persistence";
+import { DEFAULT_USER_ID } from "../../core/default-user";
 
 export async function fetchAndShowPoetry(activeContentDate: Date) {
     const modal = document.getElementById('poetry-modal');
@@ -14,7 +15,7 @@ export async function fetchAndShowPoetry(activeContentDate: Date) {
 
     try {
         const dayOfYear = getDayOfYear(activeContentDate);
-        const poetryRecents = await loadPoetryRecents();
+        const poetryRecents = await loadPoetryRecents(DEFAULT_USER_ID);
         const recentPoets = poetryRecents.map(r => r.poet).filter(Boolean);
         const recentLanguages = poetryRecents.map(r => r.language).filter(Boolean);
 
@@ -88,7 +89,7 @@ Rules:
                 const poetName = typeof data.poet === 'string' ? data.poet : '';
                 const langName = typeof data.language === 'string' ? data.language : '';
                 const updatedRecents = recordPoetrySelection(poetryRecents, poetName, langName);
-                await savePoetryRecents(updatedRecents);
+                await savePoetryRecents(DEFAULT_USER_ID, updatedRecents);
             } catch (parseError) {
                 html += `<div class="mb-6">`;
                 html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;
