@@ -260,18 +260,6 @@ Return as JSON:
     }
 }
 
-async function fetchServerContent(dateKey: string): Promise<any | null> {
-    try {
-        const res = await fetch(`/api/content?date=${encodeURIComponent(dateKey)}`);
-        if (!res.ok) return null;
-        const json = await res.json();
-        return json?.data ?? null;
-    } catch (e) {
-        console.warn('Server content fetch failed', e);
-        return null;
-    }
-}
-
 export async function getOrGeneratePlanForDate(userId: string, date: Date, dateKey: string): Promise<string> {
     // 1. Check Supabase cache
     const cachedPlan = await getCachedFoodPlan(userId, dateKey);
@@ -279,22 +267,7 @@ export async function getOrGeneratePlanForDate(userId: string, date: Date, dateK
         return cachedPlan;
     }
 
-    // 2. Check server KV via API (legacy fallback)
-    try {
-        const server = await fetchServerContent(dateKey);
-        if (server && typeof server === 'object' && 'summary' in server) {
-            const summary = (server as any).summary as string;
-            if (summary && typeof summary === 'string') {
-                // Save to Supabase cache
-                await saveFoodPlan(userId, dateKey, summary);
-                return summary;
-            }
-        }
-    } catch (e) {
-        console.warn('Could not fetch from server content API.', e);
-    }
-
-    // 3. Generate new plan
+    // 2. Generate new plan
     console.log(`Generating new food plan for ${dateKey} as it was not found in cache.`);
     const newPlan = await generateFoodPlanForDate(date);
 

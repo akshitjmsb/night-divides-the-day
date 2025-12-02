@@ -1,5 +1,3 @@
-import { kv } from '@vercel/kv';
-
 export const config = { runtime: 'edge' } as const;
 
 function formatDateInEastern(dateInput?: Date): string {
@@ -29,12 +27,8 @@ export default async function handler(req: Request): Promise<Response> {
   const url = new URL(req.url);
   const date = url.searchParams.get('date') || formatDateInEastern();
 
-  try {
-    const data = await kv.get(`content:${date}`);
-    return json({ ok: true, data, date });
-  } catch (error) {
-    return json({ ok: false, error: `${error}`, date }, 500);
-  }
+  // KV removed - returning empty response
+  return json({ ok: true, data: null, date });
 }
 
 

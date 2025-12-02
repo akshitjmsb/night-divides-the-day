@@ -1,5 +1,4 @@
 import { GoogleGenAI } from '@google/genai';
-import { kv } from '@vercel/kv';
 
 export const config = { runtime: 'edge' } as const;
 
@@ -83,12 +82,8 @@ export default async function handler(req: Request): Promise<Response> {
 
     console.log(`[manual-trigger] Generated summary length: ${summary.length} characters`);
 
-    await kv.set(`content:${date}`, {
-      summary,
-      generatedAt: new Date().toISOString(),
-    });
-
-    console.log(`[manual-trigger] Successfully saved content for date: ${date}`);
+    // KV removed - content is now stored in Supabase only
+    console.log(`[manual-trigger] Content generated for date: ${date} (not saved to KV)`);
 
     return json({ 
       ok: true, 
@@ -102,7 +97,7 @@ export default async function handler(req: Request): Promise<Response> {
     
     return json({ 
       ok: false, 
-      error: 'generation_or_kv_failed', 
+      error: 'generation_failed', 
       details: `${error}`,
       date,
       timestamp: new Date().toISOString()
