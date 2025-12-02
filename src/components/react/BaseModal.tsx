@@ -13,7 +13,7 @@ export const BaseModal: React.FC<BaseModalProps> = ({
   onClose, 
   title, 
   children, 
-  modalId = 'storybook-modal' 
+  modalId = 'base-modal' 
 }) => {
   if (!isOpen) return null;
 
