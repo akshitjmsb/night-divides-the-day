@@ -1,6 +1,7 @@
 import { ai } from "../api/perplexity";
 import { getCanonicalTime } from "../core/time";
 import { getCachedContent, saveCachedContent } from "../core/supabase-content-cache";
+import { escapeHtml } from "../utils/escapeHtml";
 
 // Quote generation time: 5 PM (17:00)
 const QUOTE_GENERATION_HOUR = 17;
@@ -84,21 +85,27 @@ export async function getOrGenerateDailyQuote(
     
     // 2. If not cached and it's time to generate (>= 5 PM on quote date)
     if (!ai) {
-        console.warn("Perplexity API not available. Cannot generate quote.");
-        return null;
+        console.warn("Perplexity API not available. Using curated quote.");
+        // Fallback to curated quote when API is unavailable
+        return getCuratedQuote(quoteDate);
     }
     
     if (!shouldGenerateQuote(quoteDate)) {
-        // Not time to generate yet, return null (will show loading/placeholder)
-        console.log(`Not yet 5 PM. Quote will be generated at 5 PM on ${dateKey}`);
-        return null;
+        // Not time to generate yet, return curated quote as instant fallback
+        console.log(`Not yet 5 PM. Using curated quote. New quote will be generated at 5 PM on ${dateKey}`);
+        return getCuratedQuote(quoteDate);
     }
     
-    // 3. Generate new quote via Perplexity API
-    try {
-        showQuoteLoadingIndicator();
-        
-        const prompt = `Generate a profound, thought-provoking quote from a famous philosopher that would inspire deep reflection. The quote must be:
+    // 3. Generate new quote via Perplexity API (non-blocking - return curated quote immediately)
+    // Show curated quote first for instant display, then update when API completes
+    const curatedQuote = getCuratedQuote(quoteDate);
+    
+    // Generate in background (non-blocking)
+    (async () => {
+        try {
+            showQuoteLoadingIndicator();
+            
+            const prompt = `Generate a profound, thought-provoking quote from a famous philosopher that would inspire deep reflection. The quote must be:
 1. From a well-known philosopher (Socrates, Plato, Aristotle, Marcus Aurelius, Epictetus, Seneca, Nietzsche, Kant, etc.)
 2. Profound and meaningful for daily reflection
 3. Maximum 25 words (count carefully)
@@ -106,44 +113,54 @@ export async function getOrGenerateDailyQuote(
 5. Format as: "Quote text" - Philosopher Name
 
 Make it different from common quotes and choose something that would make someone pause and think deeply about life, wisdom, or human nature.`;
-        
-        const response = await ai.models.generateContent({
-            model: 'sonar-pro',
-            contents: prompt,
-        });
-        
-        const fullText = response.text.trim();
-        const parts = fullText.split(' - ');
-        
-        if (parts.length >= 2) {
-            let quote = parts[0].replace(/^["']|["']$/g, '').trim();
-            const author = parts[1].trim();
             
-            // Ensure quote is max 25 words
-            const wordCount = countWords(quote);
-            if (wordCount > 25) {
-                console.warn(`Quote has ${wordCount} words, truncating to 25`);
-                quote = truncateToMaxWords(quote, 25);
+            const response = await ai.models.generateContent({
+                model: 'sonar-pro',
+                contents: prompt,
+            });
+            
+            const fullText = response.text.trim();
+            const parts = fullText.split(' - ');
+            
+            if (parts.length >= 2) {
+                let quote = parts[0].replace(/^["']|["']$/g, '').trim();
+                const author = parts[1].trim();
+                
+                // Ensure quote is max 25 words
+                const wordCount = countWords(quote);
+                if (wordCount > 25) {
+                    console.warn(`Quote has ${wordCount} words, truncating to 25`);
+                    quote = truncateToMaxWords(quote, 25);
+                }
+                
+                const quoteData = { quote, author };
+                
+                // Save to Supabase cache
+                await saveCachedContent(userId, 'philosophical-quote', dateKey, quoteData);
+                
+                hideQuoteLoadingIndicator();
+                
+                // Update the UI with the new quote
+                const lifePointerEl = document.getElementById('life-pointer-display-day');
+                if (lifePointerEl) {
+                    lifePointerEl.innerHTML = `
+                        <div class="quote-text">"${escapeHtml(quoteData.quote)}"</div>
+                        <div class="quote-author">— ${escapeHtml(quoteData.author)}</div>
+                    `;
+                }
+            } else {
+                // Fallback if parsing fails
+                console.error("Failed to parse quote response:", fullText);
+                hideQuoteLoadingIndicator();
             }
-            
-            const quoteData = { quote, author };
-            
-            // 4. Save to Supabase cache
-            await saveCachedContent(userId, 'philosophical-quote', dateKey, quoteData);
-            
+        } catch (error) {
+            console.error("Error generating philosophical quote:", error);
             hideQuoteLoadingIndicator();
-            return quoteData;
-        } else {
-            // Fallback if parsing fails
-            console.error("Failed to parse quote response:", fullText);
-            hideQuoteLoadingIndicator();
-            return null;
         }
-    } catch (error) {
-        console.error("Error generating philosophical quote:", error);
-        hideQuoteLoadingIndicator();
-        return null;
-    }
+    })();
+    
+    // Return curated quote immediately (non-blocking)
+    return curatedQuote;
 }
 
 // Legacy functions for backward compatibility (deprecated)

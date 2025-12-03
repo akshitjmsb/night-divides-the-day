@@ -51,14 +51,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (quote) {
             todaysQuote = quote;
         } else {
-            // Quote not available yet (before 5 PM) or generation failed
-            // Show loading state or placeholder
-            const lifePointerEl = document.getElementById('life-pointer-display-day');
-            if (lifePointerEl && !lifePointerEl.querySelector('.quote-text')) {
-                lifePointerEl.innerHTML = `
-                    <div class="quote-text">Loading today's quote...</div>
-                `;
-            }
+            // This should rarely happen now (fallback to curated quote is in place)
+            // But if it does, show a curated quote immediately
+            const { getPhilosophicalQuoteInstant } = await import('./components/reflection');
+            todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
         }
     }
     
