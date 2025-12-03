@@ -17,7 +17,7 @@ export async function fetchAndShowWorldOrder() {
             return;
         }
 
-        const prompt = "Be extremely brief. First, what is the single most important, recent headline about Donald Trump? State it in 10 words or less. Then, list the 5 most critical world order headlines (US/Canada focused) as ultra-short, scannable bullet points. Finally, list the 5 latest major headlines from India in the same brief format. Do not use asterisks or any markdown formatting.";
+        const prompt = "Be extremely brief. First, what is the single most important, recent headline about Donald Trump? State it in 10 words or less. Then, list the 5 most critical world order headlines (US/Canada focused) as ultra-short, scannable bullet points. Finally, list the 5 latest major headlines from India in the same brief format. Format your response clearly with section headers like 'Trump Headline:', 'US/Canada Headlines:', and 'India Headlines:'. Do not use asterisks or any markdown formatting.";
 
         const response = await ai.models.generateContent({
            model: "sonar-pro",
@@ -30,10 +30,34 @@ export async function fetchAndShowWorldOrder() {
         let html = '';
 
         if(response.text) {
-            const formattedText = response.text
+            let formattedText = response.text
                 .replace(/\*/g, '')
-                .replace(/\n/g, '<br>')
+                .replace(/\n/g, '<br>');
+            
+            // Better parsing for sections - look for common patterns
+            // Try to identify India headlines section
+            const indiaMatch = formattedText.match(/(?:India|India Headlines?)[:\s]*<br>(.*?)(?:<br><br>|$)/i);
+            const usMatch = formattedText.match(/(?:US|US\/Canada|US\/Canada Headlines?)[:\s]*<br>(.*?)(?:India|$)/i);
+            const trumpMatch = formattedText.match(/(?:Trump|Donald Trump)[:\s]*<br>(.*?)(?:US|India|$)/i);
+            
+            // If we can't find India section, try to extract it from the end
+            if (!indiaMatch && formattedText.includes('India')) {
+                // Look for India mentions in the text
+                const parts = formattedText.split(/India/i);
+                if (parts.length > 1) {
+                    // Take everything after "India" as India headlines
+                    const indiaSection = parts.slice(1).join('India');
+                    formattedText = formattedText.replace(new RegExp(indiaSection, 'i'), `<strong class="block mt-3 mb-1">India Headlines:</strong>${indiaSection}`);
+                }
+            }
+            
+            // Format section headers
+            formattedText = formattedText
+                .replace(/(?:Trump|Donald Trump)[:\s]*<br>/gi, '<strong class="block mt-3 mb-1">Trump Headline:</strong><br>')
+                .replace(/(?:US|US\/Canada|US\/Canada Headlines?)[:\s]*<br>/gi, '<strong class="block mt-3 mb-1">US/Canada Headlines:</strong><br>')
+                .replace(/(?:India|India Headlines?)[:\s]*<br>/gi, '<strong class="block mt-3 mb-1">India Headlines:</strong><br>')
                 .replace(/^(.*?):<br>/gm, '<strong class="block mt-3 mb-1">$1:</strong>');
+            
             html += `<div class="mb-4">${formattedText}</div>`;
         } else {
              html += `<p>Could not retrieve any news data at this time.</p>`;

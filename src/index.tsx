@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     },
                 };
                 initializeModalManager(appContainer, modalDependencies);
-                initializeTaskForms(tasks, currentUserId, mainRender);
+                initializeTaskForms(currentUserId, mainRender);
                 attachTaskListeners('tasks-list-day', currentUserId);
             }
 
@@ -323,6 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const hasFlag = await hasGenerationFlag(currentUserId, 'night-generation', todayKey);
         if (hasFlag) {
             console.log('🔄 Night: Content already generated for tomorrow');
+            // Clear any existing loading message
+            const statusEl = document.getElementById('sync-status');
+            if (statusEl && statusEl.innerHTML.includes('Generating tomorrow')) {
+                statusEl.classList.add('hidden');
+            }
             return;
         }
         

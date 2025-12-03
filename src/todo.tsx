@@ -56,8 +56,8 @@ async function initializeApp() {
         // Initial render
         await mainRender();
         
-        // Initialize form
-        initializeTaskForms(tasks, currentUserId, mainRender);
+        // Initialize form (pass async mainRender function)
+        initializeTaskForms(currentUserId, mainRender);
 
     } catch (error) {
         console.error('Error initializing app:', error);

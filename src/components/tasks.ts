@@ -8,7 +8,7 @@ export function renderTasks(tasks: Task[], listId: string) {
     if(!listEl) return;
     
     if (tasks.length === 0) {
-        listEl.innerHTML = '';
+        listEl.innerHTML = '<p style="text-align: center; color: #9ca3af; padding: 2rem; font-style: italic;">No tasks yet. Add one above to get started!</p>';
         return;
     }
     
@@ -32,7 +32,7 @@ export function renderTasks(tasks: Task[], listId: string) {
     // Note: Event listeners are attached separately with userId
 }
 
-function handleTaskSubmit(e: Event, tasks: Task[], userId: string, mainRender: () => void) {
+async function handleTaskSubmit(e: Event, userId: string, mainRender: () => Promise<void>) {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
     const input = form.querySelector('input[type="text"]') as HTMLInputElement;
@@ -44,13 +44,26 @@ function handleTaskSubmit(e: Event, tasks: Task[], userId: string, mainRender: (
     const sanitizedText = sanitizeTaskInput(taskText);
 
     if (sanitizedText) {
-        tasks.push({ text: sanitizedText, completed: false });
+        // Load current tasks from Supabase to ensure we have the latest
+        const currentTasks = await loadTasksFromSupabase(userId);
+        currentTasks.push({ text: sanitizedText, completed: false });
         input.value = '';
-        saveTasksToSupabase(userId, tasks).then(() => {
-            mainRender();
-        }).catch(error => {
+        
+        try {
+            await saveTasksToSupabase(userId, currentTasks);
+            // Re-render to show the new task
+            await mainRender();
+        } catch (error) {
             console.error('Error saving task:', error);
-        });
+            const statusEl = document.getElementById('sync-status');
+            if (statusEl) {
+                statusEl.innerHTML = '⚠️ Error saving task. Please try again.';
+                statusEl.classList.remove('hidden');
+                setTimeout(() => {
+                    statusEl.classList.add('hidden');
+                }, 3000);
+            }
+        }
     } else {
         // Show user feedback for invalid input
         console.warn('Task input was rejected due to security concerns');
@@ -119,10 +132,10 @@ function attachTaskEventListeners(listId: string, userId: string) {
     });
 }
 
-export function initializeTaskForms(tasks: Task[], userId: string, mainRender: () => void) {
+export function initializeTaskForms(userId: string, mainRender: () => Promise<void>) {
     // Initialize form submission handlers
-    document.getElementById('add-task-form-day')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, userId, mainRender));
-    document.getElementById('add-task-form-night')?.addEventListener('submit', (e) => handleTaskSubmit(e, tasks, userId, mainRender));
+    document.getElementById('add-task-form-day')?.addEventListener('submit', (e) => handleTaskSubmit(e, userId, mainRender));
+    document.getElementById('add-task-form-night')?.addEventListener('submit', (e) => handleTaskSubmit(e, userId, mainRender));
 }
 
 export function attachTaskListeners(listId: string, userId: string) {

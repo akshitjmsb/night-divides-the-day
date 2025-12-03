@@ -48,11 +48,31 @@ export async function fetchAndShowCoffeeTip(activeContentDate: Date) {
         });
 
         try {
-            coffeeData = JSON.parse(response.text);
+            // Try to extract JSON from response if it's wrapped in markdown or text
+            let jsonText = response.text.trim();
+            
+            // Remove markdown code blocks if present
+            jsonText = jsonText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
+            
+            // Try to parse JSON
+            coffeeData = JSON.parse(jsonText);
         } catch (jsonError) {
              console.error("Failed to parse JSON from Perplexity response for coffee lesson:", jsonError);
-             contentEl.innerHTML = `<p>Could not parse the lesson. Please try again later.</p>`;
-             return;
+             console.error("Response text:", response.text);
+             // Try to extract JSON object from text
+             const jsonMatch = response.text.match(/\{[\s\S]*\}/);
+             if (jsonMatch) {
+                 try {
+                     coffeeData = JSON.parse(jsonMatch[0]);
+                 } catch (secondError) {
+                     console.error("Failed to parse extracted JSON:", secondError);
+                     contentEl.innerHTML = `<p>Could not parse the lesson. Please try again later.</p>`;
+                     return;
+                 }
+             } else {
+                 contentEl.innerHTML = `<p>Could not parse the lesson. Please try again later.</p>`;
+                 return;
+             }
         }
 
     } catch (error) {
