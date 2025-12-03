@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS poetry_recents (
 CREATE TABLE IF NOT EXISTS content_cache (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    content_type TEXT NOT NULL CHECK (content_type IN ('food-plan', 'analytics', 'transportation-physics', 'french-sound', 'exercise-plan', 'weekly-exercise', 'archive')),
+    content_type TEXT NOT NULL CHECK (content_type IN ('food-plan', 'analytics', 'transportation-physics', 'french-sound', 'exercise-plan', 'weekly-exercise', 'archive', 'classic-rock-500', 'philosophical-quote')),
     date_key DATE NOT NULL,
     content JSONB NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

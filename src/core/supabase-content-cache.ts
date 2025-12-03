@@ -8,7 +8,8 @@ export type ContentType =
     | 'exercise-plan' 
     | 'weekly-exercise' 
     | 'archive'
-    | 'classic-rock-500';
+    | 'classic-rock-500'
+    | 'philosophical-quote';
 
 /**
  * Get cached content from Supabase

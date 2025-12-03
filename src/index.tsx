@@ -8,7 +8,7 @@ import { initializeTaskForms, renderTasks, attachTaskListeners } from "./compone
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/perplexity";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
-import { getPhilosophicalQuoteInstant, generateAIPhilosophicalQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator } from "./components/reflection";
+import { getOrGenerateDailyQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator, isQuoteGenerationTime } from "./components/reflection";
 import { hasGenerationFlag, setGenerationFlag, getCachedContent } from "./core/supabase-content-cache";
 import { DEFAULT_USER_ID } from "./core/default-user";
 
@@ -45,35 +45,20 @@ document.addEventListener('DOMContentLoaded', () => {
         tomorrowKey = previewContentDate.toISOString().split('T')[0];
         tomorrowDay = previewContentDate.getDay();
         
-        // Load philosophical quote instantly (no API call blocking)
-        todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
-        
-        // Optionally generate AI quote in background for future use
-        if (ai) {
-            // Show loading indicator
-            showQuoteLoadingIndicator();
-            
-            generateAIPhilosophicalQuote(activeContentDate).then(aiQuote => {
-                // Hide loading indicator
-                hideQuoteLoadingIndicator();
-                
-                // Update the quote if AI generation was successful
-                if (aiQuote && aiQuote.quote !== todaysQuote?.quote) {
-                    todaysQuote = aiQuote;
-                    // Re-render the quote display
-                    const lifePointerEl = document.getElementById('life-pointer-display-day');
-                    if (lifePointerEl) {
-                        lifePointerEl.innerHTML = `
-                            <div class="quote-text">"${aiQuote.quote}"</div>
-                            <div class="quote-author">— ${aiQuote.author}</div>
-                        `;
-                    }
-                }
-            }).catch(error => {
-                // Hide loading indicator on error
-                hideQuoteLoadingIndicator();
-                console.log("Background AI quote generation failed, using curated quote:", error);
-            });
+        // Load or generate daily quote (generated at 5 PM, active until 5 PM next day)
+        // Using default user ID - no check needed
+        const quote = await getOrGenerateDailyQuote(currentUserId);
+        if (quote) {
+            todaysQuote = quote;
+        } else {
+            // Quote not available yet (before 5 PM) or generation failed
+            // Show loading state or placeholder
+            const lifePointerEl = document.getElementById('life-pointer-display-day');
+            if (lifePointerEl && !lifePointerEl.querySelector('.quote-text')) {
+                lifePointerEl.innerHTML = `
+                    <div class="quote-text">Loading today's quote...</div>
+                `;
+            }
         }
     }
     
@@ -291,6 +276,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn('Failed to sync tasks:', error);
                 }
             }, 30000); // every 30 seconds
+            
+            // Check for quote generation at 5 PM (runs every minute)
+            setInterval(async () => {
+                try {
+                    if (isQuoteGenerationTime()) {
+                        console.log('🕐 5 PM detected - checking for quote generation...');
+                        // Trigger quote generation by calling getOrGenerateDailyQuote
+                        const quote = await getOrGenerateDailyQuote(currentUserId);
+                        if (quote) {
+                            // Update the quote in state and re-render
+                            todaysQuote = quote;
+                            await renderDayModule();
+                            console.log('✅ Daily quote generated and displayed');
+                        }
+                    }
+                } catch (error) {
+                    console.warn('Failed to check/generate quote at 5 PM:', error);
+                }
+            }, 60000); // Check every minute
         } catch (error) {
             handleGlobalError(error as Error, 'app initialization');
         }
