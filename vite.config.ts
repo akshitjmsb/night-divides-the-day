@@ -15,6 +15,11 @@ export default defineConfig(({ mode }) => {
       },
       build: {
         rollupOptions: {
+          // Multiple entry points for different pages
+          input: {
+            main: path.resolve(__dirname, 'index.html'),
+            todo: path.resolve(__dirname, 'todo.html'),
+          },
           // Remove external configuration for @google/genai since it's used client-side
           // The import map in HTML will handle the external dependency
         }
