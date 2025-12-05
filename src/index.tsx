@@ -1,10 +1,12 @@
-// Removed @google/genai import - now using Perplexity API
-
+// Google GenAI import removed
 import { escapeHtml } from "./utils/escapeHtml";
-import { getCanonicalTime, isDayMode, isNightMode } from "./core/time";
+import { getDayOfYear } from "./utils/date";
+import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } from "./core/time";
+import { Task, PoetrySelection } from "./types";
+import { loadTasks, saveTasks, loadPoetryRecents, savePoetryRecents, recordPoetrySelection } from "./core/persistence";
 import { loadTasks as loadTasksFromSupabase } from "./core/supabase-persistence";
 import { initializeQuantumTimer } from "./components/quantumTimer";
-import { initializeTaskForms, renderTasks, attachTaskListeners } from "./components/tasks";
+import { initializeTaskForms, renderTasks, handleTaskDelete, handleTaskToggle, refreshTasksFromCloud, attachTaskListeners } from "./components/tasks";
 import { getOrGenerateDynamicContent, getOrGeneratePlanForDate, ai } from "./api/perplexity";
 import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
@@ -44,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
         todayKey = activeContentDate.toISOString().split('T')[0];
         tomorrowKey = previewContentDate.toISOString().split('T')[0];
         tomorrowDay = previewContentDate.getDay();
-        
+
         // Load or generate daily quote (generated at 5 PM, active until 5 PM next day)
         // Using default user ID - no check needed
         const quote = await getOrGenerateDailyQuote(currentUserId);
@@ -57,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
         }
     }
-    
+
     let tasks: { text: string; completed: boolean }[] = [];
 
     // Active chat state for the modal UI
@@ -69,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- DATA PERSISTENCE ---
 
     // --- DYNAMIC CONTENT GENERATION & CACHING ---
-    
+
     /**
      * Displays a status message to the user, typically for content synchronization.
      * @param {string} message The message to display.
@@ -98,8 +100,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return; // Generation is already in progress.
         }
 
-        updateDateDerivedData(); 
-        
+        updateDateDerivedData();
+
         const dateForGeneration = previewContentDate;
         const dateKeyForGeneration = dateForGeneration.toISOString().split('T')[0];
 
@@ -110,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // This key prevents re-triggering the generation process every 5 minutes during Night mode.
         // Using default user ID - no check needed
-        
+
         const hasFlag = await hasGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
         if (hasFlag) {
             return; // We've already run auto-generation for this date.
@@ -119,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
         isAutoGenerating = true;
         showSyncStatus('⚙️ Synchronizing next day\'s content...');
         console.log(`It's Night mode. Triggering background content generation for ${dateKeyForGeneration}...`);
-        
+
         try {
             // We "warm the cache" by calling the generation functions.
             // They will check existing caches first and only generate/fetch if the content is missing.
@@ -131,9 +133,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ];
 
             await Promise.all(promises);
-            
+
             console.log(`Background content generation for ${dateKeyForGeneration} complete.`);
-            
+
             // Mark that we've successfully attempted generation for this date.
             await setGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
             showSyncStatus('✅ Sync complete. Tomorrow\'s preview is ready.', true);
@@ -156,17 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
         // device that isn't available on another.
     }
 
-    
+
     // --- RENDER FUNCTIONS ---
-    
+
     // renderChatHistory function removed for simplicity
-    
-    
+
+
     async function mainRender() {
         // Using default user ID - no check needed
-        
+
         // Recalculate time-sensitive variables each time render is called
-        await updateDateDerivedData(); 
+        await updateDateDerivedData();
         const { hour } = getCanonicalTime(); // Use canonical hour
 
         await loadCoreData();
@@ -175,13 +177,13 @@ document.addEventListener('DOMContentLoaded', () => {
         // Always show day module (now our single dynamic module)
         const dayModule = document.getElementById('day-module') as HTMLElement;
         if (dayModule) dayModule.classList.add('active');
-        
+
         // Update dynamic icon based on time
         updateDynamicIcon(hour);
-        
+
         // Render navigation icons
         renderNavigationIcons();
-        
+
         // Always render day content for now
         await renderDayModule();
     }
@@ -189,7 +191,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateDynamicIcon(hour: number) {
         const iconEl = document.getElementById('dynamic-time-icon') as HTMLElement;
         if (!iconEl) return;
-        
+
         if (isDayMode()) {
             iconEl.textContent = '☀️';
             iconEl.className = 'theme-icon day-mode';
@@ -202,7 +204,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Error boundary function
     function handleGlobalError(error: Error, context: string) {
         console.error(`Error in ${context}:`, error);
-        
+
         // Show user-friendly error message
         const statusEl = document.getElementById('sync-status');
         if (statusEl) {
@@ -221,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // No authentication required - using default user ID
             // Render icons immediately for better UX
             renderModuleIcons();
-            
+
             await updateDateDerivedData(); // Ensure date-derived data is available
             initializeQuantumTimer();
 
@@ -248,10 +250,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (el) el.textContent = new Date().toLocaleString('en-CA', options);
             }
             updateTime();
-            
+
             // Load persistent data on startup
             // Chat functionality removed for simplicity
-            
+
             await mainRender();
 
             setInterval(updateTime, 1000);
@@ -262,7 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     handleGlobalError(error as Error, 'periodic update');
                 }
             }, 60000 * 5); // every 5 minutes
-            
+
             // More frequent task syncing for better cross-device experience
             setInterval(async () => {
                 try {
@@ -272,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.warn('Failed to sync tasks:', error);
                 }
             }, 30000); // every 30 seconds
-            
+
             // Check for quote generation at 5 PM (runs every minute)
             setInterval(async () => {
                 try {
@@ -297,28 +299,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     initializeApp();
-    
+
     // --- MODULE EDITING FUNCTIONALITY REMOVED ---
     // All edit module names functionality has been removed for cleaner design
 
     // --- ENHANCED CONTENT FLOW SYSTEM ---
-    
+
     /**
      * Enhanced content generation specifically for Night Mode (6 PM - 6 AM)
      */
     async function triggerNightContentGeneration(): Promise<void> {
         const { hour, now } = getCanonicalTime();
-        
+
         // Only generate during Night Mode (6 PM - 6 AM)
         if (!isNightMode()) {
             console.log(`⏰ Night: Not in Night time window (current hour: ${hour})`);
             return;
         }
-        
+
         // Using default user ID - no check needed
-        
+
         const todayKey = new Date().toISOString().split('T')[0];
-        
+
         // Check if we've already generated content for tomorrow today
         const hasFlag = await hasGenerationFlag(currentUserId, 'night-generation', todayKey);
         if (hasFlag) {
@@ -330,7 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             return;
         }
-        
+
         console.log('🚀 Night: Starting content generation for tomorrow...', {
             currentTime: now.toISOString(),
             todayKey: todayKey,
@@ -338,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
             previewContentDate: previewContentDate.toISOString()
         });
         showSyncStatus('🔄 Generating tomorrow\'s content...', false);
-        
+
         try {
             // Generate all content types for tomorrow
             const promises = [
@@ -347,50 +349,50 @@ document.addEventListener('DOMContentLoaded', () => {
                 getOrGenerateDynamicContent(currentUserId, 'analytics', previewContentDate),
                 getOrGenerateDynamicContent(currentUserId, 'transportation-physics', previewContentDate)
             ];
-            
+
             await Promise.all(promises);
-            
+
             // Mark that we've generated content for tomorrow
             await setGenerationFlag(currentUserId, 'night-generation', todayKey);
             console.log('✅ Night: Content generation completed for tomorrow');
             showSyncStatus('✅ Tomorrow\'s content generated successfully!', true);
-            
+
         } catch (error) {
             console.error('❌ Night: Content generation failed', error);
             showSyncStatus('⚠️ Content generation failed. Will retry.', true);
         }
     }
-    
+
     /**
      * Archives today's content during Day Mode (6 AM - 6 PM)
      */
     async function archiveTodaysContent(): Promise<void> {
         const { hour, now } = getCanonicalTime();
-        
+
         // Only archive during Day Mode (6 AM - 6 PM)
         if (!isDayMode()) {
             console.log(`⏰ Day: Not in Day time window (current hour: ${hour})`);
             return;
         }
-        
+
         // Using default user ID - no check needed
-        
+
         const todayKey = new Date().toISOString().split('T')[0];
-        
+
         // Check if we've already archived today's content
         const hasFlag = await hasGenerationFlag(currentUserId, 'archived', todayKey);
         if (hasFlag) {
             console.log('🔄 Day: Content already archived for today');
             return;
         }
-        
+
         console.log('📦 Day: Archiving today\'s content...', {
             currentTime: now.toISOString(),
             todayKey: todayKey,
             hour: hour,
             activeContentDate: activeContentDate.toISOString()
         });
-        
+
         try {
             // Collect all of today's content
             const archiveData = {
@@ -402,24 +404,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 transportationContent: await getOrGenerateDynamicContent(currentUserId, 'transportation-physics', activeContentDate),
                 lifePointer: todaysQuote
             };
-            
+
             // Save to archive in Supabase
             const { saveCachedContent } = await import('./core/supabase-content-cache');
             await saveCachedContent(currentUserId, 'archive', todayKey, archiveData);
             await setGenerationFlag(currentUserId, 'archived', todayKey);
             console.log('✅ Day: Content archived successfully for today');
-            
+
         } catch (error) {
             console.error('❌ Day: Content archiving failed', error);
         }
     }
-    
+
     /**
      * Loads archived content for display
      */
     async function getArchivedContent(dateKey: string): Promise<any> {
         // Using default user ID - no check needed
-        
+
         try {
             const archivedData = await getCachedContent(currentUserId, 'archive', dateKey);
             return archivedData;
@@ -428,21 +430,21 @@ document.addEventListener('DOMContentLoaded', () => {
             return null;
         }
     }
-    
+
     // --- ARCHIVED CONTENT MODAL FUNCTIONS ---
-    
+
     function showArchivedFrenchModal(archivedContent: any) {
         const modal = document.getElementById('frenchy-modal');
         if (!modal) return;
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const titleEl = modal.querySelector('#modal-frenchy-title') as HTMLElement;
         const tableBodyEl = modal.querySelector('#modal-frenchy-table-body') as HTMLElement;
-        
+
         titleEl.textContent = `French (Archived - ${archivedContent.date})`;
-        
+
         if (archivedContent.frenchContent && archivedContent.frenchContent.sound && archivedContent.frenchContent.words) {
             const { sound, words } = archivedContent.frenchContent;
             tableBodyEl.innerHTML = `
@@ -456,52 +458,52 @@ document.addEventListener('DOMContentLoaded', () => {
             tableBodyEl.innerHTML = `<tr><td colspan="3" class="text-center p-4">No archived French content available.</td></tr>`;
         }
     }
-    
+
     function showArchivedFoodModal(archivedContent: any) {
         const modal = document.getElementById('food-modal');
         if (!modal) return;
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const titleEl = modal.querySelector('#modal-food-title') as HTMLElement;
         const contentEl = modal.querySelector('#modal-food-content') as HTMLElement;
-        
+
         titleEl.textContent = `Food Plan (Archived - ${archivedContent.date})`;
         contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.foodPlan || 'No archived food plan available.')}</div>`;
     }
-    
+
     function showArchivedAnalyticsModal(archivedContent: any) {
         const modal = document.getElementById('analytics-modal');
         if (!modal) return;
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const titleEl = modal.querySelector('#modal-analytics-title') as HTMLElement;
         const contentEl = modal.querySelector('#modal-analytics-content') as HTMLElement;
-        
+
         titleEl.textContent = `Analytics (Archived - ${archivedContent.date})`;
-        
+
         if (archivedContent.analyticsContent && archivedContent.analyticsContent.insights) {
             contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.analyticsContent.insights)}</div>`;
         } else {
             contentEl.innerHTML = `<div class="p-4">No archived analytics content available.</div>`;
         }
     }
-    
+
     function showArchivedHoodModal(archivedContent: any) {
         const modal = document.getElementById('hood-modal');
         if (!modal) return;
-        
+
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const titleEl = modal.querySelector('#modal-hood-title') as HTMLElement;
         const contentEl = modal.querySelector('#modal-hood-content') as HTMLElement;
-        
+
         titleEl.textContent = `Transportation Physics (Archived - ${archivedContent.date})`;
-        
+
         if (archivedContent.transportationContent && archivedContent.transportationContent.physics) {
             contentEl.innerHTML = `<div class="p-4">${escapeHtml(archivedContent.transportationContent.physics)}</div>`;
         } else {
@@ -510,7 +512,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- ENHANCED MODULE RENDERING FUNCTIONS ---
-    
+
     async function renderDayModule() {
         // Display philosophical quote
         const lifePointerEl = document.getElementById('life-pointer-display-day');
@@ -520,12 +522,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="quote-author">— ${todaysQuote.author}</div>
             `;
         }
-        
+
         const reflectionPromptEl = document.getElementById('reflection-prompt-display-day');
         if (reflectionPromptEl) reflectionPromptEl.textContent = '';
 
         renderTasks(tasks, 'tasks-list-day');
-        
+
         if (isDayMode()) {
             // Day Mode: Use today's content
             console.log('☀️ Day Mode: Using today\'s content');

@@ -2,16 +2,19 @@ import { ErrorHandler } from "../utils/errorHandling";
 import { getCachedContent, saveCachedContent, getCachedFoodPlan, saveFoodPlan } from "../core/supabase-content-cache";
 
 const PERPLEXITY_API_URL = 'https://api.perplexity.ai/chat/completions';
-const apiKey = (import.meta.env.VITE_PERPLEXITY_API_KEY || import.meta.env.VITE_API_KEY) as string;
+// API Key moved to server-side (only available in Vercel Function)
+// const apiKey = (import.meta.env.VITE_PERPLEXITY_API_KEY || import.meta.env.VITE_API_KEY) as string;
 
-let hasApiKey = false;
+const PERPLEXITY_PROXY_URL = '/api/perplexity-proxy';
 
-if (apiKey && apiKey !== 'test_key_for_development') {
-    hasApiKey = true;
-} else {
-    console.warn("Using development mode without Perplexity API key");
-    hasApiKey = false;
-}
+// let hasApiKey = false;
+
+// if (apiKey && apiKey !== 'test_key_for_development') {
+//     hasApiKey = true;
+// } else {
+//     console.warn("Using development mode without Perplexity API key");
+//     hasApiKey = false;
+// }
 
 /**
  * Call Perplexity API with a prompt
@@ -24,9 +27,9 @@ async function callPerplexityAPI(
         temperature?: number;
     } = {}
 ): Promise<string> {
-    if (!hasApiKey) {
-        throw new Error('Perplexity API key not configured');
-    }
+    // if (!hasApiKey) {
+    //     throw new Error('Perplexity API key not configured');
+    // }
 
     const {
         model = 'sonar-pro',
@@ -36,24 +39,22 @@ async function callPerplexityAPI(
 
     try {
         const requestBody: any = {
-            model,
-            messages: [
-                {
-                    role: 'user',
-                    content: prompt
-                }
-            ],
-            temperature
+            prompt,
+            options: {
+                model,
+                responseFormat,
+                temperature
+            }
         };
 
         // Perplexity API doesn't support response_format like OpenAI
         // JSON responses are handled via prompt instructions and parsing
         // No need to set response_format
 
-        const response = await fetch(PERPLEXITY_API_URL, {
+        const response = await fetch(PERPLEXITY_PROXY_URL, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${apiKey}`,
+                // 'Authorization': `Bearer ${apiKey}`, // API key handled by proxy
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestBody)
@@ -65,6 +66,7 @@ async function callPerplexityAPI(
         }
 
         const data = await response.json();
+        // Helper function removed as logic is now in the proxy
         return data.choices[0]?.message?.content || '';
     } catch (error) {
         console.error('Perplexity API call failed:', error);
@@ -80,26 +82,35 @@ export const ai = {
             // Perplexity doesn't support response_format, so we always get text
             // If JSON is requested, we parse it from the text response
             const expectsJson = params.config?.responseMimeType === 'application/json';
-            
-            const response = await callPerplexityAPI(prompt, {
-                model: params.model || 'sonar-pro',
-                responseFormat: 'text' // Always use text, parse JSON if needed
-            });
+            try {
+                const response = await fetch(PERPLEXITY_PROXY_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        prompt: params.contents,
+                        options: {
+                            model: params.model || 'sonar-pro',
+                            responseFormat: expectsJson ? 'json_object' : 'text' // Pass responseFormat to proxy
+                        }
+                    })
+                });
 
-            // If JSON was expected, try to extract JSON from the response
-            let text = response;
-            if (expectsJson) {
-                // Try to find JSON in the response (might be wrapped in markdown code blocks)
-                const jsonMatch = response.match(/```(?:json)?\s*(\{[\s\S]*\})\s*```/) || 
-                                 response.match(/(\{[\s\S]*\})/);
-                if (jsonMatch) {
-                    text = jsonMatch[1];
+                if (!response.ok) {
+                    throw new Error(`Proxy error! status: ${response.status}`);
                 }
-            }
 
-            return {
-                text: text
-            };
+                const data = await response.json();
+
+                // Return in format compatible with existing code
+                return {
+                    text: data.choices[0].message.content
+                };
+            } catch (error) {
+                console.error("Error calling Perplexity Proxy:", error);
+                throw error;
+            }
         }
     }
 };
@@ -115,7 +126,7 @@ function getWorkoutType(dayOfWeek: number): string {
 
 export async function getOrGenerateDynamicContent(
     userId: string,
-    contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', 
+    contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan',
     date: Date
 ): Promise<any> {
     const dateKey = date.toISOString().split('T')[0];
@@ -143,10 +154,11 @@ export async function getOrGenerateDynamicContent(
 
 export async function generateDynamicContent(contentType: 'analytics' | 'transportation-physics' | 'french-sound' | 'classic-rock-500' | 'exercise-plan', dateKey: string): Promise<any> {
     // If no API key, return fallback content
-    if (!hasApiKey) {
-        return getFallbackContent(contentType, dateKey);
-    }
-    
+    // Proxy handles auth, so we always attempt to generate
+    // if (!hasApiKey) {
+    //    return getFallbackContent(contentType, dateKey);
+    // }
+
     let prompt = '';
     let needsJson = false;
 
@@ -201,7 +213,7 @@ Format:
     } else if (contentType === 'exercise-plan') {
         const dayOfWeek = new Date(dateKey).getDay();
         const workoutType = getWorkoutType(dayOfWeek);
-        
+
         prompt = `Generate a comprehensive ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs/Upper rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.
 
 Return as JSON:
@@ -233,10 +245,10 @@ Return as JSON:
         if (needsJson) {
             // Try to extract JSON from response if it's wrapped in markdown or text
             let jsonText = responseText.trim();
-            
+
             // Remove markdown code blocks if present
             jsonText = jsonText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
-            
+
             try {
                 return JSON.parse(jsonText);
             } catch (parseError) {
@@ -250,7 +262,7 @@ Return as JSON:
                 throw parseError;
             }
         }
-        
+
         return responseText;
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Content generation for ${contentType}`);
@@ -285,10 +297,11 @@ export async function getOrGeneratePlanForDate(userId: string, date: Date, dateK
 
 export async function generateFoodPlanForDate(date: Date): Promise<string> {
     // If no API key, return fallback food plan
-    if (!hasApiKey) {
-        return getFallbackFoodPlan(date);
-    }
-    
+    // Proxy handles auth
+    // if (!hasApiKey) {
+    //     return getFallbackFoodPlan(date);
+    // }
+
     const dayOfWeek = date.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
     let prompt = `Create a full-day meal plan using only whole, minimally processed foods that naturally support libido. Format the output as a simple, scannable list with clear headings (Breakfast, Lunch, Dinner, Snack). Be very concise. Prioritize ingredients known to boost sexual health: oysters, leafy greens, avocados, nuts, dark chocolate, berries, watermelon, olive oil, eggs, fatty fish, ginger, cinnamon. Avoid processed foods, refined sugar, and alcohol. Do not use any markdown formatting like asterisks.`;
 
@@ -370,7 +383,7 @@ function getFallbackContent(contentType: 'analytics' | 'transportation-physics' 
     } else if (contentType === 'exercise-plan') {
         const dayOfWeek = new Date(dateKey).getDay();
         const workoutType = getWorkoutType(dayOfWeek);
-        
+
         return {
             push: {
                 exercises: [
@@ -526,7 +539,7 @@ function getFallbackContent(contentType: 'analytics' | 'transportation-physics' 
 function getFallbackFoodPlan(date: Date): string {
     const dayOfWeek = date.getDay();
     const isNoMeatDay = dayOfWeek === 2 || dayOfWeek === 4;
-    
+
     if (isNoMeatDay) {
         return `Breakfast: Oatmeal with berries, nuts, and cinnamon
 Lunch: Quinoa salad with avocado, leafy greens, and olive oil
@@ -567,9 +580,10 @@ export async function generateWeeklyExerciseContent(userId: string, startDate: D
 
 async function generateWeeklyContent(startDate: Date): Promise<any> {
     // If no API key, return fallback weekly content
-    if (!hasApiKey) {
-        return getFallbackWeeklyContent(startDate);
-    }
+    // Proxy handles auth
+    // if (!hasApiKey) {
+    //     return getFallbackWeeklyContent(startDate);
+    // }
 
     const prompt = `Generate a comprehensive 7-day workout plan starting from ${startDate.toISOString().split('T')[0]}. 
     
@@ -610,7 +624,7 @@ async function generateWeeklyContent(startDate: Date): Promise<any> {
         // Try to parse JSON
         let jsonText = responseText.trim();
         jsonText = jsonText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '');
-        
+
         try {
             return JSON.parse(jsonText);
         } catch (parseError) {
