@@ -5,43 +5,34 @@
 
 set -e
 
-SUPABASE_ACCESS_TOKEN="sbp_1f3a4cf6d81da3b010bc2bafad807932a15c150d"
-
-echo "🚀 Setting up Supabase for Night Divides the Day..."
-
-# Check if Supabase CLI is installed
-if ! command -v supabase &> /dev/null; then
-    echo "❌ Supabase CLI not found. Installing..."
-    
-    # Detect OS and install
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        echo "📦 Installing Supabase CLI via Homebrew..."
-        brew install supabase/tap/supabase
-    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-        echo "📦 Please install Supabase CLI manually:"
-        echo "   brew install supabase/tap/supabase"
-        echo "   Or download from: https://github.com/supabase/cli/releases"
-        exit 1
-    else
-        echo "❌ Unsupported OS. Please install Supabase CLI manually."
-        exit 1
-    fi
+# Load environment variables from .env.local if present
+if [ -f .env.local ]; then
+    echo "📄 Loading environment variables from .env.local..."
+    # Source .env.local but ignore comment lines
+    set -a
+    source .env.local
+    set +a
 fi
 
-echo "✅ Supabase CLI found"
-
-# Login with access token
-echo "🔐 Authenticating with Supabase..."
-export SUPABASE_ACCESS_TOKEN="$SUPABASE_ACCESS_TOKEN"
-
-# Try to login (if token auth is supported)
-if supabase login --token "$SUPABASE_ACCESS_TOKEN" 2>/dev/null; then
-    echo "✅ Authenticated with access token"
-else
-    echo "⚠️  Token login not available, using interactive login..."
-    echo "   You can also set the token as an environment variable:"
-    echo "   export SUPABASE_ACCESS_TOKEN='$SUPABASE_ACCESS_TOKEN'"
+# Check if SUPABASE_ACCESS_TOKEN is set
+if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+    echo "⚠️  SUPABASE_ACCESS_TOKEN is not set."
+    echo "   Please set it before running this script:"
+    echo "   export SUPABASE_ACCESS_TOKEN='your_token_here'"
+    echo "   Or run: SUPABASE_ACCESS_TOKEN='...' ./setup-supabase.sh"
+    
+    # Try interactive login if token is missing
+    echo "   Attempting interactive login..."
     supabase login
+else
+    echo "🔐 Authenticating with provided access token..."
+    # Try to login with token
+    if supabase login --token "$SUPABASE_ACCESS_TOKEN" 2>/dev/null; then
+        echo "✅ Authenticated with access token"
+    else
+        echo "❌ Token login failed. Please check your token."
+        exit 1
+    fi
 fi
 
 # Check if project is already linked
