@@ -19,6 +19,10 @@ export default defineConfig(({ mode }) => {
         input: {
           main: path.resolve(__dirname, 'index.html'),
           todo: path.resolve(__dirname, 'todo.html'),
+          meditate: path.resolve(__dirname, 'meditate.html'),
+          quantum: path.resolve(__dirname, 'quantum.html'),
+          health: path.resolve(__dirname, 'health.html'),
+          travel: path.resolve(__dirname, 'travel.html'),
         },
         // Remove external configuration for @google/genai since it's used client-side
         // The import map in HTML will handle the external dependency
