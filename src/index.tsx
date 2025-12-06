@@ -359,7 +359,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         } catch (error) {
             console.error('❌ Night: Content generation failed', error);
-            showSyncStatus('⚠️ Content generation failed. Will retry.', true);
+            // Even if it failed, attempt to mark as attempted. 
+            // Wrap in try-catch so we don't break the UI update if this fails too (e.g. missing user)
+            try {
+                await setGenerationFlag(currentUserId, 'night-generation', todayKey);
+            } catch (flagError) {
+                console.warn('Could not set generation flag:', flagError);
+            }
+            showSyncStatus('⚠️ Content generation failed. Please check connection.', true);
         }
     }
 
