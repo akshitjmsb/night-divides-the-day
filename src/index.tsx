@@ -1,4 +1,4 @@
-// Google GenAI import removed
+// Checked usage, will verify with grep just in case.
 import { escapeHtml } from "./utils/escapeHtml";
 import { getDayOfYear } from "./utils/date";
 import { getCanonicalTime, isContentReadyForPreview, isDayMode, isNightMode } from "./core/time";
@@ -533,8 +533,8 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('☀️ Day Mode: Using today\'s content');
         } else {
             // Night Mode: Generate tomorrow's content and show preview
-            await triggerNightContentGeneration();
-            console.log('🌙 Night Mode: Generating tomorrow\'s content, showing preview');
+            triggerNightContentGeneration().catch(err => console.error("Background generation error:", err));
+            console.log('🌙 Night Mode: Generating tomorrow\'s content in background');
         }
     }
 });

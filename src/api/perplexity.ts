@@ -51,23 +51,34 @@ async function callPerplexityAPI(
         // JSON responses are handled via prompt instructions and parsing
         // No need to set response_format
 
-        const response = await fetch(PERPLEXITY_PROXY_URL, {
-            method: 'POST',
-            headers: {
-                // 'Authorization': `Bearer ${apiKey}`, // API key handled by proxy
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(requestBody)
-        });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Perplexity API error: ${response.status} ${errorText}`);
+        try {
+            const response = await fetch(PERPLEXITY_PROXY_URL, {
+                method: 'POST',
+                headers: {
+                    // 'Authorization': `Bearer ${apiKey}`, // API key handled by proxy
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody),
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Perplexity API error: ${response.status} ${errorText}`);
+            }
+
+            const data = await response.json();
+            // Helper function removed as logic is now in the proxy
+            return data.choices[0]?.message?.content || '';
+        } catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
         }
-
-        const data = await response.json();
-        // Helper function removed as logic is now in the proxy
-        return data.choices[0]?.message?.content || '';
     } catch (error) {
         console.error('Perplexity API call failed:', error);
         throw error;
@@ -83,30 +94,41 @@ export const ai = {
             // If JSON is requested, we parse it from the text response
             const expectsJson = params.config?.responseMimeType === 'application/json';
             try {
-                const response = await fetch(PERPLEXITY_PROXY_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        prompt: params.contents,
-                        options: {
-                            model: params.model || 'sonar-pro',
-                            responseFormat: expectsJson ? 'json_object' : 'text' // Pass responseFormat to proxy
-                        }
-                    })
-                });
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-                if (!response.ok) {
-                    throw new Error(`Proxy error! status: ${response.status}`);
+                try {
+                    const response = await fetch(PERPLEXITY_PROXY_URL, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            prompt: params.contents,
+                            options: {
+                                model: params.model || 'sonar-pro',
+                                responseFormat: expectsJson ? 'json_object' : 'text' // Pass responseFormat to proxy
+                            }
+                        }),
+                        signal: controller.signal
+                    });
+
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`Proxy error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+
+                    // Return in format compatible with existing code
+                    return {
+                        text: data.choices[0].message.content
+                    };
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    throw error;
                 }
-
-                const data = await response.json();
-
-                // Return in format compatible with existing code
-                return {
-                    text: data.choices[0].message.content
-                };
             } catch (error) {
                 console.error("Error calling Perplexity Proxy:", error);
                 throw error;
