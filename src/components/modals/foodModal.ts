@@ -50,7 +50,8 @@ export async function showFoodModal(
     contentEl.innerHTML = '<p>Loading food plan...</p>';
 
     try {
-        const plan = await getOrGeneratePlanForDate(DEFAULT_USER_ID, date, key);
+        const userId = await getUserId();
+        const plan = await getOrGeneratePlanForDate(userId, date, key);
         contentEl.innerHTML = plan.replace(/\n/g, '<br>');
     } catch (error) {
         const appError = ErrorHandler.handleApiError(error, `Food modal (${mode})`);

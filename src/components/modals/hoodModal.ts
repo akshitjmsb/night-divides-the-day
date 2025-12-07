@@ -17,7 +17,7 @@ export async function showHoodModal(
     modal.classList.remove('hidden');
     modal.classList.add('flex');
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-    
+
     if (mode === 'archive' && !dates.archive) {
         console.error('Archive mode requested but archive data not available');
         if (contentEl) {
@@ -36,7 +36,8 @@ export async function showHoodModal(
     contentEl.innerHTML = '<p>Loading topic...</p>';
 
     try {
-        const data = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'transportation-physics', date);
+        const userId = await getUserId();
+        const data = await getOrGenerateDynamicContent(userId, 'transportation-physics', date);
         if (!data || !data.title || !data.explanation) {
             titleEl.textContent = 'Error';
             contentEl.innerHTML = '<p>Content is not available. Please try again later.</p>';

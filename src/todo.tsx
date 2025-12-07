@@ -1,10 +1,10 @@
 import { getCanonicalTime } from "./core/time";
 import { loadTasks as loadTasksFromSupabase } from "./core/supabase-persistence";
 import { initializeTaskForms, renderTasks, attachTaskListeners } from "./components/tasks";
-import { DEFAULT_USER_ID } from "./core/default-user";
+import { getUserId } from "./lib/supabase";
 import { Task } from "./types";
 
-const currentUserId: string = DEFAULT_USER_ID;
+let currentUserId: string;
 let tasks: Task[] = [];
 
 // Update datetime display
@@ -25,12 +25,14 @@ function updateDateTime() {
 // Main render function
 async function mainRender() {
     try {
+        if (!currentUserId) return;
+
         // Load tasks
         tasks = await loadTasksFromSupabase(currentUserId);
-        
+
         // Render tasks
         renderTasks(tasks, 'tasks-list-day');
-        
+
         // Attach listeners
         attachTaskListeners('tasks-list-day', currentUserId);
     } catch (error) {
@@ -49,13 +51,16 @@ async function mainRender() {
 // Initialize app
 async function initializeApp() {
     try {
+        // Authenticate
+        currentUserId = await getUserId();
+
         // Update datetime
         updateDateTime();
         setInterval(updateDateTime, 1000);
 
         // Initial render
         await mainRender();
-        
+
         // Initialize form (pass async mainRender function)
         initializeTaskForms(currentUserId, mainRender);
 

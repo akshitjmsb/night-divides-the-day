@@ -2,7 +2,7 @@ import { ai } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadPoetryRecents, recordPoetrySelection, savePoetryRecents } from "../../core/supabase-persistence";
-import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getUserId } from "../../lib/supabase";
 
 export async function fetchAndShowPoetry(activeContentDate: Date) {
     const modal = document.getElementById('poetry-modal');
@@ -11,35 +11,36 @@ export async function fetchAndShowPoetry(activeContentDate: Date) {
 
     modal.classList.remove('hidden');
     modal.classList.add('flex');
-    contentEl.innerHTML = '<p>Generating beautiful poetry for you...</p>';
+    contentEl.innerHTML = `<p>Generating beautiful poetry for you...</p>`;
 
     try {
+        const userId = await getUserId();
         const dayOfYear = getDayOfYear(activeContentDate);
-        const poetryRecents = await loadPoetryRecents(DEFAULT_USER_ID);
+        const poetryRecents = await loadPoetryRecents(userId);
         const recentPoets = poetryRecents.map(r => r.poet).filter(Boolean);
         const recentLanguages = poetryRecents.map(r => r.language).filter(Boolean);
 
         const prompt = `Task: Create a mini poetry moment with simple words.
-
-Constraints:
-- Pick a famous couplet from one poet in one language chosen from: Urdu, Hindi, Punjabi, English, Persian.
-- Avoid using any poet in this do-not-repeat list: ${JSON.stringify(recentPoets)}
-- Avoid using any language in this do-not-repeat list: ${JSON.stringify(recentLanguages)}
-- Use day number ${dayOfYear} to help pick variety.
-
-Write:
-1) scene: 6–10 short sentences, present tense, simple everyday words. Place the poet clearly in their real historical era and place. Show what is happening around them that might inspire the couplet. Focus on clear, concrete details (what they see, hear, touch). End the scene right before the couplet is spoken, so the couplet feels like a natural result of the moment.
-2) couplet: the exact couplet in the original script.
-3) transliteration: simple romanized version.
-4) translation: one or two short, plain sentences.
-5) aboutWriter: 2–3 short lines about the poet.
-6) poet: the poet's name.
-7) language: the language of the couplet.
-
-Rules:
-- Keep language plain and readable.
-- Respect the do-not-repeat lists for poet and language.
-- Respond ONLY as strict JSON matching the provided schema.`;
+    
+    Constraints:
+    - Pick a famous couplet from one poet in one language chosen from: Urdu, Hindi, Punjabi, English, Persian.
+    - Avoid using any poet in this do-not-repeat list: ${JSON.stringify(recentPoets)}
+    - Avoid using any language in this do-not-repeat list: ${JSON.stringify(recentLanguages)}
+    - Use day number ${dayOfYear} to help pick variety.
+    
+    Write:
+    1) scene: 6–10 short sentences, present tense, simple everyday words. Place the poet clearly in their real historical era and place. Show what is happening around them that might inspire the couplet. Focus on clear, concrete details (what they see, hear, touch). End the scene right before the couplet is spoken, so the couplet feels like a natural result of the moment.
+    2) couplet: the exact couplet in the original script.
+    3) transliteration: simple romanized version.
+    4) translation: one or two short, plain sentences.
+    5) aboutWriter: 2–3 short lines about the poet.
+    6) poet: the poet's name.
+    7) language: the language of the couplet.
+    
+    Rules:
+    - Keep language plain and readable.
+    - Respect the do-not-repeat lists for poet and language.
+    - Respond ONLY as strict JSON matching the provided schema.`;
 
         const response = await ai.models.generateContent({
             model: 'sonar-pro',
@@ -89,7 +90,7 @@ Rules:
                 const poetName = typeof data.poet === 'string' ? data.poet : '';
                 const langName = typeof data.language === 'string' ? data.language : '';
                 const updatedRecents = recordPoetrySelection(poetryRecents, poetName, langName);
-                await savePoetryRecents(DEFAULT_USER_ID, updatedRecents);
+                await savePoetryRecents(userId, updatedRecents);
             } catch (parseError) {
                 html += `<div class="mb-6">`;
                 html += `<h4 class="text-lg font-bold mb-3 text-center">Poetry in Motion</h4>`;

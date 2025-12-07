@@ -1,6 +1,8 @@
 import { getOrGenerateDynamicContent } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
-import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getUserId } from "../../lib/supabase";
+
+
 
 export async function showFrenchModal(
     mode: 'today' | 'tomorrow' | 'archive',
@@ -15,7 +17,7 @@ export async function showFrenchModal(
     const titleEl = modal.querySelector('#modal-frenchy-title') as HTMLElement;
     const tableBodyEl = modal.querySelector('#modal-frenchy-table-body') as HTMLElement;
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-    
+
     if (mode === 'archive' && !dates.archive) {
         console.error('Archive mode requested but archive data not available');
         if (tableBodyEl) {
@@ -37,11 +39,12 @@ export async function showFrenchModal(
     tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">Loading French lesson...</td></tr>`;
 
     try {
-        const soundData = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'french-sound', date);
+        const userId = await getUserId();
+        const soundData = await getOrGenerateDynamicContent(userId, 'french-sound', date);
 
         if (!soundData || !soundData.sound || !soundData.words) {
-             titleEl.textContent = `French: Error`;
-             tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">Could not load French lesson data.</td></tr>`;
+            titleEl.textContent = `French: Error`;
+            tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">Could not load French lesson data.</td></tr>`;
         } else {
             titleEl.textContent = `French: " ${soundData.sound} "`;
             tableBodyEl.innerHTML = soundData.words.map((item: any, index: number) =>

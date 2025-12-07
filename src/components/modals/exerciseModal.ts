@@ -1,7 +1,7 @@
 import { getOrGenerateDynamicContent, generateWeeklyExerciseContent } from "../../api/perplexity";
 import { isContentReadyForPreview } from "../../core/time";
 import { ErrorHandler, ErrorType } from "../../utils/errorHandling";
-import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getUserId } from "../../lib/supabase";
 import { createSafeHtml } from "../../utils/escapeHtml";
 
 
@@ -24,7 +24,7 @@ export async function showExerciseModal(
     modal.classList.add('flex');
 
     const date = mode === 'today' ? dates.active : mode === 'tomorrow' ? dates.preview : dates.archive;
-    
+
     if (mode === 'archive' && !dates.archive) {
         console.error('Archive mode requested but archive data not available');
         contentEl.innerHTML = '<div class="p-4">Archive functionality not available.</div>';
@@ -43,8 +43,9 @@ export async function showExerciseModal(
     try {
         // Get the start of the week (Sunday) for the given date
         const startOfWeek = getStartOfWeek(date);
-        const weeklyData = await generateWeeklyExerciseContent(DEFAULT_USER_ID, startOfWeek);
-        
+        const userId = await getUserId();
+        const weeklyData = await generateWeeklyExerciseContent(userId, startOfWeek);
+
         if (!weeklyData) {
             contentEl.innerHTML = '<p>Weekly exercise plan not available. Please try again later.</p>';
             return;
@@ -86,16 +87,16 @@ function renderWeeklyExerciseContent(container: HTMLElement, weeklyData: any, cu
 
             <div class="day-selector">
                 ${weekDays.map((day, index) => {
-                    const dayData = weeklyData[day];
-                    const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
-                    const isActive = day === currentDay;
-                    return `
+        const dayData = weeklyData[day];
+        const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][index];
+        const isActive = day === currentDay;
+        return `
                         <button class="day-button ${isActive ? 'active' : ''}" data-day="${day}">
                             <span class="day-name">${dayName}</span>
                             <span class="workout-type">${getWorkoutTypeAbbreviation(dayData.type)}</span>
                         </button>
                     `;
-                }).join('')}
+    }).join('')}
             </div>
 
             <div class="exercise-content">
@@ -111,7 +112,7 @@ function renderWeeklyExerciseContent(container: HTMLElement, weeklyData: any, cu
 function getWorkoutTypeAbbreviation(workoutType: string): string {
     const abbreviations: { [key: string]: string } = {
         'push': 'Push',
-        'pull': 'Pull', 
+        'pull': 'Pull',
         'legs': 'Legs',
         'upper': 'Upper',
         'rest': 'Rest'
@@ -195,13 +196,13 @@ function renderWorkoutCards(workoutData: any): string {
             <div class="exercise-counter">Exercise 1 of ${workoutData.exercises.length}</div>
             <div class="cards-wrapper">
                 ${workoutData.exercises.map((exercise: any, index: number) =>
-                    renderExerciseCard(exercise, index + 1, workoutData.exercises.length)
-                ).join('')}
+        renderExerciseCard(exercise, index + 1, workoutData.exercises.length)
+    ).join('')}
             </div>
             <div class="card-indicators">
                 ${workoutData.exercises.map((_: any, index: number) =>
-                    `<span class="indicator ${index === 0 ? 'active' : ''}"></span>`
-                ).join('')}
+        `<span class="indicator ${index === 0 ? 'active' : ''}"></span>`
+    ).join('')}
             </div>
         </div>
     `;
@@ -292,10 +293,10 @@ function getMuscleWikiUrl(exerciseName: string): string {
         'mountain climber': 'mountain-climber',
         'burpee': 'burpee'
     };
-    
+
     const normalizedName = exerciseName.toLowerCase().trim();
     const muscleWikiSlug = exerciseMap[normalizedName] || normalizedName.replace(/\s+/g, '-');
-    
+
     return `https://musclewiki.com/exercises/${muscleWikiSlug}`;
 }
 
@@ -332,7 +333,7 @@ function initializeCardNavigation(workoutData: any) {
     const cards = document.querySelectorAll('.exercise-card');
     const indicators = document.querySelectorAll('.indicator');
     const counter = document.querySelector('.exercise-counter');
-    
+
     if (cards.length === 0 || indicators.length === 0 || !counter) {
         return;
     }
@@ -409,7 +410,7 @@ function initializeCardNavigation(workoutData: any) {
         // Update current card
         cards[currentIndex].classList.remove('active');
         cards[currentIndex].classList.add('prev');
-        
+
         // Update new card
         cards[index].classList.remove('prev');
         cards[index].classList.add('active');

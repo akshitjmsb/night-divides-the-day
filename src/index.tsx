@@ -12,11 +12,11 @@ import { initializeModalManager } from "./components/modals/modalManager";
 import { renderModuleIcons, renderNavigationIcons } from "./utils/iconRenderer";
 import { getOrGenerateDailyQuote, showQuoteLoadingIndicator, hideQuoteLoadingIndicator, isQuoteGenerationTime } from "./components/reflection";
 import { hasGenerationFlag, setGenerationFlag, getCachedContent } from "./core/supabase-content-cache";
-import { DEFAULT_USER_ID } from "./core/default-user";
+import { getUserId } from "./lib/supabase";
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- DEFAULT USER ID (No authentication required) ---
-    const currentUserId: string = DEFAULT_USER_ID;
+    // --- AUTHENTICATION ---
+    let currentUserId: string;
 
     // --- STATE & DERIVED DATA ---
     let todayKey: string, tomorrowKey: string, tomorrowDay: number;
@@ -48,15 +48,16 @@ document.addEventListener('DOMContentLoaded', () => {
         tomorrowDay = previewContentDate.getDay();
 
         // Load or generate daily quote (generated at 5 PM, active until 5 PM next day)
-        // Using default user ID - no check needed
-        const quote = await getOrGenerateDailyQuote(currentUserId);
-        if (quote) {
-            todaysQuote = quote;
-        } else {
-            // This should rarely happen now (fallback to curated quote is in place)
-            // But if it does, show a curated quote immediately
-            const { getPhilosophicalQuoteInstant } = await import('./components/reflection');
-            todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
+        if (currentUserId) {
+            const quote = await getOrGenerateDailyQuote(currentUserId);
+            if (quote) {
+                todaysQuote = quote;
+            } else {
+                // This should rarely happen now (fallback to curated quote is in place)
+                // But if it does, show a curated quote immediately
+                const { getPhilosophicalQuoteInstant } = await import('./components/reflection');
+                todaysQuote = getPhilosophicalQuoteInstant(activeContentDate);
+            }
         }
     }
 
@@ -96,8 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
      * creating the experience of an autonomous sync process for the user.
      */
     async function triggerAutoContentGeneration() {
-        if (isAutoGenerating) {
-            return; // Generation is already in progress.
+        if (isAutoGenerating || !currentUserId) {
+            return; // Generation is already in progress or user not loaded.
         }
 
         updateDateDerivedData();
@@ -111,7 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // This key prevents re-triggering the generation process every 5 minutes during Night mode.
-        // Using default user ID - no check needed
 
         const hasFlag = await hasGenerationFlag(currentUserId, 'auto-generation-attempted', dateKeyForGeneration);
         if (hasFlag) {
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     async function mainRender() {
-        // Using default user ID - no check needed
+        if (!currentUserId) return;
 
         // Recalculate time-sensitive variables each time render is called
         await updateDateDerivedData();
@@ -216,11 +216,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Authentication removed - using default anonymous user
-
     async function initializeApp() {
         try {
-            // No authentication required - using default user ID
+            // Get secure user ID (anonymous auth)
+            currentUserId = await getUserId();
+            console.log("Authenticated as:", currentUserId);
+
             // Render icons immediately for better UX
             renderModuleIcons();
 
@@ -268,8 +269,10 @@ document.addEventListener('DOMContentLoaded', () => {
             // More frequent task syncing for better cross-device experience
             setInterval(async () => {
                 try {
-                    const tasks = await loadTasksFromSupabase(currentUserId);
-                    renderTasks(tasks, 'tasks-list-day');
+                    if (currentUserId) {
+                        const tasks = await loadTasksFromSupabase(currentUserId);
+                        renderTasks(tasks, 'tasks-list-day');
+                    }
                 } catch (error) {
                     console.warn('Failed to sync tasks:', error);
                 }
@@ -278,7 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
             // Check for quote generation at 5 PM (runs every minute)
             setInterval(async () => {
                 try {
-                    if (isQuoteGenerationTime()) {
+                    if (isQuoteGenerationTime() && currentUserId) {
                         console.log('🕐 5 PM detected - checking for quote generation...');
                         // Trigger quote generation by calling getOrGenerateDailyQuote
                         const quote = await getOrGenerateDailyQuote(currentUserId);

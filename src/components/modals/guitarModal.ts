@@ -2,7 +2,7 @@ import { ai, getOrGenerateDynamicContent } from "../../api/perplexity";
 import { getDayOfYear } from "../../utils/date";
 import { escapeHtml } from "../../utils/escapeHtml";
 import { loadGuitarRecentPicks, saveGuitarRecentPick } from "../../core/supabase-persistence";
-import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getUserId } from "../../lib/supabase";
 
 export async function fetchAndShowGuitarTab(activeContentDate: Date) {
     const modal = document.getElementById('guitar-modal');
@@ -27,14 +27,15 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
     } | null = null;
 
     try {
+        const userId = await getUserId();
         const dayOfYear = getDayOfYear(activeContentDate);
 
         // Load recent picks from Supabase
-        const recent = await loadGuitarRecentPicks(DEFAULT_USER_ID);
-        
+        const recent = await loadGuitarRecentPicks(userId);
+
         let songPool: Array<{ title: string; artist: string }> = [];
         try {
-            const pool = await getOrGenerateDynamicContent(DEFAULT_USER_ID, 'classic-rock-500', activeContentDate);
+            const pool = await getOrGenerateDynamicContent(userId, 'classic-rock-500', activeContentDate);
             if (Array.isArray(pool) && pool.length > 0) {
                 songPool = pool
                     .filter(item => item && typeof item.title === 'string' && typeof item.artist === 'string')
@@ -52,7 +53,7 @@ export async function fetchAndShowGuitarTab(activeContentDate: Date) {
             const idx = Math.floor(Math.random() * selectionPool.length);
             const picked = selectionPool[idx];
             pickedTitle = picked.title; pickedArtist = picked.artist;
-            await saveGuitarRecentPick(DEFAULT_USER_ID, picked.title, picked.artist);
+            await saveGuitarRecentPick(userId, picked.title, picked.artist);
         }
 
         const prompt = pickedTitle && pickedArtist

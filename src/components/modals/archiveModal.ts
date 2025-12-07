@@ -1,10 +1,11 @@
 import { escapeHtml } from "../../utils/escapeHtml";
 import { getCachedContent } from "../../core/supabase-content-cache";
-import { DEFAULT_USER_ID } from "../../core/default-user";
+import { getUserId } from "../../lib/supabase";
 
 async function getArchivedContent(dateKey: string): Promise<any> {
     try {
-        const archivedData = await getCachedContent(DEFAULT_USER_ID, 'archive', dateKey);
+        const userId = await getUserId();
+        const archivedData = await getCachedContent(userId, 'archive', dateKey);
         return archivedData;
     } catch (error) {
         console.error('Error loading archived content:', error);
