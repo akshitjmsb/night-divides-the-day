@@ -32,7 +32,7 @@ async function callPerplexityAPI(
     // }
 
     const {
-        model = 'sonar-pro',
+        model = 'sonar',
         responseFormat = 'text',
         temperature = 0.7
     } = options;
@@ -106,7 +106,7 @@ export const ai = {
                         body: JSON.stringify({
                             prompt: params.contents,
                             options: {
-                                model: params.model || 'sonar-pro',
+                                model: params.model || 'sonar',
                                 responseFormat: expectsJson ? 'json_object' : 'text' // Pass responseFormat to proxy
                             }
                         }),

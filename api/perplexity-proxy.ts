@@ -15,7 +15,7 @@ export default async function handler(request: VercelRequest, response: VercelRe
         const { prompt, options } = request.body;
 
         // Default options
-        const model = options?.model || 'sonar-pro';
+        const model = options?.model || 'sonar';
         const temperature = options?.temperature || 0.7;
         // Note: responseFormat is handled by logic in caller usually, but we pass what we can
 
