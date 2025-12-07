@@ -185,74 +185,32 @@ export async function generateDynamicContent(contentType: 'analytics' | 'transpo
     let needsJson = false;
 
     if (contentType === 'analytics') {
-        prompt = `Generate a unique, new set of daily technical topics for an analytics engineer for the date ${dateKey}. Provide one SQL question, one DAX question, one Snowflake question, one dbt question, one explanation of a DMBOK data management concept, and one topic on data quality. For the Data Quality topic, focus on a common column data type (e.g., String, Numeric, Datetime), list 3-4 potential data quality issues found in such columns, and describe common data transformations to correct them in a big data context. Each question must include a title, a prompt/problem description, and a concise solution. The DMBOK and Data Quality explanations must have a title and a detailed explanation. Ensure the content is different from other days.
+        prompt = `Generate analytics engineer daily quiz for ${dateKey}. Techs: SQL, DAX, Snowflake, dbt, DMBOK concept, Data Quality (focus: specific data type issues/fixes). Unique daily topics. JSON format required.`;
 
-Return the response as a JSON object with this exact structure:
-{
-  "sql": {"title": "...", "prompt": "...", "solution": "..."},
-  "dax": {"title": "...", "prompt": "...", "solution": "..."},
-  "snowflake": {"title": "...", "prompt": "...", "solution": "..."},
-  "dbt": {"title": "...", "prompt": "...", "solution": "..."},
-  "dataManagement": {"title": "...", "explanation": "..."},
-  "dataQuality": {
-    "title": "...",
-    "dataType": "...",
-    "issues": ["...", "..."],
-    "transformations": ["...", "..."]
-  }
-}`;
+
         needsJson = true;
     } else if (contentType === 'transportation-physics') {
-        prompt = `For the date ${dateKey}, explain a single, fundamental physics principle behind a common mode of transportation (like a car, bike, or plane). The goal is to explain the working principle to a layman at a very conceptual level. Use simple analogies and avoid technical jargon or formulas. The topic must be unique and different from other days. For example, you could explain how airplane wings generate lift conceptually, why tires need tread, or the basic idea behind regenerative braking. Provide a title and an explanation that is extremely easy to understand for someone with no physics background.
+        prompt = `Explain one transportation physics principle(e.g.lift, braking) for ${dateKey}.Layman terms, simple analogy.Unique daily topic.JSON output.`;
 
-Return as JSON:
-{
-  "title": "...",
-  "explanation": "..."
-}`;
+
         needsJson = true;
     } else if (contentType === 'french-sound') {
-        prompt = `Act as a French phonetics teacher planning a long-term course. For the date ${dateKey}, create a self-contained lesson for a single, unique French phoneme. The series of lessons over many days should eventually cover all phonemes of the French language in a logical progression. The content for this single day must be unique. Provide: 1. The target sound (e.g., 'an', 'in', 'ou' or an IPA symbol). 2. A list of exactly 10 example words that use this sound. For each word, provide the French word, a simple phonetic cue for an English speaker, and its English meaning. Do not use markdown.
+        prompt = `French phonetics lesson for ${dateKey}. One unique phoneme. 10 example words with English meaning and phonetic cue. JSON output.`;
 
-Return as JSON:
-{
-  "sound": "...",
-  "words": [
-    {"word": "...", "cue": "...", "meaning": "..."},
-    ...
-  ]
-}`;
+
         needsJson = true;
     } else if (contentType === 'classic-rock-500') {
-        prompt = `Generate a JSON array of exactly 500 items. Each item must have two string fields: title and artist. The list should be classic rock (and closely related rock) songs that are well-known/popular for guitar learners. Keep it diverse across decades and artists; avoid duplicates. Return JSON only.
+        prompt = `JSON array of 500 unique classic rock songs(title, artist).Focus: guitar friendly.No duplicates.`;
 
-Format:
-[
-  {"title": "...", "artist": "..."},
-  ...
-]`;
+
         needsJson = true;
     } else if (contentType === 'exercise-plan') {
         const dayOfWeek = new Date(dateKey).getDay();
         const workoutType = getWorkoutType(dayOfWeek);
 
-        prompt = `Generate a comprehensive ${workoutType.charAt(0).toUpperCase() + workoutType.slice(1)} workout plan for ${dateKey}. Create a 4-day weekly schedule with Push/Pull/Legs/Upper rotation. For the specific day, provide detailed exercises with proper form instructions, sets, reps, and rest periods. Focus on compound movements and progressive overload. Include muscle groups targeted and practical tips for each exercise.
+        prompt = `Generate ${workoutType} workout plan for ${dateKey}. 4-day split (Push/Pull/Legs/Upper). Detail exercises with sets/reps/tips. Focus on compound movements. JSON format.`;
 
-Return as JSON:
-{
-  "push": {
-    "exercises": [
-      {"name": "...", "muscleGroup": "...", "sets": "...", "reps": "...", "rest": "...", "instructions": "...", "tips": "..."}
-    ],
-    "notes": "..."
-  },
-  "pull": {...},
-  "legs": {...},
-  "rest": {
-    "activities": ["..."],
-    "notes": "..."
-  }
-}`;
+
         needsJson = true;
     } else {
         return null;
@@ -325,7 +283,7 @@ export async function generateFoodPlanForDate(date: Date): Promise<string> {
     // }
 
     const dayOfWeek = date.getDay(); // 0 for Sunday, 1 for Monday, ..., 6 for Saturday
-    let prompt = `Create a full-day meal plan using only whole, minimally processed foods that naturally support libido. Format the output as a simple, scannable list with clear headings (Breakfast, Lunch, Dinner, Snack). Be very concise. Prioritize ingredients known to boost sexual health: oysters, leafy greens, avocados, nuts, dark chocolate, berries, watermelon, olive oil, eggs, fatty fish, ginger, cinnamon. Avoid processed foods, refined sugar, and alcohol. Do not use any markdown formatting like asterisks.`;
+    let prompt = `Full-day libido-boosting whole food meal plan. Clear headers (Breakfast, Lunch, Dinner, Snack). Ingredients: oysters, greens, avo, nuts, dark choc, berries, eggs, fish, ginger. No processed/sugar/alcohol. Concise list. No markdown.`;
 
     // Day 2 (Tuesday) and 4 (Thursday) are no-meat days
     if (dayOfWeek === 2 || dayOfWeek === 4) {
@@ -564,13 +522,13 @@ function getFallbackFoodPlan(date: Date): string {
 
     if (isNoMeatDay) {
         return `Breakfast: Oatmeal with berries, nuts, and cinnamon
-Lunch: Quinoa salad with avocado, leafy greens, and olive oil
-Dinner: Grilled salmon with steamed vegetables
-Snack: Dark chocolate and mixed nuts`;
+    Lunch: Quinoa salad with avocado, leafy greens, and olive oil
+    Dinner: Grilled salmon with steamed vegetables
+    Snack: Dark chocolate and mixed nuts`;
     } else {
         return `Breakfast: Scrambled eggs with spinach and avocado
-Lunch: Grilled chicken with mixed greens and olive oil dressing
-Dinner: Lean beef stir-fry with vegetables
+    Lunch: Grilled chicken with mixed greens and olive oil dressing
+    Dinner: Lean beef stir - fry with vegetables
 Snack: Berries with Greek yogurt`;
     }
 }
@@ -586,7 +544,7 @@ export async function generateWeeklyExerciseContent(userId: string, startDate: D
     }
 
     // 2. Generate new weekly content
-    console.log(`Generating new weekly exercise content starting from ${dateKey}`);
+    console.log(`Generating new weekly exercise content starting from ${dateKey} `);
     const generatedContent = await generateWeeklyContent(startDate);
 
     if (generatedContent) {
@@ -607,35 +565,7 @@ async function generateWeeklyContent(startDate: Date): Promise<any> {
     //     return getFallbackWeeklyContent(startDate);
     // }
 
-    const prompt = `Generate a comprehensive 7-day workout plan starting from ${startDate.toISOString().split('T')[0]}. 
-    
-    The schedule should be:
-    - Sunday: Rest day
-    - Monday: Push day (chest, shoulders, triceps)
-    - Tuesday: Rest day  
-    - Wednesday: Pull day (back, biceps, rear delts)
-    - Thursday: Rest day
-    - Friday: Legs day (quads, hamstrings, glutes, calves)
-    - Saturday: Upper body day (combination of push and pull)
-
-    For each workout day, provide 3-4 exercises with:
-    - Exercise name
-    - Target muscle groups
-    - Sets and reps
-    - Rest periods
-    - Brief form instructions
-    - Pro tips
-
-    For rest days, suggest active recovery activities.
-
-    Focus on compound movements, progressive overload, and proper form. Make each day unique and challenging.
-
-    Return as JSON with this structure:
-    {
-      "sunday": {"type": "rest", "activities": ["..."], "notes": "..."},
-      "monday": {"type": "push", "exercises": [{"name": "...", "muscleGroups": "...", "sets": "...", "reps": "...", "rest": "...", "instructions": "...", "tips": "..."}], "notes": "..."},
-      ...
-    }`;
+    const prompt = `7 - day workout plan(Push / Pull / Legs / Upper / Rest) starting ${startDate.toISOString().split('T')[0]}. Exercises with sets / reps / tips.JSON format.`;
 
     try {
         const responseText = await callPerplexityAPI(prompt, {
