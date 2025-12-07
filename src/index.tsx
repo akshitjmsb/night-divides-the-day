@@ -540,8 +540,9 @@ document.addEventListener('DOMContentLoaded', () => {
             console.log('☀️ Day Mode: Using today\'s content');
         } else {
             // Night Mode: Generate tomorrow's content and show preview
-            triggerNightContentGeneration().catch(err => console.error("Background generation error:", err));
-            console.log('🌙 Night Mode: Generating tomorrow\'s content in background');
+            // Night Mode: Content is now generated On-Demand when clicking the module.
+            // triggerNightContentGeneration().catch(err => console.error("Background generation error:", err));
+            console.log('🌙 Night Mode: Content will be generated on-demand.');
         }
     }
 });
