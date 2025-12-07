@@ -7,8 +7,6 @@ export default async function handler(request: VercelRequest, response: VercelRe
 
     const apiKey = process.env.PERPLEXITY_API_KEY;
 
-    console.log(`[Proxy Debug] Key exists: ${!!apiKey}, Length: ${apiKey?.length || 0}, Preview: ${apiKey ? apiKey.substring(0, 7) + '...' : 'N/A'}`);
-
     if (!apiKey) {
         return response.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
