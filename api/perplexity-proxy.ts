@@ -36,7 +36,9 @@ export default async function handler(request: VercelRequest, response: VercelRe
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'User-Agent': 'NightDividesTheDay/1.0 (Vercel Serverless)',
+                'Accept': 'application/json'
             },
             body: JSON.stringify(requestBody)
         });
