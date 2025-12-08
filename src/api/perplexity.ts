@@ -346,19 +346,10 @@ function getFallbackContent(contentType: 'analytics' | 'transportation-physics' 
         };
     } else if (contentType === 'french-sound') {
         return {
-            sound: "on",
-            words: [
-                { word: "bon", cue: "like 'bone'", meaning: "good" },
-                { word: "mon", cue: "like 'moan'", meaning: "my" },
-                { word: "ton", cue: "like 'tone'", meaning: "your" },
-                { word: "son", cue: "like 'sown'", meaning: "his/her" },
-                { word: "non", cue: "like 'known'", meaning: "no" },
-                { word: "don", cue: "like 'dawn'", meaning: "gift" },
-                { word: "pont", cue: "like 'pawn'", meaning: "bridge" },
-                { word: "front", cue: "like 'frawn'", meaning: "front" },
-                { word: "mont", cue: "like 'mawn'", meaning: "mountain" },
-                { word: "compte", cue: "like 'kawn'", meaning: "account" }
-            ]
+            phrase: "Je voudrais planifier une réunion",
+            pronunciation: "Zhuh voo-dray plah-nee-fjay oon ray-oon-yon",
+            translation: "I would like to schedule a meeting",
+            context: "Used when asking a colleague to set up a time to talk."
         };
     } else if (contentType === 'exercise-plan') {
         const dayOfWeek = new Date(dateKey).getDay();

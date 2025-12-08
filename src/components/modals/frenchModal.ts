@@ -40,16 +40,35 @@ export async function showFrenchModal(
 
     try {
         const userId = await getUserId();
-        const soundData = await getOrGenerateDynamicContent(userId, 'french-sound', date);
+        const data = await getOrGenerateDynamicContent(userId, 'french-sound', date);
 
-        if (!soundData || !soundData.sound || !soundData.words) {
+        if (!data || !data.phrase) {
             titleEl.textContent = `French: Error`;
             tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">Could not load French lesson data.</td></tr>`;
         } else {
-            titleEl.textContent = `French: " ${soundData.sound} "`;
-            tableBodyEl.innerHTML = soundData.words.map((item: any, index: number) =>
-                `<tr><td class="font-bold text-center">${index + 1}</td><td>${item.word}</td><td>${item.cue}</td><td>${item.meaning}</td><td class="text-center"><button class="play-btn" data-word="${item.word}">🔊</button></td></tr>`
-            ).join('');
+            titleEl.textContent = 'French: Daily Office Phrase';
+
+            // Create "Deep Dive" search URL
+            const searchUrl = `https://www.perplexity.ai/search?q=${encodeURIComponent(`How to use "${data.phrase}" in a french business context`)}`;
+
+            tableBodyEl.innerHTML = `
+                <tr>
+                    <td colspan="5" class="p-6">
+                        <div class="flex flex-col items-center space-y-4">
+                            <h2 class="text-2xl font-bold text-center text-[var(--text-primary)]">"${data.phrase}"</h2>
+                            <p class="text-lg italic text-[var(--accent-primary)] text-center">${data.pronunciation}</p>
+                            <div class="w-full border-t border-[var(--border-subtle)] my-2"></div>
+                            <p class="text-xl text-center text-[var(--text-secondary)]">${data.translation}</p>
+                            <p class="text-sm text-center text-[var(--text-muted)] max-w-md mt-2">${data.context}</p>
+                            
+                            <a href="${searchUrl}" target="_blank" rel="noopener noreferrer" 
+                               class="mt-6 flex items-center gap-2 px-4 py-2 bg-[var(--accent-primary)] text-[var(--bg-primary)] rounded-full hover:opacity-90 transition-opacity font-medium text-sm">
+                                🔍 Deep Dive on Perplexity
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            `;
         }
     } catch (error) {
         console.error('Error showing French modal:', error);
