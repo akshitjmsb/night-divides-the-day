@@ -1,13 +1,16 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
 export default async function handler(request: VercelRequest, response: VercelResponse) {
+    console.log('Proxy Handler Started');
     if (request.method !== 'POST') {
         return response.status(405).json({ error: 'Method not allowed' });
     }
 
     const apiKey = process.env.PERPLEXITY_API_KEY;
+    console.log(`API Key status: ${apiKey ? 'Present' : 'Missing'}, Length: ${apiKey?.length}`);
 
     if (!apiKey) {
+        console.error('Missing API Key in environment');
         return response.status(500).json({ error: 'Server configuration error: Missing API Key' });
     }
 
@@ -49,8 +52,11 @@ export default async function handler(request: VercelRequest, response: VercelRe
         const data = await apiResponse.json();
         return response.status(200).json(data);
 
-    } catch (error) {
-        console.error('Proxy error:', error);
-        return response.status(500).json({ error: 'Internal server error while communicating with Perplexity API' });
+    } catch (error: any) {
+        console.error('Proxy error catch:', error);
+        return response.status(500).json({
+            error: 'Internal server error while communicating with Perplexity API',
+            details: error.message
+        });
     }
 }
