@@ -70,9 +70,20 @@ export async function showFrenchModal(
                 </tr>
             `;
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error showing French modal:', error);
         titleEl.textContent = 'French: Error';
-        tableBodyEl.innerHTML = `<tr><td colspan="5" class="text-center p-4">An error occurred while loading the lesson.</td></tr>`;
+        // Show specific error message to help debugging
+        const errorMessage = error.message || 'Unknown error occurred';
+        tableBodyEl.innerHTML = `
+            <tr>
+                <td colspan="5" class="text-center p-4">
+                    <p class="text-red-500 font-bold mb-2">Could not load French lesson.</p>
+                    <p class="text-sm text-[var(--text-muted)] font-mono bg-[var(--bg-secondary)] p-2 rounded">
+                        Debug: ${errorMessage}
+                    </p>
+                    <p class="text-xs mt-2">Check .env.local for VITE_PERPLEXITY_API_KEY</p>
+                </td>
+            </tr>`;
     }
 }
