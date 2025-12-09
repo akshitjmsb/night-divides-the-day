@@ -153,22 +153,26 @@ export async function getOrGenerateDynamicContent(
 ): Promise<any> {
     const dateKey = date.toISOString().split('T')[0];
 
-    // 1. Check Supabase cache
-    const cachedContent = await getCachedContent(userId, contentType, dateKey);
-    if (cachedContent) {
-        return cachedContent;
+    // 1. Check Supabase cache (skip for french-sound to ensure randomness)
+    if (contentType !== 'french-sound') {
+        const cachedContent = await getCachedContent(userId, contentType, dateKey);
+        if (cachedContent) {
+            return cachedContent;
+        }
     }
 
-    // 2. If not in cache, generate new content
-    console.log(`Generating new content for ${contentType} on ${dateKey} as it was not found in cache.`);
+    // 2. If not in cache (or if random), generate new content
+    console.log(`Generating new content for ${contentType} on ${dateKey}...`);
     const generatedContent = await generateDynamicContent(contentType, dateKey);
 
     if (generatedContent) {
-        // 3. Save to Supabase cache
-        try {
-            await saveCachedContent(userId, contentType, dateKey, generatedContent);
-        } catch (e) {
-            console.error("Error saving content to Supabase cache", e);
+        // 3. Save to Supabase cache (skip for french-sound as it is random/ephemeral)
+        if (contentType !== 'french-sound') {
+            try {
+                await saveCachedContent(userId, contentType, dateKey, generatedContent);
+            } catch (e) {
+                console.error("Error saving content to Supabase cache", e);
+            }
         }
     }
     return generatedContent;
@@ -195,9 +199,7 @@ export async function generateDynamicContent(contentType: 'analytics' | 'transpo
 
         needsJson = true;
     } else if (contentType === 'french-sound') {
-        prompt = `French phonetics lesson for ${dateKey}. One unique phoneme. 10 example words with English meaning and phonetic cue. JSON output.`;
-
-
+        prompt = `Generate a random, useful French office phrase. Something different from previous requests. Context: Business setting. JSON: {phrase, pronunciation, translation, context}.`;
         needsJson = true;
     } else if (contentType === 'classic-rock-500') {
         prompt = `JSON array of 500 unique classic rock songs(title, artist).Focus: guitar friendly.No duplicates.`;
