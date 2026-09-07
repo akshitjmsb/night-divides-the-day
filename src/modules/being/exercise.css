@@ -1,37 +1,28 @@
-/* Weights — a quiet list of today's pointers. */
+/* Movement — today's routine first; alternatives stay one level deeper. */
 
 .movement-now {
-    margin-top: 1rem;
+    margin-top: 0.75rem;
 }
 
 .movement-now__action {
     width: 100%;
 }
 
-.movement-alternatives {
+.movement-choose {
     display: flex;
     justify-content: flex-end;
-    gap: 0.25rem;
-    margin-top: 0.25rem;
+    margin-top: 0.75rem;
 }
 
-.movement-alternatives__action {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
+.movement-choose__action {
     background: transparent;
     border-color: transparent;
     color: var(--home-muted, #6b7280);
 }
 
-.movement-alternatives__action .pillar-action__glyph {
-    width: 1.1rem;
-    height: 1.1rem;
-}
-
-.movement-alternatives__action .pillar-action__glyph svg {
-    width: 1.05rem;
-    height: 1.05rem;
+.movement-choice__weights {
+    width: 100%;
+    margin-top: 0.5rem;
 }
 
 .ex-view {
@@ -82,22 +73,21 @@
 }
 
 .movement-tutorials {
-    margin-top: 1.5rem;
-    border-top: 1px solid var(--home-border, #e5e7eb);
+    margin-top: 0.75rem;
 }
 
 .movement-routine__title {
-    margin: 1.25rem 0;
+    margin: 0 0 1rem;
     font: inherit;
-    font-size: 1.1rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    line-height: 1.4;
 }
 
 .movement-routine__label {
-    margin: 1rem 0 0.5rem;
+    margin: 0.9rem 0 0.35rem;
     font: inherit;
     color: var(--home-muted, #6b7280);
-    font-size: 0.85rem;
+    font-size: 0.78rem;
 }
 
 .movement-tutorial {
@@ -112,6 +102,7 @@
     padding: 0.65rem 0;
     cursor: pointer;
     list-style: none;
+    font-size: 0.9rem;
 }
 
 .movement-tutorial summary::-webkit-details-marker {
@@ -129,6 +120,7 @@
 
 .movement-tutorial summary .ex-pointer__rx {
     margin-left: auto;
+    font-size: 0.75rem;
 }
 
 .movement-tutorial summary:focus-visible,

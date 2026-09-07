@@ -20,11 +20,11 @@ pages. Food owns the fifth page.
   control. Neither behavior leaves a record.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
-- **Movement** — Stretch Now opens one deterministic curated stretch for the
-  local day. The full Stretch chooser and three deterministic, fully-offline
-  Weights pointers remain secondary paths. The five bodyweight routine pointers
-  and three warm-up pointers expand into publisher tutorials under one minute. Only the opened
-  tutorial loads a YouTube player; closing or leaving it stops playback.
+- **Movement** — today's tennis routine is the opening action. Its three warm-up
+  and five workout pointers expand into publisher tutorials under one minute.
+  Only the opened tutorial loads a YouTube player; closing or leaving it stops
+  playback. Stretch Now, the full Stretch chooser, and the deterministic,
+  fully-offline Weights pointers remain one level deeper behind Choose.
 - **Mindfulness** — Breathe, OM, and Focus. Breathe begins immediately with a
   continuous 4-in / 6-out audio guide that survives screen lock and stops from
   the Vitruvian Man. Focus begins immediately from one of four fixed choices:
