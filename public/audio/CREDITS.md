@@ -32,9 +32,9 @@ Synthesized in-repo via `ffmpeg`'s `aevalsrc` filter — fundamental sine + 2× 
 
 ## breath-guide.mp3 — spoken box-breathing guide
 
-Synthesized in-repo with the macOS Samantha voice and assembled with `ffmpeg`.
+Synthesized in-repo with the macOS Rishi voice and assembled with `ffmpeg`.
 The first 16-second cycle slowly speaks each phase and count in a 4-second
-inhale, hold, exhale, hold rhythm. Soft high, mid, low, and mid phase chimes
-carry the remaining five-minute track, so the voice teaches once instead of
-repeating. The continuous media element lets the guide continue through iOS
-screen lock.
+inhale, hold, exhale, hold rhythm. One gentler phase-only cycle follows, then
+the voice gives way to the existing OM track at very low volume. There is no
+repeating bell or spoken-count pattern. The continuous media element lets the
+guide continue through iOS screen lock.
