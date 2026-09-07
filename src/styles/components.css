@@ -1558,8 +1558,8 @@ button.preview-card {
     /* Diameter follows the viewport on a phone, capped on wider screens.
        The circle rides well inside the square so the five practices on the
        ring clear the four tool tiles in the corners at every width. */
-    --orbit-d: min(92vw, 26rem);
-    --orbit-r: calc(var(--orbit-d) * 0.34);
+    --orbit-d: min(88vw, 25rem);
+    --orbit-r: calc(var(--orbit-d) * 0.38);
     position: relative;
     width: var(--orbit-d);
     height: var(--orbit-d);
@@ -1605,7 +1605,7 @@ button.preview-card {
 
 .being-figure {
     display: block;
-    height: 9.5rem;
+    height: 8rem;
     width: auto;
     opacity: 0.95;
     border: 1px solid var(--home-border, #e5e7eb);
@@ -1617,9 +1617,9 @@ button.preview-card {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 7.25rem;
-    height: 7.25rem;
-    margin: -3.625rem 0 0 -3.625rem;
+    width: 6.25rem;
+    height: 6.25rem;
+    margin: -3.125rem 0 0 -3.125rem;
     border: 1px solid var(--home-muted, #6b7280);
     border-radius: 50%;
     opacity: 0;
@@ -1668,9 +1668,9 @@ button.preview-card {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 4.25rem;
-    height: 4.25rem;
-    margin: -2.125rem 0 0 -2.125rem;
+    width: 3.75rem;
+    height: 3.75rem;
+    margin: -1.875rem 0 0 -1.875rem;
     display: inline-flex;
     flex-direction: column;
     align-items: center;
@@ -1781,7 +1781,7 @@ button.preview-card {
 }
 
 .orbit-ring-name--sukoon {
-    top: calc(50% + var(--orbit-r) - 1.7rem);
+    top: calc(50% + var(--orbit-r) - 1.35rem);
 }
 
 .orbit-ring-name--junoon {
@@ -1806,8 +1806,8 @@ button.preview-card {
    their own page instead of acting in place. */
 .orbit-tool {
     position: absolute;
-    width: 4rem;
-    height: 4rem;
+    width: 3.5rem;
+    height: 3.5rem;
     display: inline-flex;
     flex-direction: column;
     align-items: center;
