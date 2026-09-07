@@ -80,3 +80,75 @@
     font-size: 0.82rem;
     white-space: nowrap;
 }
+
+.movement-tutorials {
+    margin-top: 1.5rem;
+    border-top: 1px solid var(--home-border, #e5e7eb);
+}
+
+.movement-routine__title {
+    margin: 1.25rem 0;
+    font: inherit;
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.movement-routine__label {
+    margin: 1rem 0 0.5rem;
+    font: inherit;
+    color: var(--home-muted, #6b7280);
+    font-size: 0.85rem;
+}
+
+.movement-tutorial {
+    border-bottom: 1px solid var(--home-border, #e5e7eb);
+}
+
+.movement-tutorial summary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-height: 44px;
+    padding: 0.65rem 0;
+    cursor: pointer;
+    list-style: none;
+}
+
+.movement-tutorial summary::-webkit-details-marker {
+    display: none;
+}
+
+.movement-tutorial summary::before {
+    content: '+';
+    color: var(--home-muted, #6b7280);
+}
+
+.movement-tutorial[open] summary::before {
+    content: '−';
+}
+
+.movement-tutorial summary .ex-pointer__rx {
+    margin-left: auto;
+}
+
+.movement-tutorial summary:focus-visible,
+.movement-tutorial__source:focus-visible {
+    outline: 2px solid var(--home-ink, #111111);
+    outline-offset: 3px;
+}
+
+.movement-tutorial__player iframe {
+    display: block;
+    width: 100%;
+    min-height: 200px;
+    aspect-ratio: 16 / 9;
+    border: 0;
+}
+
+.movement-tutorial__source {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--home-muted, #6b7280);
+    font-size: 0.75rem;
+}

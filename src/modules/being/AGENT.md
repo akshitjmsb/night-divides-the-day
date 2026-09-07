@@ -22,7 +22,9 @@ pages. Food owns the fifth page.
   module, keeping the module boundary intact.
 - **Movement** — Stretch Now opens one deterministic curated stretch for the
   local day. The full Stretch chooser and three deterministic, fully-offline
-  Weights pointers remain secondary paths.
+  Weights pointers remain secondary paths. The five bodyweight routine pointers
+  and three warm-up pointers expand into publisher tutorials under one minute. Only the opened
+  tutorial loads a YouTube player; closing or leaving it stops playback.
 - **Mindfulness** — Breathe, OM, and Focus. Breathe begins immediately with a
   continuous 4-in / 6-out audio guide that survives screen lock and stops from
   the Vitruvian Man. Focus begins immediately from one of four fixed choices:
@@ -39,6 +41,7 @@ not add teaching or supporting prose without explicit Product Owner approval.
 - `orbit.ts` — central reset wiring mounted by `src/home/bootstrap.ts`.
 - `*-entry.ts` — dedicated Sleep, Movement, Mindfulness, and Rooh entries.
 - `movement-view.ts` — the Stretch Now, chooser, and Weights page flow.
+- `movement-tutorials.ts` — the routine's on-demand form tutorials and sources.
 - `sleep.ts` / `sleep.css` — contextual Sleep action and temporary dim state.
 - `meditate.ts` — `initMeditate()`: timer + breath ring + ambient audio.
 - `exercise-view.ts` — today's three Weights pointers.

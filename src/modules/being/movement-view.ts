@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../utils/escapeHtml';
 import { getStretchLinks, getStretchNow } from './exercise-data';
 import { renderExerciseView } from './exercise-view';
+import { initializeMovementTutorials, renderMovementTutorials } from './movement-tutorials';
 
 const STRETCH_ICON = '<path d="M8 4v6l-3 4"></path><path d="m8 10 4 3 4-5"></path><path d="m12 13-1 7"></path><circle cx="8" cy="3" r="1.5"></circle>';
 const WEIGHTS_ICON = '<path d="M6 9v6"></path><path d="M3 10v4"></path><path d="M18 9v6"></path><path d="M21 10v4"></path><path d="M6 12h12"></path>';
@@ -22,7 +23,9 @@ export function renderMovementView(host: HTMLElement, today: Date): void {
         </button>
         <button type="button" class="pillar-action movement-alternatives__action" data-movement="stretch">Choose</button>
       </div>
+      ${renderMovementTutorials()}
     `;
+    initializeMovementTutorials(host);
   };
 
   const renderChoice = (): void => {
