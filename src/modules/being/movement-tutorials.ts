@@ -32,7 +32,7 @@ function renderTutorial(tutorial: (typeof TUTORIALS)[number]): string {
 
 export function renderMovementTutorials(): string {
   return `<div class="movement-tutorials">
-    <h2 class="movement-routine__title">Day 2 — Tennis Foundation</h2>
+    <h2 class="movement-routine__title">Routine — Tennis Foundation</h2>
     <h3 class="movement-routine__label">Warm-up</h3>
     ${WARMUP_TUTORIALS.map(renderTutorial).join('')}
     <h3 class="movement-routine__label">Workout</h3>

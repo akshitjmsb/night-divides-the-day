@@ -1,28 +1,23 @@
-/* Movement — today's routine first; alternatives stay one level deeper. */
+/* Movement — one quiet page, ordered by purpose. */
 
 .movement-now {
-    margin-top: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .movement-now__action {
     width: 100%;
 }
 
-.movement-choose {
-    display: flex;
-    justify-content: flex-end;
-    margin-top: 0.75rem;
+.movement-section {
+    margin-top: 1.5rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
-.movement-choose__action {
-    background: transparent;
-    border-color: transparent;
-    color: var(--home-muted, #6b7280);
-}
-
-.movement-choice__weights {
-    width: 100%;
-    margin-top: 0.5rem;
+.movement-section__title {
+    margin: 0 0 0.75rem;
+    font: inherit;
+    font-size: 1rem;
 }
 
 .ex-view {
@@ -34,7 +29,7 @@
     margin: 0;
     color: var(--home-ink, #111111);
     font: inherit;
-    font-size: 1.15rem;
+    font-size: 0.85rem;
 }
 
 .ex-view__focus {

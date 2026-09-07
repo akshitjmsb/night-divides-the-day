@@ -20,11 +20,11 @@ pages. Food owns the fifth page.
   control. Neither behavior leaves a record.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
-- **Movement** — today's tennis routine is the opening action. Its three warm-up
-  and five workout pointers expand into publisher tutorials under one minute.
-  Only the opened tutorial loads a YouTube player; closing or leaving it stops
-  playback. Stretch Now, the full Stretch chooser, and the deterministic,
-  fully-offline Weights pointers remain one level deeper behind Choose.
+- **Movement** — one page ordered as Routine, Weights, then Stretch. The
+  tennis routine's three warm-up and five workout pointers expand into publisher
+  tutorials under one minute. Only the opened tutorial loads a YouTube player;
+  closing or leaving it stops playback. Stretch Now, the full Stretch library,
+  and the deterministic, fully-offline Weights pointers remain visible below.
 - **Mindfulness** — Breathe, OM, and Focus. Breathe begins immediately with a
   continuous 4-in / 6-out audio guide that survives screen lock and stops from
   the Vitruvian Man. Focus begins immediately from one of four fixed choices:
@@ -40,7 +40,7 @@ not add teaching or supporting prose without explicit Product Owner approval.
 - `manifest.json` — module metadata and the four owned `routeHrefs`.
 - `orbit.ts` — central reset wiring mounted by `src/home/bootstrap.ts`.
 - `*-entry.ts` — dedicated Sleep, Movement, Mindfulness, and Rooh entries.
-- `movement-view.ts` — the Stretch Now, chooser, and Weights page flow.
+- `movement-view.ts` — the single-page routine, Stretch, and Weights flow.
 - `movement-tutorials.ts` — the routine's on-demand form tutorials and sources.
 - `sleep.ts` / `sleep.css` — contextual Sleep action and temporary dim state.
 - `meditate.ts` — `initMeditate()`: timer + breath ring + ambient audio.
