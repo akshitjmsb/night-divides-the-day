@@ -20,11 +20,11 @@ pages. Food owns the fifth page.
   control. Neither behavior leaves a record.
 - **Food** — a session-only next-meal cue rendered by the shell from the Food
   module, keeping the module boundary intact.
-- **Movement** — one page ordered as Routine, Weights, then Stretch. The
-  tennis routine's three warm-up and five workout pointers expand into publisher
-  tutorials under one minute. Only the opened tutorial loads a YouTube player;
-  closing or leaving it stops playback. Stretch Now, the full Stretch library,
-  and the deterministic, fully-offline Weights pointers remain visible below.
+- **Movement** — one compact page with visible icon tabs for Routine, Weights,
+  and Stretch. The routine uses a two-column grid so its three warm-up and five
+  workout pointers fit without a long page. Every video uses the same on-demand,
+  privacy-enhanced inline player; switching tabs stops playback. Weights remains
+  deterministic and fully offline.
 - **Mindfulness** — Breathe, OM, and Focus. Breathe begins immediately with a
   continuous 4-in / 6-out audio guide that survives screen lock and stops from
   the Vitruvian Man. Focus begins immediately from one of four fixed choices:
@@ -40,8 +40,8 @@ not add teaching or supporting prose without explicit Product Owner approval.
 - `manifest.json` — module metadata and the four owned `routeHrefs`.
 - `orbit.ts` — central reset wiring mounted by `src/home/bootstrap.ts`.
 - `*-entry.ts` — dedicated Sleep, Movement, Mindfulness, and Rooh entries.
-- `movement-view.ts` — the single-page routine, Stretch, and Weights flow.
-- `movement-tutorials.ts` — the routine's on-demand form tutorials and sources.
+- `movement-view.ts` — the single-page icon tabs and panel switching.
+- `movement-tutorials.ts` — compact routine tiles and the shared inline player.
 - `sleep.ts` / `sleep.css` — contextual Sleep action and temporary dim state.
 - `meditate.ts` — `initMeditate()`: timer + breath ring + ambient audio.
 - `exercise-view.ts` — today's three Weights pointers.

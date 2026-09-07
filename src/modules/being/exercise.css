@@ -1,23 +1,152 @@
-/* Movement — one quiet page, ordered by purpose. */
+/* Movement — three icon-led actions sharing one compact stage. */
 
-.movement-now {
-    margin-bottom: 0.5rem;
+.movement-page .sukoon-page__header {
+    margin-bottom: 0.75rem;
 }
 
-.movement-now__action {
+.movement-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.45rem;
+    margin-bottom: 0.85rem;
+}
+
+.movement-tab {
+    min-height: 58px;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    padding: 0.4rem;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    color: var(--home-muted, #6b7280);
+    font: inherit;
+    font-size: 0.66rem;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.movement-tab svg {
+    width: 1.35rem;
+    height: 1.35rem;
+}
+
+.movement-tab[aria-selected='true'] {
+    background: var(--home-card-bg, #f8f9fa);
+    border-color: var(--home-border, #e5e7eb);
+    color: var(--home-text, #374151);
+}
+
+.movement-tab:focus-visible,
+.movement-video:focus-visible {
+    outline: 2px solid var(--home-ink, #111111);
+    outline-offset: 2px;
+}
+
+.movement-panel[hidden],
+.movement-player[hidden] {
+    display: none;
+}
+
+.movement-panel--playing > :not(.movement-player) {
+    display: none;
+}
+
+.movement-panel__title {
+    margin: 0 0 0.4rem;
+    font: inherit;
+    font-size: 0.88rem;
+}
+
+.movement-panel__label {
+    margin: 0.55rem 0 0.3rem;
+    color: var(--home-muted, #6b7280);
+    font: inherit;
+    font-size: 0.68rem;
+}
+
+.movement-video-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem;
+}
+
+.movement-video {
+    min-width: 0;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    padding: 0.45rem 0.55rem;
+    background: var(--home-surface, #ffffff);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.45rem;
+    color: var(--home-text, #374151);
+    font: inherit;
+    font-size: 0.7rem;
+    line-height: 1.2;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+.movement-video::before {
+    content: '▶';
+    flex: 0 0 auto;
+    color: var(--home-muted, #6b7280);
+    font-size: 0.55rem;
+}
+
+.movement-video span {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+.movement-video small {
+    flex: 0 0 auto;
+    color: var(--home-muted, #6b7280);
+    font: inherit;
+    font-size: 0.62rem;
+    white-space: nowrap;
+}
+
+.movement-video[aria-pressed='true'] {
+    background: var(--home-card-bg, #f8f9fa);
+    border-color: var(--home-text, #374151);
+}
+
+.movement-player {
+    position: relative;
+    margin-top: 0.55rem;
+}
+
+.movement-player iframe {
+    display: block;
     width: 100%;
+    aspect-ratio: 16 / 9;
+    border: 0;
+    border-radius: 0.45rem;
 }
 
-.movement-section {
-    margin-top: 1.5rem;
-    padding-top: 1.25rem;
-    border-top: 1px solid var(--home-border, #e5e7eb);
-}
-
-.movement-section__title {
-    margin: 0 0 0.75rem;
+.movement-player__close {
+    position: absolute;
+    z-index: 1;
+    top: 0.35rem;
+    right: 0.35rem;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 50%;
+    color: var(--home-text, #374151);
     font: inherit;
     font-size: 1rem;
+    cursor: pointer;
 }
 
 .ex-view {
@@ -29,113 +158,52 @@
     margin: 0;
     color: var(--home-ink, #111111);
     font: inherit;
-    font-size: 0.85rem;
+    font-size: 0.88rem;
 }
 
 .ex-view__focus {
-    margin: 0.45rem 0 0;
+    margin: 0.35rem 0 0;
     color: var(--home-muted, #6b7280);
-    font-size: 0.75rem;
-    line-height: 1.5;
+    font-size: 0.68rem;
+    line-height: 1.4;
 }
 
 .ex-pointers {
-    margin: 1rem 0 0;
+    margin: 0.6rem 0 0;
     padding: 0;
     list-style: none;
-    border-top: 1px solid var(--home-border, #e5e7eb);
 }
 
 .ex-pointer {
+    min-height: 44px;
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
-    gap: 1rem;
-    padding: 0.8rem 0;
+    gap: 0.75rem;
     border-bottom: 1px solid var(--home-border, #e5e7eb);
+    font-size: 0.76rem;
 }
 
 .ex-pointer__name {
     min-width: 0;
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 .ex-pointer__rx {
     flex: 0 0 auto;
     color: var(--home-muted, #6b7280);
-    font-size: 0.82rem;
+    font-size: 0.68rem;
     white-space: nowrap;
 }
 
-.movement-tutorials {
-    margin-top: 0.75rem;
-}
+@media (max-width: 390px) {
+    .movement-video {
+        padding-right: 0.4rem;
+        padding-left: 0.4rem;
+        font-size: 0.66rem;
+    }
 
-.movement-routine__title {
-    margin: 0 0 1rem;
-    font: inherit;
-    font-size: 1rem;
-    line-height: 1.4;
-}
-
-.movement-routine__label {
-    margin: 0.9rem 0 0.35rem;
-    font: inherit;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.78rem;
-}
-
-.movement-tutorial {
-    border-bottom: 1px solid var(--home-border, #e5e7eb);
-}
-
-.movement-tutorial summary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    min-height: 44px;
-    padding: 0.65rem 0;
-    cursor: pointer;
-    list-style: none;
-    font-size: 0.9rem;
-}
-
-.movement-tutorial summary::-webkit-details-marker {
-    display: none;
-}
-
-.movement-tutorial summary::before {
-    content: '+';
-    color: var(--home-muted, #6b7280);
-}
-
-.movement-tutorial[open] summary::before {
-    content: '−';
-}
-
-.movement-tutorial summary .ex-pointer__rx {
-    margin-left: auto;
-    font-size: 0.75rem;
-}
-
-.movement-tutorial summary:focus-visible,
-.movement-tutorial__source:focus-visible {
-    outline: 2px solid var(--home-ink, #111111);
-    outline-offset: 3px;
-}
-
-.movement-tutorial__player iframe {
-    display: block;
-    width: 100%;
-    min-height: 200px;
-    aspect-ratio: 16 / 9;
-    border: 0;
-}
-
-.movement-tutorial__source {
-    display: flex;
-    align-items: center;
-    min-height: 44px;
-    color: var(--home-muted, #6b7280);
-    font-size: 0.75rem;
+    .movement-video small {
+        font-size: 0.58rem;
+    }
 }
