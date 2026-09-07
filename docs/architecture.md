@@ -6,7 +6,7 @@ The app is the orbit: da Vinci's Vitruvian Man at the centre of the home,
 with two rings around him —
 
 - **Circle (soul)** — five pillars that act in place and leave nothing
-  behind: Sleep, Food, Movement, Mindfulness, Rooh. Breathe, OM, and Focus
+  behind: Sleep, Food, Movement, Mindfulness, Recovery. Breathe, OM, and Focus
   appear only inside Mindfulness. Each pillar renders only approved action
   pointers. Circle experiences never navigate.
 - **Square (purpose)** — tools that open their own page and accumulate a

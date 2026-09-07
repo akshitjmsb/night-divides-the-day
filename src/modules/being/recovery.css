@@ -1,0 +1,64 @@
+.recovery-capsule h2 {
+    margin: 0 0 0.75rem !important;
+    color: var(--home-muted, #6b7280);
+    font: inherit;
+    font-size: 0.78rem !important;
+}
+
+.recovery-cues {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+}
+
+.recovery-cues--daily {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.recovery-tools {
+    margin-top: 1.25rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--home-border, #e5e7eb);
+}
+
+.recovery-cue {
+    min-height: 5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    padding: 0.55rem 0.35rem;
+    background: var(--home-card-bg, #f8f9fa);
+    border: 1px solid var(--home-border, #e5e7eb);
+    border-radius: 0.5rem;
+    color: var(--home-text, #374151);
+    text-align: center;
+}
+
+.recovery-cue svg {
+    width: 1.4rem;
+    height: 1.4rem;
+    color: var(--home-muted, #6b7280);
+}
+
+.recovery-cue span {
+    font-size: 0.72rem;
+    line-height: 1.15;
+}
+
+.recovery-cue small {
+    color: var(--home-muted, #6b7280);
+    font: inherit;
+    font-size: 0.6rem;
+}
+
+@media (max-width: 360px) {
+    .recovery-cue {
+        min-height: 4.5rem;
+    }
+
+    .recovery-cue span {
+        font-size: 0.66rem;
+    }
+}

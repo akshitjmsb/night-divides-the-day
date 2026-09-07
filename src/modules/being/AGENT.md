@@ -30,7 +30,9 @@ pages. Food owns the fifth page.
   the Vitruvian Man. Focus begins immediately from one of four fixed choices:
   5, 10, 15, or 30 minutes.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
-- **Rooh** — relationships, safety, and co-regulation.
+- **Recovery** — a post-sleep breathing, stretch, and balance capsule, followed
+  by four concise tool-to-day pointers: cold for intense work, sauna for light
+  recovery, massage weekly, and red light on rest days.
 
 Every pillar page contains only its approved icon-led action pointers. Do
 not add teaching or supporting prose without explicit Product Owner approval.
@@ -39,7 +41,7 @@ not add teaching or supporting prose without explicit Product Owner approval.
 
 - `manifest.json` — module metadata and the four owned `routeHrefs`.
 - `orbit.ts` — central reset wiring mounted by `src/home/bootstrap.ts`.
-- `*-entry.ts` — dedicated Sleep, Movement, Mindfulness, and Rooh entries.
+- `*-entry.ts` — dedicated Sleep, Movement, Mindfulness, and Recovery entries.
 - `movement-view.ts` — the single-page icon tabs and panel switching.
 - `movement-tutorials.ts` — compact routine tiles and the shared inline player.
 - `sleep.ts` / `sleep.css` — contextual Sleep action and temporary dim state.

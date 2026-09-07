@@ -29,7 +29,7 @@ export default defineConfig(() => {
           food: path.resolve(__dirname, 'food.html'),
           movement: path.resolve(__dirname, 'movement.html'),
           mindfulness: path.resolve(__dirname, 'mindfulness.html'),
-          rooh: path.resolve(__dirname, 'rooh.html'),
+          recovery: path.resolve(__dirname, 'recovery.html'),
         },
       },
     },

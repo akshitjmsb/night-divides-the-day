@@ -41,7 +41,7 @@ const EXPECTED_SOUL_HOOKS = [
   'data-panel="food"',
   'data-panel="movement"',
   'data-panel="mindfulness"',
-  'data-panel="rooh"',
+  'data-panel="recovery"',
 ];
 const EXPECTED_MINDFULNESS_HOOKS = [
   'data-mode="breathe"',

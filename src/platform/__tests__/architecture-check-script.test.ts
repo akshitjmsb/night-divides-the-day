@@ -21,7 +21,7 @@ const SOUL_HOOKS = [
   'data-panel="food"',
   'data-panel="movement"',
   'data-panel="mindfulness"',
-  'data-panel="rooh"',
+  'data-panel="recovery"',
 ];
 
 const MINDFULNESS_HOOKS = [
@@ -31,7 +31,7 @@ const MINDFULNESS_HOOKS = [
 ];
 
 const CIRCLE_ROUTES: Record<string, string[]> = {
-  being: ['sleep.html', 'movement.html', 'mindfulness.html', 'rooh.html'],
+  being: ['sleep.html', 'movement.html', 'mindfulness.html', 'recovery.html'],
   food: ['food.html'],
 };
 

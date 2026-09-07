@@ -105,7 +105,7 @@ enforces the contract:
 - **`circle`** — a soul practice. Opens its own quiet page from the home and
   leaves nothing behind by default. A circle module declares one or more
   `routeHrefs`. Sukoon has five pillars: Sleep, Food, Movement, Mindfulness,
-  and Rooh. Breathe, OM, and Focus appear inside Mindfulness. Every pillar
+  and Recovery. Breathe, OM, and Focus appear inside Mindfulness. Every pillar
   presents only its approved icon-led action pointers; supporting prose is
   absent by default. Only the central Vitruvian reset acts on the home.
 - **`square`** — a purpose tool. Opens its own page (`routeHref`) from a
@@ -191,7 +191,7 @@ page header `<span class="theme-icon">`.
 
 - The orbit markup in `index.html` is the source of truth for what's on
   the home. There is no runtime module-arranging code — that's deliberate.
-- The five Sukoon pillar hooks (`data-panel="sleep|food|movement|mindfulness|rooh"`),
+- The five Sukoon pillar hooks (`data-panel="sleep|food|movement|mindfulness|recovery"`),
   the three Mindfulness actions (`data-mode="breathe|om|focus"`), and one
   `href` per square tool must
   exist in the home markup; `npm run check:architecture` fails otherwise.
