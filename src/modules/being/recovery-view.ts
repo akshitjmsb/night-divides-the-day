@@ -10,12 +10,24 @@ const ICONS = {
   light: '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"></path>',
 } as const;
 
+const TUTORIALS = {
+  breathe: { videoId: 'v0Yj9HjgR64', seconds: 56, publisher: 'Michelle Kenway' },
+  stretch: { videoId: '-CiWQ2IvY34', seconds: 42, publisher: 'Squat University' },
+  balance: { videoId: '4s-FOz95u5E', seconds: 49, publisher: 'Baptist Health' },
+  cold: { videoId: 'h3lDtXVMHLg', seconds: 47, publisher: 'Dr. Jen Caudle' },
+  sauna: { videoId: '1CfjPQMKSrQ', seconds: 18, publisher: 'Dr. Tania Elliott' },
+  massage: { videoId: 'CjvkaAkg4ik', seconds: 15, publisher: 'EastWest Physiotherapy' },
+  light: { videoId: '790lIZi5h1s', seconds: 23, publisher: 'American Wellness Authority' },
+} as const;
+
 function cue(icon: keyof typeof ICONS, name: string, context?: string): string {
-  return `<div class="recovery-cue">
+  const tutorial = TUTORIALS[icon];
+  const title = `${name} — ${tutorial.publisher} (${tutorial.seconds} seconds)`;
+  return `<button type="button" class="recovery-cue" data-recovery-video="${tutorial.videoId}" data-video-title="${createSafeHtml(title)}" aria-pressed="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>
     <span>${createSafeHtml(name)}</span>
     ${context ? `<small>${createSafeHtml(context)}</small>` : ''}
-  </div>`;
+  </button>`;
 }
 
 export function renderRecoveryView(host: HTMLElement): void {
@@ -36,5 +48,44 @@ export function renderRecoveryView(host: HTMLElement): void {
         ${cue('light', 'Red light', 'Rest')}
       </div>
     </section>
+    <div class="recovery-player" data-recovery-player hidden></div>
   `;
+
+  host.addEventListener('click', event => {
+    const target = event.target as HTMLElement | null;
+    if (target?.closest('[data-close-recovery-video]')) {
+      host.classList.remove('recovery-view--playing');
+      host.querySelectorAll<HTMLButtonElement>('[data-recovery-video]').forEach(button => {
+        button.setAttribute('aria-pressed', 'false');
+      });
+      const player = host.querySelector<HTMLElement>('[data-recovery-player]');
+      player?.replaceChildren();
+      if (player) player.hidden = true;
+      return;
+    }
+
+    const button = target?.closest<HTMLButtonElement>('[data-recovery-video]');
+    const player = host.querySelector<HTMLElement>('[data-recovery-player]');
+    const videoId = button?.dataset.recoveryVideo;
+    if (!button || !player || !videoId) return;
+
+    host.querySelectorAll<HTMLButtonElement>('[data-recovery-video]').forEach(other => {
+      other.setAttribute('aria-pressed', String(other === button));
+    });
+    const close = document.createElement('button');
+    close.type = 'button';
+    close.className = 'recovery-player__close';
+    close.dataset.closeRecoveryVideo = '';
+    close.setAttribute('aria-label', 'Close video');
+    close.textContent = '×';
+    const frame = document.createElement('iframe');
+    frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?rel=0&playsinline=1`;
+    frame.title = button.dataset.videoTitle ?? 'Recovery tutorial';
+    frame.allow = 'encrypted-media; picture-in-picture; fullscreen';
+    frame.allowFullscreen = true;
+    frame.referrerPolicy = 'strict-origin-when-cross-origin';
+    player.replaceChildren(close, frame);
+    player.hidden = false;
+    host.classList.add('recovery-view--playing');
+  });
 }
