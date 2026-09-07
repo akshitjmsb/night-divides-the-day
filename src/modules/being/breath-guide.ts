@@ -39,7 +39,7 @@ export interface BreathGuideSound {
   stop(): void;
 }
 
-/** A continuous spoken 4-4-4-4 track stays alive through iOS screen lock. */
+/** A continuous 4-4-4-4 guide stays alive through iOS screen lock. */
 export function createBreathGuideSound(
   audio: BreathGuideAudio,
   onPlaybackError: (error: unknown) => void = error =>
