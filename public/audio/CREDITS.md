@@ -30,10 +30,9 @@ Synthesized in-repo via `ffmpeg`'s `aevalsrc` filter — fundamental sine + 2× 
 | `chime-mid.mp3`  | 660 Hz (E5) | 1320 Hz | hold phases |
 | `chime-low.mp3`  | 440 Hz (A4) | 880 Hz  | exhale phase |
 
-## breath-guide.mp3 — screen-free breathing cues
+## breath-guide.mp3 — spoken box-breathing guide
 
-Synthesized in-repo from the existing high and low breath chimes. A high chime
-marks inhale, a low chime marks exhale four seconds later, and the ten-second
-4-in / 6-out cycle repeats for five minutes before the media element loops.
-An inaudibly quiet noise floor keeps one continuous media stream active so iOS
-can continue it through screen lock.
+Synthesized in-repo with the macOS Samantha voice and assembled with `ffmpeg`.
+The 16-second loop speaks each count in a 4-second inhale, hold, exhale, hold
+cycle. The continuous media element lets the guide continue through iOS screen
+lock.

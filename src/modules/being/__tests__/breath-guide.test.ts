@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BREATH_GUIDE_VOLUME,
   createBreathGuideSound,
+  getGuidedBreathCue,
 } from '../breath-guide';
 
 function audioHarness(play: () => Promise<void> | void = () => undefined) {
@@ -54,5 +55,17 @@ describe('screen-free breath guide', () => {
     expect(() => sound.start()).not.toThrow();
     await Promise.resolve();
     expect(errors).toEqual([rejected]);
+  });
+});
+
+describe('guided breath cue', () => {
+  it('paces a complete 4-4-4-4 cycle', () => {
+    expect(getGuidedBreathCue(0)).toEqual({ phase: 'Inhale', count: 1 });
+    expect(getGuidedBreathCue(3_999)).toEqual({ phase: 'Inhale', count: 4 });
+    expect(getGuidedBreathCue(4_000)).toEqual({ phase: 'Hold', count: 1 });
+    expect(getGuidedBreathCue(8_000)).toEqual({ phase: 'Exhale', count: 1 });
+    expect(getGuidedBreathCue(12_000)).toEqual({ phase: 'Hold', count: 1 });
+    expect(getGuidedBreathCue(15_999)).toEqual({ phase: 'Hold', count: 4 });
+    expect(getGuidedBreathCue(16_000)).toEqual({ phase: 'Inhale', count: 1 });
   });
 });

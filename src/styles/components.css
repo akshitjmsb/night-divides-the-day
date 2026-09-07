@@ -2406,11 +2406,8 @@ button.preview-card {
     opacity: 0.55;
 }
 
-/* Breath ring — pure CSS box breathing (4-4-4-4) shown only while a
-   meditation session is running. The phase label sits centered inside
-   a 220 px stage; the ring breathes around it from a 140 px base out
-   to ~217 px on full inhale. Labels cross-fade so phase changes feel
-   seamless rather than snapped. */
+/* Breath ring — 4-4-4-4 guidance shown only while Breathe is active.
+   The spoken track, phase, count, and 16-second ring share one rhythm. */
 
 .meditate-breath {
     display: none;
@@ -2446,32 +2443,6 @@ button.preview-card {
 
 .meditate-breath.is-active .meditate-breath__ring {
     animation: meditate-breath-ring 16s infinite;
-}
-
-/* Screen-free Breathe follows the direct-control rhythm: 4 in, 6 out.
-   The continuous audio track carries the same cue timing through screen lock. */
-.meditate-breath.is-active.is-screen-free .meditate-breath__ring {
-    animation: meditate-screen-free-ring 10s infinite;
-}
-
-@keyframes meditate-screen-free-ring {
-    0% {
-        transform: scale(1);
-        border-color: #d1d5db;
-        background-color: transparent;
-        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
-    }
-    40% {
-        transform: scale(1.55);
-        border-color: #374151;
-        background-color: rgba(248, 249, 250, 0.6);
-        animation-timing-function: cubic-bezier(0.45, 0.05, 0.55, 0.95);
-    }
-    100% {
-        transform: scale(1);
-        border-color: #d1d5db;
-        background-color: transparent;
-    }
 }
 
 /* Per-keyframe timing function: smooth cubic ease on the inhale and
@@ -2512,7 +2483,7 @@ button.preview-card {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -135%);
     width: 160px;
     text-align: center;
     font-family: 'Special Elite', monospace;
@@ -2520,96 +2491,24 @@ button.preview-card {
     line-height: 1.4;
     color: #374151;
     letter-spacing: 0.025em;
-    opacity: 0;
     pointer-events: none;
 }
 
-.meditate-breath.is-active .meditate-breath__label--inhale {
-    animation: meditate-label-inhale 16s linear infinite;
-}
-.meditate-breath.is-active .meditate-breath__label--hold-1 {
-    animation: meditate-label-hold-1 16s linear infinite;
-}
-.meditate-breath.is-active .meditate-breath__label--exhale {
-    animation: meditate-label-exhale 16s linear infinite;
-}
-.meditate-breath.is-active .meditate-breath__label--hold-2 {
-    animation: meditate-label-hold-2 16s linear infinite;
-}
-
-.meditate-breath.is-active.is-screen-free .meditate-breath__label--inhale {
-    animation: meditate-screen-free-inhale 10s linear infinite;
-}
-.meditate-breath.is-active.is-screen-free .meditate-breath__label--exhale {
-    animation: meditate-screen-free-exhale 10s linear infinite;
-}
-.meditate-breath.is-screen-free .meditate-breath__label--hold-1,
-.meditate-breath.is-screen-free .meditate-breath__label--hold-2 {
-    display: none;
-}
-
-@keyframes meditate-screen-free-inhale {
-    0%      { opacity: 1; }
-    35%     { opacity: 1; }
-    40%     { opacity: 0; }
-    95%     { opacity: 0; }
-    100%    { opacity: 1; }
-}
-
-@keyframes meditate-screen-free-exhale {
-    0%      { opacity: 0; }
-    35%     { opacity: 0; }
-    40%     { opacity: 1; }
-    95%     { opacity: 1; }
-    100%    { opacity: 0; }
-}
-
-/* Cross-fade keyframes — each phase label is fully visible during its
-   3.5 s window, fades out over the last 0.5 s of its phase, and the
-   next phase's label fades in during that same 0.5 s. The seam between
-   hold-2 and inhale wraps across the 100% / 0% boundary. */
-
-@keyframes meditate-label-inhale {
-    0%      { opacity: 1; }
-    21.875% { opacity: 1; }
-    25%     { opacity: 0; }
-    96.875% { opacity: 0; }
-    100%    { opacity: 1; }
-}
-@keyframes meditate-label-hold-1 {
-    0%      { opacity: 0; }
-    21.875% { opacity: 0; }
-    25%     { opacity: 1; }
-    46.875% { opacity: 1; }
-    50%     { opacity: 0; }
-    100%    { opacity: 0; }
-}
-@keyframes meditate-label-exhale {
-    0%      { opacity: 0; }
-    46.875% { opacity: 0; }
-    50%     { opacity: 1; }
-    71.875% { opacity: 1; }
-    75%     { opacity: 0; }
-    100%    { opacity: 0; }
-}
-@keyframes meditate-label-hold-2 {
-    0%      { opacity: 0; }
-    71.875% { opacity: 0; }
-    75%     { opacity: 1; }
-    96.875% { opacity: 1; }
-    100%    { opacity: 0; }
+.meditate-breath__count {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 5%);
+    color: #374151;
+    font-family: 'Special Elite', monospace;
+    font-size: 2.2rem;
+    line-height: 1;
+    pointer-events: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .meditate-breath.is-active .meditate-breath__ring,
-    .meditate-breath.is-active .meditate-breath__label--inhale,
-    .meditate-breath.is-active .meditate-breath__label--hold-1,
-    .meditate-breath.is-active .meditate-breath__label--exhale,
-    .meditate-breath.is-active .meditate-breath__label--hold-2 {
+    .meditate-breath.is-active .meditate-breath__ring {
         animation: none;
-    }
-    .meditate-breath.is-active .meditate-breath__label--inhale {
-        opacity: 1; /* show one steady label rather than rotating */
     }
 }
 

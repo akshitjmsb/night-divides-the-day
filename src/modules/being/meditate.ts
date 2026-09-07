@@ -23,6 +23,7 @@ import { getMeditateTimer } from '../../platform/meditateTimer';
 import {
   BREATH_GUIDE_URL,
   createBreathGuideSound,
+  getGuidedBreathCue,
 } from './breath-guide';
 
 const STATUS_RUNNING = 'Stay with the breath.';
@@ -67,6 +68,8 @@ export function initMeditate(): MeditateAudioControls | null {
   ) as HTMLButtonElement | null;
   const status = document.getElementById('meditate-status');
   const breath = document.getElementById('meditate-breath');
+  const breathPhaseLabel = document.getElementById('meditate-breath-phase');
+  const breathCount = document.getElementById('meditate-breath-count');
   const options = document.querySelector<HTMLElement>('.meditate-options');
   const presets = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.meditate-preset')
@@ -82,6 +85,8 @@ export function initMeditate(): MeditateAudioControls | null {
   let breathChimesActive = false;
   let currentMode: 'breathe' | 'om' | 'focus' = 'breathe';
   let breathePlaying = false;
+  let guidedBreathStartedAt = 0;
+  let guidedBreathInterval: number | null = null;
 
   // ─────────────────────────────────────────────────────────────────
   // Chime pool — three HTMLAudioElement instances, one per pitch.
@@ -155,11 +160,32 @@ export function initMeditate(): MeditateAudioControls | null {
     error => {
       console.warn('[breathe] guide playback rejected:', error);
       breathePlaying = false;
+      stopGuidedBreathVisuals();
       paint(timer.store.getState());
     }
   );
   let omPlaying = false;
   let focusPlaying = false;
+
+  function paintGuidedBreathCue(): void {
+    const cue = getGuidedBreathCue(Date.now() - guidedBreathStartedAt);
+    if (breathPhaseLabel) breathPhaseLabel.textContent = cue.phase;
+    if (breathCount) breathCount.textContent = String(cue.count);
+  }
+
+  function startGuidedBreathVisuals(): void {
+    if (guidedBreathInterval !== null) window.clearInterval(guidedBreathInterval);
+    guidedBreathStartedAt = Date.now();
+    paintGuidedBreathCue();
+    guidedBreathInterval = window.setInterval(paintGuidedBreathCue, 200);
+  }
+
+  function stopGuidedBreathVisuals(): void {
+    if (guidedBreathInterval !== null) {
+      window.clearInterval(guidedBreathInterval);
+      guidedBreathInterval = null;
+    }
+  }
 
   function setLoopPlaying(
     tag: 'om' | 'focus',
@@ -202,6 +228,7 @@ export function initMeditate(): MeditateAudioControls | null {
   function stopBreathe(): void {
     breathePlaying = false;
     breathGuide.stop();
+    stopGuidedBreathVisuals();
     paint(timer.store.getState());
   }
 
@@ -212,6 +239,7 @@ export function initMeditate(): MeditateAudioControls | null {
     if (timer.store.getState().status !== 'idle') timer.cancel();
     breathePlaying = true;
     breathGuide.start();
+    startGuidedBreathVisuals();
     paint(timer.store.getState());
   }
 
@@ -446,6 +474,7 @@ export function initMeditate(): MeditateAudioControls | null {
     omAudio.pause();
     focusAudio.pause();
     breathGuide.stop();
+    stopGuidedBreathVisuals();
   });
 
   return {

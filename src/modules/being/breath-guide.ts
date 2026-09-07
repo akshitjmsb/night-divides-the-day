@@ -1,5 +1,29 @@
 export const BREATH_GUIDE_URL = '/audio/breath-guide.mp3';
-export const BREATH_GUIDE_VOLUME = 0.45;
+export const BREATH_GUIDE_VOLUME = 0.65;
+export const GUIDED_BREATH_CYCLE_MS = 16_000;
+
+export type GuidedBreathPhase = 'Inhale' | 'Hold' | 'Exhale';
+
+export interface GuidedBreathCue {
+  phase: GuidedBreathPhase;
+  count: 1 | 2 | 3 | 4;
+}
+
+const GUIDED_PHASES: readonly GuidedBreathPhase[] = [
+  'Inhale',
+  'Hold',
+  'Exhale',
+  'Hold',
+];
+
+/** The spoken track and ring share this 4-4-4-4 phase clock. */
+export function getGuidedBreathCue(elapsedMs: number): GuidedBreathCue {
+  const safeElapsed = Number.isFinite(elapsedMs) ? Math.max(0, elapsedMs) : 0;
+  const cycleElapsed = safeElapsed % GUIDED_BREATH_CYCLE_MS;
+  const phaseIndex = Math.floor(cycleElapsed / 4_000);
+  const count = (Math.floor((cycleElapsed % 4_000) / 1_000) + 1) as 1 | 2 | 3 | 4;
+  return { phase: GUIDED_PHASES[phaseIndex], count };
+}
 
 export interface BreathGuideAudio {
   loop: boolean;
@@ -15,7 +39,7 @@ export interface BreathGuideSound {
   stop(): void;
 }
 
-/** A continuous media track keeps 4-in / 6-out cues alive through iOS lock. */
+/** A continuous spoken 4-4-4-4 track stays alive through iOS screen lock. */
 export function createBreathGuideSound(
   audio: BreathGuideAudio,
   onPlaybackError: (error: unknown) => void = error =>
