@@ -26,9 +26,10 @@ pages. Food owns the fifth page.
   privacy-enhanced inline player; switching tabs stops playback. Weights remains
   deterministic and fully offline.
 - **Mindfulness** — Breathe, OM, and Focus. Breathe begins immediately with a
-  4-second inhale / hold / exhale / hold guide: one slowly counted cycle, one
-  gentle cue cycle, then a quiet continuous OM bed. It survives screen lock and
-  stops from the Vitruvian Man. Focus begins immediately from one of four fixed
+  4-second inhale / hold / exhale / hold guide: a female voice counts the first
+  cycle in sync with the visible clock, then gives a gentle cue on every phase
+  boundary over a quiet continuous OM bed. It survives screen lock and stops
+  from the Vitruvian Man. Focus begins immediately from one of four fixed
   choices: 5, 10, 15, or 30 minutes.
   Audio uses HTMLAudioElement for iOS autoplay reliability.
 - **Recovery** — a post-sleep breathing, stretch, and balance capsule, followed
